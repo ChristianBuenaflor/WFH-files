@@ -8,7 +8,7 @@ import { AuthProvider } from "@/context/AuthContext";
 createRoot(document.getElementById("root")).render(
     <StrictMode>
     <AuthProvider>
-      <BrowserRouter basename="/">
+      <BrowserRouter basename="/snl-hr-app">
         <App />
       </BrowserRouter>
     </AuthProvider>

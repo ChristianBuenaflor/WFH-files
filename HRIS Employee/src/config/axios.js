@@ -1,7 +1,8 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://192.168.100.7:8000/api",
+  // baseURL: import.meta.env.VITE_API_BASE_URL || "https://www.rheycrystalconstructionservices.com/snl-hr/backend/public/api/",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "https://api-hris.slarenasitsolutions.com/public/api",
   headers: {
     "Content-Type": "application/json",
   },
