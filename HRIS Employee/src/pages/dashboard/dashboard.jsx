@@ -167,7 +167,6 @@ const Dashboard = ({ setIsAuth }) => {
                 </p>
               </Col>
             </Row>
-
             {/* STAT CARDS */}
             <Row className="mb-4">
               {stats.map((stat) => (
