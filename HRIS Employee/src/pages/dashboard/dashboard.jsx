@@ -29,11 +29,23 @@ const Dashboard = ({ setIsAuth }) => {
     netPay: true,
   });
 
+  //State for selected month and year (default to current month/year)
+  const [selectedDate, setSelectedDate] = useState({
+    month: new Date().getMonth() + 1,
+    year: new Date().getFullYear()
+  });
+
   const togglePayVisibility = useCallback((payType) => {
     setHidePayValues((prev) => ({
       ...prev,
       [payType]: !prev[payType],
     }));
+  }, []);
+
+  //Callback to handle month change from calendar
+  const handleMonthChange = useCallback((month, year) => {
+    console.log("Month changed to:", month, year); // Debug log
+    setSelectedDate({ month, year });
   }, []);
 
   const iconMap = useMemo(
@@ -63,7 +75,7 @@ const Dashboard = ({ setIsAuth }) => {
     },
     {
       id: 3,
-      label: "Total Presents",
+      label: "Total Gross Pay",
       value: "0",
       icon: "clipboard-data-fill",
       color: "primary",
@@ -129,10 +141,12 @@ const Dashboard = ({ setIsAuth }) => {
         setRecentReports(recent_reports || []);
         setLoading(false);
       } catch (err) {
+        console.error("Error fetching dashboard:", err);
         setError("Failed to load dashboard");
         setLoading(false);
       }
     };
+
     if (hasFetched.current) return;
     hasFetched.current = true;
     fetchDashboard();
@@ -167,6 +181,7 @@ const Dashboard = ({ setIsAuth }) => {
                 </p>
               </Col>
             </Row>
+
             {/* STAT CARDS */}
             <Row className="mb-4">
               {stats.map((stat) => (
@@ -175,44 +190,44 @@ const Dashboard = ({ setIsAuth }) => {
                     <Card.Body className="stat-content">
                       <div className="stat-info">
                         <div className="d-flex align-items-center justify-content-start">
-                          <p>{stat.label}
-                        </p>
-                         <span>{(stat.id === 3 || stat.id === 4) && (
-                            <button
-                              className="eye-toggle-btn mb-2 ms-2"
-                              onClick={() =>
-                                togglePayVisibility(
-                                  stat.id === 3 ? "grossPay" : "netPay"
-                                )
-                              }
-                              title={
-                                stat.id === 3
+                          <p>{stat.label}</p>
+                          <span>
+                            {(stat.id === 3 || stat.id === 4) && (
+                              <button
+                                className="eye-toggle-btn mb-2 ms-2"
+                                onClick={() =>
+                                  togglePayVisibility(
+                                    stat.id === 3 ? "grossPay" : "netPay"
+                                  )
+                                }
+                                title={
+                                  stat.id === 3
+                                    ? hidePayValues.grossPay
+                                      ? "Show gross pay"
+                                      : "Hide gross pay"
+                                    : hidePayValues.netPay
+                                      ? "Show net pay"
+                                      : "Hide net pay"
+                                }
+                              >
+                                {stat.id === 3
                                   ? hidePayValues.grossPay
-                                    ? "Show gross pay"
-                                    : "Hide gross pay"
+                                    ? <EyeSlash />
+                                    : <Eye />
                                   : hidePayValues.netPay
-                                  ? "Show net pay"
-                                  : "Hide net pay"
-                              }
-                            >
-                              {stat.id === 3
-                                ? hidePayValues.grossPay
-                                  ? <EyeSlash />
-                                  : <Eye />
-                                : hidePayValues.netPay
-                                ? <EyeSlash />
-                                : <Eye />}
-                            </button>
-                          )}</span>
-                          </div> 
+                                    ? <EyeSlash />
+                                    : <Eye />}
+                              </button>
+                            )}
+                          </span>
+                        </div>
                         <div className="stat-value-container">
                           <h5>
                             {(stat.id === 3 && hidePayValues.grossPay) ||
-                            (stat.id === 4 && hidePayValues.netPay)
+                              (stat.id === 4 && hidePayValues.netPay)
                               ? "••••••"
                               : stat.value}
                           </h5>
-                          
                         </div>
                       </div>
                       <div className={`stat-icon stat-icon-${stat.color}`}>
@@ -224,15 +239,19 @@ const Dashboard = ({ setIsAuth }) => {
               ))}
             </Row>
 
+            {/* ATTENDANCE CALENDAR AND OVERVIEW */}
             <Row className="mb-4">
-              {/* ATTENDANCE CHART */}
+              {/* Attendance Calendar */}
               <Col lg={6}>
-                <MemoizedAttendanceCalendar />
+                <MemoizedAttendanceCalendar onMonthChange={handleMonthChange} />
               </Col>
 
-              {/* ATTENDANCE CALENDAR */}
+              {/* Overview - Pass selected month and year as props */}
               <Col lg={6}>
-                <MemoizedOverview />
+                <MemoizedOverview
+                  selectedMonth={selectedDate.month}
+                  selectedYear={selectedDate.year}
+                />
               </Col>
             </Row>
 

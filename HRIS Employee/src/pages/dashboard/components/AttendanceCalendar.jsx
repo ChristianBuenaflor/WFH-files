@@ -4,12 +4,11 @@ import { ChevronLeft, ChevronRight } from "react-bootstrap-icons";
 import api from "@/config/axios";
 import "@/pages/dashboard/components/AttendanceCalendar.css";
 
-const AttendanceCalendar = () => {
+const AttendanceCalendar = ({ onMonthChange }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [calendarData, setCalendarData] = useState([]);
   const [summary, setSummary] = useState({
     present: 0,
-    late: 0,
     missed: 0,
     absent: 0,
   });
@@ -137,19 +136,33 @@ const AttendanceCalendar = () => {
   */
 
   const handlePreviousMonth = () => {
-    setCurrentDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth() - 1),
-    );
+    const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1);
+    setCurrentDate(newDate);
+
+    // ✅ Notify parent component about month change
+    if (onMonthChange) {
+      onMonthChange(newDate.getMonth() + 1, newDate.getFullYear());
+    }
   };
 
   const handleNextMonth = () => {
-    setCurrentDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth() + 1),
-    );
+    const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1);
+    setCurrentDate(newDate);
+
+    // ✅ Notify parent component about month change
+    if (onMonthChange) {
+      onMonthChange(newDate.getMonth() + 1, newDate.getFullYear());
+    }
   };
 
   const handleToday = () => {
-    setCurrentDate(new Date());
+    const newDate = new Date();
+    setCurrentDate(newDate);
+
+    // ✅ Notify parent component about month change
+    if (onMonthChange) {
+      onMonthChange(newDate.getMonth() + 1, newDate.getFullYear());
+    }
   };
 
   /*
@@ -203,7 +216,6 @@ const AttendanceCalendar = () => {
 
     const map = {
       present: "Present",
-      late: "Late",
       missed: "Missed",
       weekend: "Weekend",
       absent: "Absent",
@@ -217,7 +229,6 @@ const AttendanceCalendar = () => {
 
     const icons = {
       present: "✓",
-      late: "⏱",
       missed: "?",
       weekend: "-",
       absent: "✗",
@@ -354,11 +365,6 @@ const AttendanceCalendar = () => {
               <div className="legend-item">
                 <span className="legend-color present"></span>
                 <span className="legend-text">Present</span>
-              </div>
-
-              <div className="legend-item">
-                <span className="legend-color late"></span>
-                <span className="legend-text">Late</span>
               </div>
 
               <div className="legend-item">

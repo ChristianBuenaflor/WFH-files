@@ -1,13 +1,12 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Card, Button, Row, Col } from "react-bootstrap";
 import { Link } from "react-router-dom";
-import { PieChart, Pie, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import api from "@/config/axios";
 
-const Overview = () => {
+const Overview = ({ selectedMonth, selectedYear }) => {
   const [error, setError] = useState(null);
-  const hasFetched = useRef(false);
-
+  const [loading, setLoading] = useState(false);
   const [attendanceData, setAttendanceData] = useState({
     present: 0,
     missed: 0,
@@ -27,7 +26,7 @@ const Overview = () => {
       {
         name: "Missed",
         value: attendanceData.missed,
-        fill: "#17a2b8",
+        fill: "#ffc107",
       },
       {
         name: "Absent",
@@ -38,66 +37,103 @@ const Overview = () => {
     [attendanceData],
   );
 
+  // Fetch data when selectedMonth or selectedYear changes
   useEffect(() => {
-    const fetchDashboard = async () => {
+    const fetchOverviewData = async () => {
       try {
-        const year = new Date().getFullYear();
+        setLoading(true);
+        setError(null);
 
-        const res = await api.get("/dashboard/attendance/overview", {
-          params: { year },
+        const month = selectedMonth || new Date().getMonth() + 1;
+        const year = selectedYear || new Date().getFullYear();
+
+        console.log("Fetching overview for:", { month, year });
+
+        // Use the calendar endpoint that we know works
+        const response = await api.get("/dashboard/calendar", {
+          params: { month, year },
         });
 
-        const data = res.data.data;
+        console.log("Calendar API Response:", response.data);
 
-        let present = data.present || 0;
-        let missed = data.missed || 0;
-        let absent = 0;
+        if (response.data.success) {
+          const calendar = response.data.calendar || [];
 
-        // ✅ Normalize today (removes time)
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+          // Get current date for comparison
+          const today = new Date();
+          today.setHours(0, 0, 0, 0); // Remove time for accurate comparison
 
-        // ✅ Count ONLY past + today absences (exclude future)
-        if (res.data.records && Array.isArray(res.data.records)) {
-          absent = res.data.records.filter((record) => {
-            if (record.status !== "absent") return false;
+          // Calculate statistics from calendar data
+          let present = 0;
+          let missed = 0;
+          let absent = 0;
 
+          calendar.forEach(record => {
+            const status = record.status?.toLowerCase();
             const recordDate = new Date(record.date);
             recordDate.setHours(0, 0, 0, 0);
 
-            return recordDate <= today; // ✅ this is the fix
-          }).length;
+            // For absent status, only count if the date is today or in the past
+            if (status === 'absent') {
+              if (recordDate <= today) {
+                absent++;
+              }
+            }
+            // For present and missed, count all (they can only be recorded for past dates anyway)
+            else if (status === 'present') {
+              present++;
+            }
+            else if (status === 'missed') {
+              missed++;
+            }
+          });
+
+          console.log(`Statistics for ${month}/${year}:`, { present, missed, absent });
+          console.log("Today's date:", today);
+
+          const total = present + missed + absent;
+
+          if (total > 0) {
+            setAttendanceData({
+              present,
+              missed,
+              absent,
+              presentPercentage: Math.round((present / total) * 100),
+              missedPercentage: Math.round((missed / total) * 100),
+              absentPercentage: Math.round((absent / total) * 100),
+            });
+          } else {
+            setAttendanceData({
+              present: 0,
+              missed: 0,
+              absent: 0,
+              presentPercentage: 0,
+              missedPercentage: 0,
+              absentPercentage: 0,
+            });
+          }
         } else {
-          // fallback if no records (use backend value)
-          absent = data.absent || 0;
+          setError(response.data.message || "Failed to load attendance data");
         }
-
-        const total = present + missed + absent || 1;
-
-        setAttendanceData({
-          present,
-          missed,
-          absent,
-          presentPercentage: Math.round((present / total) * 100),
-          missedPercentage: Math.round((missed / total) * 100),
-          absentPercentage: Math.round((absent / total) * 100),
-        });
       } catch (err) {
-        setError("Failed to load attendance overview");
+        console.error("Error fetching overview:", err);
+        setError(err.response?.data?.message || "Failed to load attendance overview");
+      } finally {
+        setLoading(false);
       }
     };
 
-    if (!hasFetched.current) {
-      fetchDashboard();
-      hasFetched.current = true;
-    }
-  }, []);
+    fetchOverviewData();
+  }, [selectedMonth, selectedYear]);
+
+  // Get month name for display
+  const monthName = selectedMonth ? new Date(selectedYear, selectedMonth - 1).toLocaleString('default', { month: 'long' }) : '';
 
   return (
     <Card className="dashboard-card-modern h-100">
       <Card.Header className="card-header-custom">
         <div className="d-flex align-items-center justify-content-between">
-          <h5>Overview</h5>
+          <h5>Overview - {monthName} {selectedYear}</h5>
           <Link to="/attendance">
             <Button size="sm" variant="outline-primary">
               View All
@@ -107,98 +143,132 @@ const Overview = () => {
       </Card.Header>
 
       <Card.Body>
-        {error && <p className="text-danger">{error}</p>}
+        {error && (
+          <div className="alert alert-danger" role="alert">
+            {error}
+          </div>
+        )}
 
-        <div className="attendance-chart-wrapper">
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                innerRadius={70}
-                outerRadius={110}
-                paddingAngle={5}
-                dataKey="value"
-                label={({ name, value }) => `${name}: ${value}`}
-              />
+        {loading && (
+          <div className="text-center text-muted py-4">
+            <div className="spinner-border text-primary mb-2" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+            <p>Loading overview data...</p>
+          </div>
+        )}
 
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#fff",
-                  border: "1px solid #e9ecef",
-                  borderRadius: "8px",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                }}
-                formatter={(value) => `${value} days`}
-              />
+        {!loading && !error && (
+          <>
+            <div className="attendance-chart-wrapper">
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={70}
+                    outerRadius={110}
+                    paddingAngle={5}
+                    dataKey="value"
+                    label={({ name, value, percent }) =>
+                      `${name}: ${value} (${(percent * 100).toFixed(0)}%)`
+                    }
+                    labelLine={true}
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Pie>
 
-              <Legend
-                verticalAlign="bottom"
-                height={36}
-                wrapperStyle={{ paddingTop: "20px" }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#fff",
+                      border: "1px solid #e9ecef",
+                      borderRadius: "8px",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                    }}
+                    formatter={(value, name) => [`${value} days`, name]}
+                  />
 
-        <div className="attendance-stats-container mt-3">
-          <Row className="g-3 mb-3">
-            {/* ABSENT */}
-            <Col>
-              <div className="attendance-stat-card">
-                <div className="stat-header">
-                  <div className="stat-color-indicator absent"></div>
-                  <h6>Absent</h6>
-                </div>
-                <div className="stat-content">
-                  <h3>{attendanceData.absent}</h3>
-                  <div className="stat-percentage">
-                    <span className="percentage-badge danger">
-                      {attendanceData.absentPercentage}%
-                    </span>
+                  <Legend
+                    verticalAlign="bottom"
+                    height={36}
+                    wrapperStyle={{ paddingTop: "20px" }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="attendance-stats-container mt-3">
+              <Row className="g-3 mb-3">
+                {/* PRESENT */}
+                <Col xs={12} sm={4}>
+                  <div className="attendance-stat-card present-stat">
+                    <div className="stat-header">
+                      <div className="stat-color-indicator present"></div>
+                      <h6 className="mb-0">Present</h6>
+                    </div>
+                    <div className="stat-content text-center">
+                      <h2 className="mb-0">{attendanceData.present}</h2>
+                      <small className="text-muted">days</small>
+                      <div className="stat-percentage mt-2">
+                        <span className="percentage-badge success">
+                          {attendanceData.presentPercentage}%
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </Col>
+                </Col>
 
-            {/* MISSED */}
-            <Col>
-              <div className="attendance-stat-card">
-                <div className="stat-header">
-                  <div className="stat-color-indicator missed"></div>
-                  <h6>Missed</h6>
-                </div>
-                <div className="stat-content">
-                  <h3>{attendanceData.missed}</h3>
-                  <div className="stat-percentage">
-                    <span className="percentage-badge warning">
-                      {attendanceData.missedPercentage}%
-                    </span>
+                {/* MISSED */}
+                <Col xs={12} sm={4}>
+                  <div className="attendance-stat-card missed-stat">
+                    <div className="stat-header">
+                      <div className="stat-color-indicator missed"></div>
+                      <h6 className="mb-0">Missed</h6>
+                    </div>
+                    <div className="stat-content text-center">
+                      <h2 className="mb-0">{attendanceData.missed}</h2>
+                      <small className="text-muted">days</small>
+                      <div className="stat-percentage mt-2">
+                        <span className="percentage-badge warning">
+                          {attendanceData.missedPercentage}%
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </Col>
+                </Col>
 
-            {/* PRESENT */}
-            <Col>
-              <div className="attendance-stat-card">
-                <div className="stat-header">
-                  <div className="stat-color-indicator present"></div>
-                  <h6>Present</h6>
-                </div>
-                <div className="stat-content">
-                  <h3>{attendanceData.present}</h3>
-                  <div className="stat-percentage">
-                    <span className="percentage-badge success">
-                      {attendanceData.presentPercentage}%
-                    </span>
+                {/* ABSENT */}
+                <Col xs={12} sm={4}>
+                  <div className="attendance-stat-card absent-stat">
+                    <div className="stat-header">
+                      <div className="stat-color-indicator absent"></div>
+                      <h6 className="mb-0">Absent</h6>
+                    </div>
+                    <div className="stat-content text-center">
+                      <h2 className="mb-0">{attendanceData.absent}</h2>
+                      <small className="text-muted">days</small>
+                      <div className="stat-percentage mt-2">
+                        <span className="percentage-badge danger">
+                          {attendanceData.absentPercentage}%
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </Col>
+              </Row>
+            </div>
+
+            {/* Summary message */}
+            {attendanceData.present === 0 && attendanceData.missed === 0 && attendanceData.absent === 0 && (
+              <div className="text-center text-muted mt-3">
+                <p>No attendance records found for {monthName} {selectedYear}</p>
               </div>
-            </Col>
-          </Row>
-        </div>
+            )}
+          </>
+        )}
       </Card.Body>
     </Card>
   );
