@@ -162,11 +162,14 @@ const Attendance = ({ setIsAuth }) => {
   const fetchMonthlyPresent = async (month, year) => {
     setLoadingPresentAbsent(true);
     try {
-      const response = await api.get("/my-attendance", {
-        params: { month, year },
-      });
+      const response = await api.get("/my-attendance");
       if (response.data && response.data.attendance) {
-        setPresentRecords(response.data.attendance);
+        const filtered = response.data.attendance.filter((record) => {
+          if (!record.clock_in) return false;
+          const date = new Date(record.clock_in);
+          return date.getMonth() + 1 === month && date.getFullYear() === year;
+        });
+        setPresentRecords(filtered);
       } else if (response.data && response.data.recentAttendance) {
         const filtered = response.data.recentAttendance.filter((record) => {
           if (!record.clock_in) return false;
