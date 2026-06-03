@@ -93,12 +93,13 @@ const RecentReport = ({ recentReports = [] }) => {
       {/* REPORT DETAILS MODAL */}
       <Modal
         show={showReportModal}
+       dialogClassName="modal-90w"
         onHide={() => setShowReportModal(false)}
         size="lg"
         centered
       >
         <Modal.Header closeButton>
-          <Modal.Title>Report Details #{selectedReport?.id}</Modal.Title>
+          <Modal.Title>Report Details</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {selectedReport && (

@@ -769,3 +769,7 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+ .btn-primary {
+  border-radius: 10px;
+  font-weight: 500;
+}

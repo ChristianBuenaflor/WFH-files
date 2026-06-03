@@ -15,6 +15,10 @@ import {
   ThreeDots,
   ChevronLeft,
   ChevronRight,
+  GraphUpArrow,
+  Calendar,
+  Shield,
+  CheckCircle,
 } from "react-bootstrap-icons";
 import { Link } from "react-router-dom";
 
@@ -25,6 +29,7 @@ const OverviewTab = ({
   badgeVariant,
   badgeText,
   summary,
+  sessionTime,
   liveHoursToday,
   statusText,
   handleClockIn,
@@ -61,22 +66,22 @@ const OverviewTab = ({
     if (totalPages <= 1) return null;
 
     return (
-      <div className="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+      <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mt-3 pt-3 border-top">
         <div className="text-muted small">
           Page {currentPage} of {totalPages}
         </div>
-        <div className="pagination-controls">
+        <div className="pagination-controls d-flex flex-wrap gap-1 justify-content-start justify-content-sm-end">
           <Button
             variant="outline-secondary"
             size="sm"
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(currentPage - 1)}
-            className="me-2"
+            className="me-1"
           >
-            <ChevronLeft size={16} /> Previous
+            <ChevronLeft size={16} className="d-none d-sm-inline" /> <span className="d-sm-none">Prev</span>
           </Button>
 
-          <div className="d-inline-flex gap-1">
+          <div className="d-flex flex-wrap gap-1">
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
               <Button
                 key={page}
@@ -96,9 +101,9 @@ const OverviewTab = ({
             size="sm"
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage(currentPage + 1)}
-            className="ms-2"
+            className="ms-1"
           >
-            Next <ChevronRight size={16} />
+            <span className="d-sm-none">Next</span> <ChevronRight size={16} className="d-none d-sm-inline" />
           </Button>
         </div>
       </div>
@@ -106,194 +111,220 @@ const OverviewTab = ({
   };
   return (
     <>
-      <div className="d-flex flex-wrap justify-content-between align-items-center mb-4">
-        <div>
-          <h5 className="mb-0 attendance-date">{formattedDate}</h5>
-          <p className="attendance-time text-muted">{formattedTime}</p>
-        </div>
-
-        {loadingSummary ? (
-          <span
-            className="spinner-border spinner-border-sm me-2"
-            role="status"
-            aria-hidden="true"
-          ></span>
-        ) : (
-          <Badge
-            bg={badgeVariant}
-            className="px-3 py-2 mt-2 mt-sm-0"
-            style={{ fontSize: "1.1rem" }}
-          >
-            {badgeText}
-          </Badge>
-        )}
-      </div>
-
-      <Card className="shadow-sm border-0 rounded-4 mb-4">
-        <Card.Body className="p-3 p-md-4">
-          {loadingSummary ? (
-            <div className="text-center py-4">
-              <span
-                className="spinner-border spinner-border-sm me-2"
-                role="status"
-                aria-hidden="true"
-              ></span>
-            </div>
-          ) : (
-            <Row className="align-items-center">
-              <Col md={6}>
-                <div className="mb-3">
-                  <small className="text-uppercase text-muted">
-                    CLOCK IN TIME
-                  </small>
-                  <h3 className="fw-bold">{summary.clockInTime || "---"}</h3>
+      <Row className="g-3 g-md-4">
+        {/* Left Column - Status & Clock Controls */}
+        <Col lg={5}>
+          {/* Status Card */}
+          <Card className="border-0 rounded-4 mb-3 shadow-sm overview-status-card">
+            <Card.Body className="p-3 p-md-4">
+              {loadingSummary ? (
+                <div className="text-center py-4">
+                  <span
+                    className="spinner-border spinner-border-sm me-2"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
                 </div>
+              ) : (
+                <>
+                  <div className="d-flex align-items-start justify-content-between mb-4">
+                    <div>
+                      <small className="text-muted text-uppercase d-block mb-1">CURRENT STATUS</small>
+                      <div className="d-flex align-items-center gap-2">
+                        <h5 className="fw-bold mb-0">{statusText}</h5>
+                        <Badge bg="success" className="badge-checked-in">
+                          CHECKED IN
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="status-dot" style={{
+                      width: 12,
+                      height: 12,
+                      borderRadius: "50%",
+                      backgroundColor: "#10b981",
+                    }}></div>
+                  </div>
 
+                  <div className="mb-4 pb-4 border-bottom">
+                    <small className="text-muted text-uppercase d-block mb-2">CURRENT SESSION</small>
+                    <h2 className="fw-bold mb-0 session-time">
+                      {sessionTime}
+                    </h2>
+                  </div>
+
+                  <Row className="g-3 mb-4">
+                    <Col xs={6}>
+                      <div className="d-flex align-items-center gap-2">
+                        <Clock size={16} className="text-muted" />
+                        <div>
+                          <small className="text-muted text-uppercase d-block">CLOCK IN</small>
+                          <p className="fw-bold mb-0">{summary.clockInTime || "---"}</p>
+                        </div>
+                      </div>
+                    </Col>
+                    <Col xs={6}>
+                      <div className="d-flex align-items-center gap-2">
+                        <Clock size={16} className="text-muted" />
+                        <div>
+                          <small className="text-muted text-uppercase d-block">HOURS TODAY</small>
+                          <p className="fw-bold mb-0">{liveHoursToday.toFixed(2)} hrs</p>
+                        </div>
+                      </div>
+                    </Col>
+                  </Row>
+
+                  <div className="d-flex gap-2">
+                    <Button
+                      variant="success"
+                      className="px-3 py-2 flex-grow-1 btn-clock"
+                      onClick={handleClockIn}
+                      disabled={
+                        summary.isClockedIn ||
+                        loadingSummary ||
+                        loadingIn ||
+                        loadingOut
+                      }
+                    >
+                      {loadingIn ? (
+                        <>
+                          <span
+                            className="spinner-border spinner-border-sm me-2"
+                            role="status"
+                            aria-hidden="true"
+                          ></span>
+                          Clocking In...
+                        </>
+                      ) : (
+                        <>
+                          <Clock size={16} className="me-2" />
+                          Clock In
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="danger"
+                      className="px-3 py-2 flex-grow-1 btn-clock"
+                      onClick={() => setShowReportModal(true)}
+                      disabled={
+                        !summary.isClockedIn ||
+                        loadingSummary ||
+                        isClockOutDisabled ||
+                        loadingIn ||
+                        loadingOut
+                      }
+                    >
+                      {loadingOut ? (
+                        <>
+                          <span
+                            className="spinner-border spinner-border-sm me-2"
+                            role="status"
+                            aria-hidden="true"
+                          ></span>
+                          Clocking Out...
+                        </>
+                      ) : (
+                        <>
+                          <DoorOpen size={16} className="me-2" />
+                          Clock Out
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </Card.Body>
+          </Card>
+        </Col>
+
+        {/* Right Column - Stats & Monthly Target */}
+        <Col lg={7}>
+          {/* Stats Cards Row */}
+          <Row className="g-2 mb-3">
+            <Col xs={6} md={4}>
+              <Card className="border-0 rounded-4 shadow-sm stat-info-card">
+                <Card.Body className="p-3">
+                  <div className="d-flex justify-content-between align-items-start mb-2">
+                    <Calendar size={20} className="text-primary" />
+                    <Badge bg="success" className="badge-trend">+2.4 hrs</Badge>
+                  </div>
+                  <h5 className="fw-bold mb-1">
+                    {loadingSummary ? (
+                      <span className="spinner-border spinner-border-sm" />
+                    ) : (
+                      `${summary.weekHours.toFixed(2)} hrs`
+                    )}
+                  </h5>
+                  <small className="text-muted">This Week</small>
+                </Card.Body>
+              </Card>
+            </Col>
+            <Col xs={6} md={4}>
+              <Card className="border-0 rounded-4 shadow-sm stat-info-card">
+                <Card.Body className="p-3">
+                  <div className="d-flex justify-content-between align-items-start mb-2">
+                    <CheckCircle size={20} className="text-success" />
+                    <Badge bg="info" className="badge-trend">On track</Badge>
+                  </div>
+                  <h5 className="fw-bold mb-1">
+                    {loadingSummary ? (
+                      <span className="spinner-border spinner-border-sm" />
+                    ) : (
+                      `${summary.monthHours.toFixed(2)} hrs`
+                    )}
+                  </h5>
+                  <small className="text-muted">This Month</small>
+                </Card.Body>
+              </Card>
+            </Col>
+            <Col xs={6} md={4}>
+              <Card className="border-0 rounded-4 shadow-sm stat-info-card">
+                <Card.Body className="p-3">
+                  <div className="d-flex justify-content-between align-items-start mb-2">
+                    <Shield size={20} className="text-warning" />
+                    <Badge bg="success" className="badge-trend">100%</Badge>
+                  </div>
+                  <h5 className="fw-bold mb-1">
+                    {loadingSummary ? (
+                      <span className="spinner-border spinner-border-sm" />
+                    ) : (
+                      `${summary.attendanceDays} days`
+                    )}
+                  </h5>
+                  <small className="text-muted">Attendance</small>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+
+          {/* Monthly Target Card */}
+          <Card className="border-0 rounded-4 shadow-sm monthly-target-card">
+            <Card.Body className="p-3 p-md-4">
+              <div className="d-flex justify-content-between align-items-start mb-3">
                 <div>
-                  <small className="text-uppercase text-muted">
-                    HOURS TODAY
-                  </small>
-                  <h3 className="fw-bold">{liveHoursToday.toFixed(2)} hrs</h3>
+                  <small className="text-white text-uppercase d-block mb-1">MONTHLY TARGET</small>
+                  <h3 className="fw-bold mb-0 text-white">160 hrs</h3>
                 </div>
-              </Col>
-
-              <Col md={1} className="d-none d-md-block text-center">
+                <GraphUpArrow size={24} className="text-white opacity-50" />
+              </div>
+              <small className="text-white text-opacity-75 d-block mb-3">
+                {loadingSummary ? (
+                  "Loading..."
+                ) : (
+                  `${summary.monthHours.toFixed(2)} hrs completed • ${(160 - summary.monthHours).toFixed(2)} hrs remaining`
+                )}
+              </small>
+              <div className="progress" style={{ height: "8px" }}>
                 <div
+                  className="progress-bar bg-white"
+                  role="progressbar"
                   style={{
-                    width: 2,
-                    height: 80,
-                    background: "#dee2e6",
-                    margin: "auto",
+                    width: `${Math.min((summary.monthHours / 160) * 100, 100)}%`,
                   }}
-                />
-              </Col>
-
-              <Col md={5} className="text-md-end mt-4 mt-md-0">
-                <div className="mb-3">
-                  <small className="text-uppercase text-muted">STATUS</small>
-                  <h3 className="fw-bold">{statusText}</h3>
-                </div>
-
-                <div className="d-flex gap-2 justify-content-md-end">
-                  <Button
-                    variant="success"
-                    size="sm"
-                    className="px-3"
-                    onClick={handleClockIn}
-                    disabled={
-                      summary.isClockedIn ||
-                      loadingSummary ||
-                      loadingIn ||
-                      loadingOut
-                    }
-                  >
-                    {loadingIn ? (
-                      <>
-                        <span
-                          className="spinner-border spinner-border-sm me-2"
-                          role="status"
-                          aria-hidden="true"
-                        ></span>
-                        Clocking In...
-                      </>
-                    ) : (
-                      <>
-                        <Clock className="me-2" size={18} />
-                        Clock In
-                      </>
-                    )}
-                  </Button>
-
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    className="px-3"
-                    onClick={() => setShowReportModal(true)}
-                    disabled={
-                      !summary.isClockedIn ||
-                      loadingSummary ||
-                      isClockOutDisabled ||
-                      loadingIn ||
-                      loadingOut
-                    }
-                  >
-                    {loadingOut ? (
-                      <>
-                        <span
-                          className="spinner-border spinner-border-sm me-2"
-                          role="status"
-                          aria-hidden="true"
-                        ></span>
-                        Clocking Out...
-                      </>
-                    ) : (
-                      <>
-                        <DoorOpen className="me-2" size={18} />
-                        Clock Out
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </Col>
-            </Row>
-          )}
-        </Card.Body>
-      </Card>
-
-      <Row className="g-4 mb-5">
-        <Col md={4}>
-          <Card className="text-center border-0 shadow-sm rounded-4">
-            <Card.Body>
-              <h6 className="text-muted">THIS WEEK</h6>
-              <h2 className="fw-bold">
-                {loadingSummary ? (
-                  <span
-                    className="spinner-border spinner-border-sm me-2"
-                    role="status"
-                    aria-hidden="true"
-                  ></span>
-                ) : (
-                  `${summary.weekHours.toFixed(2)} hrs`
-                )}
-              </h2>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        <Col md={4}>
-          <Card className="text-center border-0 shadow-sm rounded-4">
-            <Card.Body>
-              <h6 className="text-muted">THIS MONTH</h6>
-              <h2 className="fw-bold">
-                {loadingSummary ? (
-                  <span
-                    className="spinner-border spinner-border-sm me-2"
-                    role="status"
-                    aria-hidden="true"
-                  ></span>
-                ) : (
-                  `${summary.monthHours.toFixed(2)} hrs`
-                )}
-              </h2>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        <Col md={4}>
-          <Card className="text-center border-0 shadow-sm rounded-4">
-            <Card.Body>
-              <h6 className="text-muted">ATTENDANCE</h6>
-              <h2 className="fw-bold">
-                {loadingSummary ? (
-                  <span
-                    className="spinner-border spinner-border-sm me-2"
-                    role="status"
-                    aria-hidden="true"
-                  ></span>
-                ) : (
-                  `${summary.attendanceDays} days`
-                )}
-              </h2>
+                  aria-valuenow={summary.monthHours}
+                  aria-valuemin="0"
+                  aria-valuemax="160"
+                ></div>
+              </div>
             </Card.Body>
           </Card>
         </Col>

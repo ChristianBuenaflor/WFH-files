@@ -20,6 +20,15 @@
   }
 }
 
+/* Attendance Header Card */
+
+
+.attendance-header-card .status-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .attendance-date {
   color: #1f2937;
   margin: 0 0 0.25rem 0;
@@ -77,10 +86,171 @@
   }
 }
 
+/* Stat Cards - Full Width */
+.stat-card {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.stat-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  transform: translateX(4px);
+}
+
+.stat-card h4 {
+  font-size: 1.3rem;
+  margin: 0;
+}
+
+@media (max-width: 576px) {
+  .stat-card h4 {
+    font-size: 1.1rem;
+  }
+  
+  .stat-card .card-body {
+    padding: 1rem !important;
+  }
+}
+
+/* New Overview Tab Layout Styles */
+.stat-info-card {
+  transition: all 0.2s ease;
+}
+
+.stat-info-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.stat-info-card .card-body {
+  position: relative;
+}
+
+.badge-trend {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.overview-status-card .session-time {
+  font-size: 2.5rem;
+}
+
+@media (max-width: 768px) {
+  .overview-status-card .session-time {
+    font-size: 2rem;
+  }
+
+  .stat-info-card .card-body {
+    padding: 1rem !important;
+  }
+
+  .stat-info-card h5 {
+    font-size: 1.1rem;
+  }
+}
+
+/* Monthly Target Card */
+.monthly-target-card {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.monthly-target-card::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 300px;
+  height: 300px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+}
+
+.monthly-target-card .card-body {
+  position: relative;
+  z-index: 1;
+}
+
+.monthly-target-card .progress {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.monthly-target-card .progress-bar {
+  background-color: white;
+}
+
+/* Clock Buttons */
+.btn-clock {
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-clock:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-clock:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Badge Checked In */
+.badge-checked-in {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.35rem 0.6rem;
+}
+
+/* Status Dot */
+.status-dot {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+/* Responsive Layout */
+@media (max-width: 991px) {
+  .overview-status-card .session-time {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .stat-info-card .card-body {
+    padding: 0.75rem !important;
+  }
+
+  .stat-info-card h5 {
+    font-size: 1rem;
+  }
+
+  .monthly-target-card .card-body {
+    padding: 1.5rem !important;
+  }
+
+  .monthly-target-card h3 {
+    font-size: 1.8rem;
+  }
+}
+
 /* Recent Attendance Table */
 .table-responsive {
   border-radius: 8px;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .table thead th {
   color: #6b7280;
@@ -97,20 +267,21 @@
   padding: 1.2rem 1.5rem;
   color: #333;
   vertical-align: middle;
-  white-space: nowrap;
 }
 @media (max-width: 768px) {
   .table thead th,
   .table tbody td {
     padding: 0.75rem 1rem;
     font-size: 0.85rem;
+    white-space: normal;
   }
 }
 @media (max-width: 576px) {
   .table thead th,
   .table tbody td {
     padding: 0.5rem 0.75rem;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
+    white-space: normal;
   }
 }
 
@@ -122,6 +293,38 @@
 @media (max-width: 576px) {
   .btn-outline-primary.sm {
     padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* Clock In/Out Buttons - Mobile Responsive */
+.btn.px-3 {
+  transition: width 0.2s ease;
+}
+@media (max-width: 576px) {
+  .btn.flex-grow-1 {
+    flex-grow: 1 !important;
+    width: 100%;
+  }
+  .btn.flex-sm-grow-0 {
+    flex-grow: 0 !important;
+    width: auto;
+  }
+}
+
+/* Pagination Controls Mobile */
+.pagination-controls {
+  flex-wrap: wrap;
+}
+@media (max-width: 576px) {
+  .pagination-controls {
+    width: 100%;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+  .page-btn {
+    min-width: 28px !important;
+    padding: 0.4rem 0.6rem !important;
     font-size: 0.75rem;
   }
 }
@@ -233,7 +436,10 @@ video {
   background-color: #2563eb !important;
   border-color: #2563eb !important;
 }
-
+.btn-outline-secondary, .btn-danger, .btn-success, .custom-badge, .btn-secondary {
+  border-radius: 10px;
+  font-weight: 500;
+}
 @media (max-width: 768px) {
   .pagination-controls {
     gap: 0.25rem;
@@ -248,5 +454,38 @@ video {
   .page-btn {
     min-width: 28px !important;
     font-size: 0.7rem;
+  }
+}
+
+/* Mobile Responsive Utilities */
+.small-text-mobile {
+  font-size: 0.75rem;
+}
+
+@media (min-width: 576px) {
+  .small-text-mobile {
+    font-size: inherit;
+  }
+}
+
+.btn-sm-full {
+  width: 100%;
+}
+
+@media (min-width: 576px) {
+  .btn-sm-full {
+    width: auto;
+  }
+}
+
+/* Responsive Button Layout */
+@media (max-width: 576px) {
+  .d-flex.flex-column.flex-sm-row {
+    flex-direction: column;
+    gap: 0.75rem !important;
+  }
+
+  .d-flex.flex-column.flex-sm-row > .btn {
+    width: 100%;
   }
 }

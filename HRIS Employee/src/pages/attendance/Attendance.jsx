@@ -47,6 +47,7 @@ const Attendance = ({ setIsAuth }) => {
 
   const [clockInTimestamp, setClockInTimestamp] = useState(null);
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
+  const [sessionTime, setSessionTime] = useState("00:00:00");
 
   const [showReportModal, setShowReportModal] = useState(false);
   const [ccEmails, setCcEmails] = useState("");
@@ -87,6 +88,29 @@ const Attendance = ({ setIsAuth }) => {
   const [status, setStatus] = useState("");
 
   const navigate = useNavigate();
+
+  // Update session time every second when clocked in
+  useEffect(() => {
+    if (!summary.isClockedIn || !clockInTimestamp) {
+      setSessionTime("00:00:00");
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const now = new Date();
+      setCurrentDateTime(now);
+      const clockInDate = new Date(clockInTimestamp);
+      const diffMs = now - clockInDate;
+      const hours = Math.floor(diffMs / (1000 * 60 * 60));
+      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+      setSessionTime(
+        `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+      );
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [summary.isClockedIn, clockInTimestamp]);
 
   // ----------------- FETCH ATTENDANCE -----------------
   const fetchMyAttendance = async () => {
@@ -632,6 +656,7 @@ const Attendance = ({ setIsAuth }) => {
             badgeVariant={badgeVariant}
             badgeText={badgeText}
             summary={summary}
+            sessionTime={sessionTime}
             liveHoursToday={liveHoursToday}
             statusText={statusText}
             handleClockIn={handleClockIn}

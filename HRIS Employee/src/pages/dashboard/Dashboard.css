@@ -277,7 +277,7 @@
    BUTTON STYLE (shadcn feel)
 ================================= */
 
-.btn-outline-primary {
+.btn-outline-primary, .btn-primary {
   border-radius: 10px;
   font-weight: 500;
 }

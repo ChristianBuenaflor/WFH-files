@@ -13,6 +13,7 @@ import RecentReport from "@/pages/dashboard/components/RecentReport";
 import RecentPayslip from "@/pages/dashboard/components/RecentPayslip";
 import Overview from "@/pages/dashboard/components/Overview";
 import AttendanceCalendar from "@/pages/dashboard/components/AttendanceCalendar";
+import AttendanceOverview from "@/pages/dashboard/components/AttendanceOverview";
 import api from "@/config/axios";
 import "./Dashboard.css";
 import "@/assets/style/global.css";
@@ -22,6 +23,7 @@ const MemoizedRecentReport = React.memo(RecentReport);
 const MemoizedRecentPayslip = React.memo(RecentPayslip);
 const MemoizedOverview = React.memo(Overview);
 const MemoizedAttendanceCalendar = React.memo(AttendanceCalendar);
+const MemoizedAttendanceOverview = React.memo(AttendanceOverview);
 
 const Dashboard = ({ setIsAuth }) => {
   const [hidePayValues, setHidePayValues] = useState({
@@ -183,7 +185,7 @@ const Dashboard = ({ setIsAuth }) => {
             </Row>
 
             {/* STAT CARDS */}
-            <Row className="mb-4">
+            <Row className="mb-3 g-4">
               {stats.map((stat) => (
                 <Col lg={3} md={6} key={stat.id}>
                   <Card className="stat-card-modern">
@@ -237,6 +239,13 @@ const Dashboard = ({ setIsAuth }) => {
                   </Card>
                 </Col>
               ))}
+            </Row>
+
+            {/* ATTENDANCE OVERVIEW */}
+            <Row className="mb-4">
+              <Col>
+                <MemoizedAttendanceOverview />
+              </Col>
             </Row>
 
             {/* ATTENDANCE CALENDAR AND OVERVIEW */}

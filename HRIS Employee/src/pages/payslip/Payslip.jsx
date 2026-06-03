@@ -402,7 +402,7 @@ const Payslip = ({ setIsAuth }) => {
                           fetchPayslipById(payslip.record_id);
                           handleShow();
                         }}
-                        className="btn-view-details w-100"
+                        variant="primary"
                       >
                         <FileEarmarkText size={16} className="me-2" />
                         View Details
