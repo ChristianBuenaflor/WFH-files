@@ -288,6 +288,15 @@
 }
 
 /* ===============================
+   MONTHLY TARGET CARD
+================================= */
+
+.monthly-target-card {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border: none;
+}
+
+/* ===============================
    RESPONSIVE
 ================================= */
 
