@@ -380,6 +380,22 @@ const Payslip = ({ setIsAuth }) => {
                             )}
                           </h6>
                         </div>
+                        {payslip.total_late_deductions > 0 && (
+                          <div className="detail-item-compact">
+                            <p className="detail-label">Late Deduction</p>
+                            <h6 className="detail-value detail-value-danger">
+                              -{" "}
+                              {formatPeso(
+                                Number(
+                                  String(payslip.total_late_deductions).replace(
+                                    /,/g,
+                                    "",
+                                  ),
+                                ),
+                              )}
+                            </h6>
+                          </div>
+                        )}
                       </div>
 
                       {/* Net Pay Highlight */}
@@ -492,6 +508,31 @@ const Payslip = ({ setIsAuth }) => {
                     {selectedPayslip.remarks || "--No additional remarks--"}
                   </p>
                 </div>
+              </div>
+
+              {/* Attendance Information Section */}
+              <div className="payslip-detail-section">
+                <h6 className="detail-section-title">Attendance Summary</h6>
+                <div className="allowance-deduction-item">
+                  <span className="item-name">Days Worked</span>
+                  <span className="item-amount">
+                    {selectedPayslip.days_worked} days
+                  </span>
+                </div>
+                <div className="allowance-deduction-item">
+                  <span className="item-name">Absences</span>
+                  <span className="item-amount">
+                    {selectedPayslip.absences} days
+                  </span>
+                </div>
+                {selectedPayslip.total_late_deductions > 0 && (
+                  <div className="allowance-deduction-item">
+                    <span className="item-name">Late Deduction</span>
+                    <span className="item-amount negative">
+                      -{formatPeso(Number(String(selectedPayslip.total_late_deductions).replace(/,/g, "")))}
+                    </span>
+                  </div>
+                )}
               </div>
               {/* Summary Boxes */}
               <Row className="mb-4">

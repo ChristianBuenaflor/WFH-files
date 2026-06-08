@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
 import { Container, Row, Col, Card } from "react-bootstrap";
 import AdminLayout from "@/components/layout/Adminlayout";
 import {
@@ -34,7 +40,7 @@ const Dashboard = ({ setIsAuth }) => {
   //State for selected month and year (default to current month/year)
   const [selectedDate, setSelectedDate] = useState({
     month: new Date().getMonth() + 1,
-    year: new Date().getFullYear()
+    year: new Date().getFullYear(),
   });
 
   const togglePayVisibility = useCallback((payType) => {
@@ -185,9 +191,9 @@ const Dashboard = ({ setIsAuth }) => {
             </Row>
 
             {/* STAT CARDS */}
-            <Row className="mb-3 g-4">
+            <Row className="mb-3 g-4 d-none d-md-flex">
               {stats.map((stat) => (
-                <Col lg={3} md={6} key={stat.id}>
+                <Col md={3} key={stat.id}>
                   <Card className="stat-card-modern">
                     <Card.Body className="stat-content">
                       <div className="stat-info">
@@ -199,7 +205,7 @@ const Dashboard = ({ setIsAuth }) => {
                                 className="eye-toggle-btn mb-2 ms-2"
                                 onClick={() =>
                                   togglePayVisibility(
-                                    stat.id === 3 ? "grossPay" : "netPay"
+                                    stat.id === 3 ? "grossPay" : "netPay",
                                   )
                                 }
                                 title={
@@ -212,13 +218,17 @@ const Dashboard = ({ setIsAuth }) => {
                                       : "Hide net pay"
                                 }
                               >
-                                {stat.id === 3
-                                  ? hidePayValues.grossPay
-                                    ? <EyeSlash />
-                                    : <Eye />
-                                  : hidePayValues.netPay
-                                    ? <EyeSlash />
-                                    : <Eye />}
+                                {stat.id === 3 ? (
+                                  hidePayValues.grossPay ? (
+                                    <EyeSlash />
+                                  ) : (
+                                    <Eye />
+                                  )
+                                ) : hidePayValues.netPay ? (
+                                  <EyeSlash />
+                                ) : (
+                                  <Eye />
+                                )}
                               </button>
                             )}
                           </span>
@@ -226,7 +236,7 @@ const Dashboard = ({ setIsAuth }) => {
                         <div className="stat-value-container">
                           <h5>
                             {(stat.id === 3 && hidePayValues.grossPay) ||
-                              (stat.id === 4 && hidePayValues.netPay)
+                            (stat.id === 4 && hidePayValues.netPay)
                               ? "••••••"
                               : stat.value}
                           </h5>

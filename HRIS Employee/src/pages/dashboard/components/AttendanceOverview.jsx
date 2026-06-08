@@ -19,6 +19,7 @@ import {
   GraphUpArrow,
   BoxArrowLeft,
 } from "react-bootstrap-icons";
+import "@/assets/style/global.css";
 import api from "@/config/axios";
 import ReportClockOutModal from "@/pages/attendance/components/modals/ReportClockOutModal.jsx";
 
@@ -44,6 +45,7 @@ const AttendanceOverview = () => {
   const [ccEmails, setCcEmails] = useState("");
   const [reportSubject, setReportSubject] = useState("");
   const [reportBody, setReportBody] = useState("");
+  const [monthlyTarget, setMonthlyTarget] = useState(160);
 
   // Toast notification function
   const showToast = (message, variant = "success") => {
@@ -80,8 +82,6 @@ const AttendanceOverview = () => {
 
   useEffect(() => {
     fetchMyAttendance();
-    const interval = setInterval(fetchMyAttendance, 30000); // Refresh every 30 seconds
-    return () => clearInterval(interval);
   }, []);
 
   // Fetch attendance data
@@ -188,8 +188,8 @@ const AttendanceOverview = () => {
       {/* Toast Notifications */}
       <ToastContainer position="top-end" className="p-3" style={{ zIndex: 1050 }}>
         {toasts.map((toast) => (
-          <Toast key={toast.id} bg={toast.variant} onClose={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}>
-            <Toast.Body className={toast.variant === "danger" ? "text-white" : ""}>
+          <Toast key={toast.id} className="glb-toast-success" onClose={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}>
+            <Toast.Body className={toast.variant === "danger" ? "text-dark" : ""}>
               {toast.message}
             </Toast.Body>
           </Toast>
@@ -412,7 +412,7 @@ const AttendanceOverview = () => {
                     <small className="text-white text-uppercase d-block mb-1 small-text-mobile">
                       MONTHLY TARGET
                     </small>
-                    <h3 className="fw-bold mb-0 text-white">160 hrs</h3>
+                    <h3 className="fw-bold mb-0 text-white">{monthlyTarget} hrs</h3>
                   </div>
                   <GraphUpArrow size={24} className="text-white opacity-50" />
                 </div>
@@ -421,7 +421,7 @@ const AttendanceOverview = () => {
                     "Loading..."
                   ) : (
                     `${summary.monthHours.toFixed(2)} hrs completed • ${(
-                      160 - summary.monthHours
+                      monthlyTarget - summary.monthHours
                     ).toFixed(2)} hrs remaining`
                   )}
                 </small>
@@ -431,13 +431,13 @@ const AttendanceOverview = () => {
                     role="progressbar"
                     style={{
                       width: `${Math.min(
-                        (summary.monthHours / 160) * 100,
+                        (summary.monthHours / monthlyTarget) * 100,
                         100
                       )}%`,
                     }}
                     aria-valuenow={summary.monthHours}
                     aria-valuemin="0"
-                    aria-valuemax="160"
+                    aria-valuemax={monthlyTarget}
                   ></div>
                 </div>
               </Card.Body>

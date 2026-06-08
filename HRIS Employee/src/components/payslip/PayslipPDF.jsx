@@ -53,12 +53,12 @@ const PayslipPDF = forwardRef(({ payslip, formatPeso }, ref) => {
         </div>
         <div className="pdf-detail-row">
           <div className="pdf-detail-item">
-            <label className="pdf-detail-label">Department:</label>
-            <span className="pdf-detail-value">{payslip.department || "N/A"}</span>
+            <label className="pdf-detail-label">Days Worked:</label>
+            <span className="pdf-detail-value">{payslip.days_worked} days</span>
           </div>
           <div className="pdf-detail-item">
-            <label className="pdf-detail-label">Days Worked:</label>
-            <span className="pdf-detail-value">{payslip.days_worked || "N/A"}</span>
+            <label className="pdf-detail-label">Absences:</label>
+            <span className="pdf-detail-value">{payslip.absences} days</span>
           </div>
         </div>
         <div className="pdf-detail-row">
@@ -69,6 +69,12 @@ const PayslipPDF = forwardRef(({ payslip, formatPeso }, ref) => {
           <div className="pdf-detail-item">
             <label className="pdf-detail-label">Basic Salary:</label>
             <span className="pdf-detail-value">{formatPeso(Number(String(payslip.basic_salary || payslip.gross_base).replace(/,/g, "")))}</span>
+          </div>
+        </div>
+        <div className="pdf-detail-row">
+          <div className="pdf-detail-item">
+            <label className="pdf-detail-label">Late Deductions:</label>
+            <span className="pdf-detail-value">{payslip.total_late_deductions > 0 ? `−${formatPeso(Number(String(payslip.total_late_deductions).replace(/,/g, "")))}` : "—"}</span>
           </div>
         </div>
       </div>
@@ -121,9 +127,15 @@ const PayslipPDF = forwardRef(({ payslip, formatPeso }, ref) => {
                   <td>{formatPeso(Number(String(d.deduction_amount).replace(/,/g, "")))}</td>
                 </tr>
               ))}
+              {payslip.total_late_deductions > 0 && (
+                <tr>
+                  <td>Late Deduction</td>
+                  <td>{formatPeso(Number(String(payslip.total_late_deductions).replace(/,/g, "")))}</td>
+                </tr>
+              )}
               <tr className="pdf-total-row">
                 <td><strong>TOTAL DEDUCTIONS</strong></td>
-                <td><strong>{formatPeso(totalDeductionsAmount)}</strong></td>
+                <td><strong>{formatPeso(totalDeductionsAmount + (payslip.total_late_deductions ? Number(String(payslip.total_late_deductions).replace(/,/g, "")) : 0))}</strong></td>
               </tr>
             </tbody>
           </table>

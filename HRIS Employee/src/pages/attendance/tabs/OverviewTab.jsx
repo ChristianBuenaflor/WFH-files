@@ -371,6 +371,8 @@ const OverviewTab = ({
                     <th>Adj. Status</th>
                     <th>Time</th>
                     <th>Hours</th>
+                    <th>Late</th>
+                    <th>Deduction</th>
                     <th>Action</th>
                   </tr>
                 </thead>
@@ -385,8 +387,10 @@ const OverviewTab = ({
                       <td>
                         {record.status === "Present" ? (
                           <Badge bg="success">Present</Badge>
+                        ) : record.status === "Late" ? (
+                          <Badge bg="warning">Late</Badge>
                         ) : record.status === "Pending" ? (
-                          <Badge bg="warning">Pending</Badge>
+                          <Badge bg="info">Pending</Badge>
                         ) : (
                           <Badge bg="danger">Absent</Badge>
                         )}
@@ -407,6 +411,24 @@ const OverviewTab = ({
                       </td>
 
                       <td>{formatHoursWorked(record.hours_worked)}</td>
+
+                      <td>
+                        {record.is_late === 1 ? (
+                          <Badge bg="warning">{record.late_minutes} min</Badge>
+                        ) : (
+                          <Badge bg="success">On Time</Badge>
+                        )}
+                      </td>
+
+                      <td>
+                        {record.late_deduction > 0 ? (
+                          <span className="text-danger fw-medium">
+                            -{record.late_deduction}
+                          </span>
+                        ) : (
+                          <span className="text-success">—</span>
+                        )}
+                      </td>
 
                       <td>
                         <Button
