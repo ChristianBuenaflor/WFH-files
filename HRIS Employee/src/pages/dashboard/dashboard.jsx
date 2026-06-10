@@ -195,7 +195,7 @@ const Dashboard = ({ setIsAuth }) => {
               {stats.map((stat) => (
                 <Col md={3} key={stat.id}>
                   <Card className="stat-card-modern">
-                    <Card.Body className="stat-content">
+                    <Card.Body className="stat-content p-0">
                       <div className="stat-info">
                         <div className="d-flex align-items-center justify-content-start">
                           <p>{stat.label}</p>

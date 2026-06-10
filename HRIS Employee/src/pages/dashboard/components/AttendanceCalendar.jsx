@@ -284,7 +284,7 @@ const AttendanceCalendar = ({ onMonthChange }) => {
         </div>
       </Card.Header>
 
-      <Card.Body>
+      <Card.Body className=" mb-4">
         {error && <div className="alert alert-danger">{error}</div>}
 
         {/* SUMMARY */}
