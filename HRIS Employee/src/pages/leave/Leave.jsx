@@ -397,11 +397,11 @@ if (hasFetched.current) return;
         <Modal
           show={showModal}
           onHide={() => setShowModal(false)}
-          size="lg"
+          size="md"
           centered
         >
           <Modal.Header closeButton>
-            <Modal.Title className="text-white">Request Leave</Modal.Title>
+            <Modal.Title >Request Leave</Modal.Title>
           </Modal.Header>
           <Modal.Body>
             {error && <Alert variant="danger">{error}</Alert>}

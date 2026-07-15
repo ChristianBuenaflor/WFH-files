@@ -8,7 +8,8 @@ const Announcement = () => {
   const [notifications, setNotifications] = useState([]);
   const [showAnnouncement, setShowAnnouncement] = useState(false);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
-    const { user } = useAuth();
+  const [showDropdown, setShowDropdown] = useState(false);
+  const { user } = useAuth();
 
   const hasFetched = useRef(false);
 
@@ -35,9 +36,21 @@ const Announcement = () => {
     }
    
   }, [user]);
+
+  // Close dropdown when announcement opens
+  useEffect(() => {
+    if (showAnnouncement) {
+      setShowDropdown(false);
+    }
+  }, [showAnnouncement]);
   return (
     <>
-      <Dropdown className="notification-dropdown" align="end">
+      <Dropdown 
+        className="notification-dropdown" 
+        align="end"
+        show={showDropdown}
+        onToggle={(show) => setShowDropdown(show)}
+      >
         <Dropdown.Toggle
           variant="link"
           id="notification-dropdown"
@@ -53,40 +66,43 @@ const Announcement = () => {
           <div className="notification-header">
             <h6 className="mb-0">Announcement</h6>
           </div>
-          {notifications.length === 0 ? (
-            <div className="empty-notification">
-              <p className="text-muted mb-0">No new announcement</p>
-            </div>
-          ) : (
-            notifications.map((notification, index) => (
-              <Dropdown.Item
-                key={notification.id || index}
-                href="#"
-                onClick={() => {
-                  setSelectedAnnouncement(notification);
-                  setShowAnnouncement(true);
-                }}
-              >
-                <div className="announcement-card">
-                  <div className="d-flex align-items-center justify-content-between">
-                    <strong>
-                      <h6>{notification.title}</h6>
-                    </strong>
-                    <p className="text-end fst-italic mb-1 small">
-                      {formatDate(notification.created_at)}
+          <div className="notification-items-container">
+            {notifications.length === 0 ? (
+              <div className="empty-notification">
+                <p className="text-muted mb-0">No new announcement</p>
+              </div>
+            ) : (
+              notifications.map((notification, index) => (
+                <Dropdown.Item
+                  key={notification.id || index}
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setSelectedAnnouncement(notification);
+                    setShowAnnouncement(true);
+                  }}
+                >
+                  <div className="announcement-card">
+                    <div className="d-flex align-items-center justify-content-between">
+                      <strong>
+                        <h6>{notification.title}</h6>
+                      </strong>
+                      <p className="text-end fst-italic mb-1 small">
+                        {formatDate(notification.created_at)}
+                      </p>
+                    </div>
+
+                    <p className="text-muted mb-1">
+                      {notification.content.substring(0, 80)}...
                     </p>
                   </div>
-
-                  <p className="text-muted mb-1">
-                    {notification.content.substring(0, 80)}...
-                  </p>
-                </div>
-              </Dropdown.Item>
-            ))
-          )}
+                </Dropdown.Item>
+              ))
+            )}
+          </div>
           {notifications?.length > 0 && (
             <>
-              <Dropdown.Divider />
+              <Dropdown.Divider className="notification-divider" />
               <Dropdown.Item
                 href="#"
                 onClick={(e) => e.preventDefault()}
@@ -101,7 +117,10 @@ const Announcement = () => {
 
       <Offcanvas
         show={showAnnouncement}
-        onHide={() => setShowAnnouncement(false)}
+        onHide={() => {
+          setShowAnnouncement(false);
+          setSelectedAnnouncement(null);
+        }}
         placement="end"
         backdrop={true}
         scroll={true}

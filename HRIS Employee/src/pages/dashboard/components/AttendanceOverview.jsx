@@ -36,6 +36,9 @@ const AttendanceOverview = () => {
     monthHours: 0,
     attendanceDays: 0,
   });
+  const [attendanceData, setAttendanceData] = useState({
+    presentPercentage: 0,
+  });
   const [liveHoursToday, setLiveHoursToday] = useState(0);
   const [statusText, setStatusText] = useState("Off Duty");
   const [clockInTimestamp, setClockInTimestamp] = useState(null);
@@ -46,6 +49,9 @@ const AttendanceOverview = () => {
   const [reportSubject, setReportSubject] = useState("");
   const [reportBody, setReportBody] = useState("");
   const [monthlyTarget, setMonthlyTarget] = useState(160);
+  const [weekTrend, setWeekTrend] = useState(0);
+  const [isOnTrack, setIsOnTrack] = useState(true);
+  const [lastWeekHours, setLastWeekHours] = useState(0);
 
   // Toast notification function
   const showToast = (message, variant = "success") => {
@@ -84,7 +90,7 @@ const AttendanceOverview = () => {
     fetchMyAttendance();
   }, []);
 
-  // Fetch attendance data
+  // Calculate attendance percentage from API data
   const fetchMyAttendance = async () => {
     try {
       setLoadingSummary(true);
@@ -111,14 +117,51 @@ const AttendanceOverview = () => {
             data.todayRecord.clock_in && !data.todayRecord.clock_out;
         }
 
+        const thisWeekHours = parseFloat(data.thisWeekHours) || 0;
+        const thisMonthHours = parseFloat(data.thisMonthHours) || 0;
+        const lastWeek = parseFloat(data.lastWeekHours) || 0;
+
+        // Calculate week trend
+        const trend = thisWeekHours - lastWeek;
+        setWeekTrend(trend);
+        setLastWeekHours(lastWeek);
+
+        // Calculate if on track for monthly target
+        const today = new Date();
+        const currentDay = today.getDate();
+        const lastDayOfMonth = new Date(
+          today.getFullYear(),
+          today.getMonth() + 1,
+          0
+        ).getDate();
+        const expectedProgress = (currentDay / lastDayOfMonth) * monthlyTarget;
+        const onTrack = thisMonthHours >= expectedProgress * 0.95; // 95% threshold for on track
+        setIsOnTrack(onTrack);
+
+        // Calculate attendance percentage - same logic as Overview.jsx
+        let presentPercentage = 0;
+        let present = data.present || 0;
+        let missed = data.missed || 0;
+        let absent = data.absent || 0;
+        const total = present + missed + absent;
+
+        if (total > 0) {
+          presentPercentage = Math.round((present / total) * 100);
+        }
+
         setSummary({
           clockInTime,
           hoursToday,
           isClockedIn,
-          weekHours: parseFloat(data.thisWeekHours) || 0,
-          monthHours: parseFloat(data.thisMonthHours) || 0,
+          weekHours: thisWeekHours,
+          monthHours: thisMonthHours,
           attendanceDays: parseInt(data.attendanceRate, 10) || 0,
         });
+
+        setAttendanceData({
+          presentPercentage,
+        });
+
         setLiveHoursToday(hoursToday);
         setStatusText(isClockedIn ? "On Duty" : "Off Duty");
       }
@@ -393,8 +436,11 @@ const AttendanceOverview = () => {
                 <Card.Body className="p-3">
                   <div className="d-flex justify-content-between align-items-start mb-2">
                     <Calendar size={20} className="text-primary" />
-                    <Badge bg="success" className="badge-trend">
-                      +2.4 hrs
+                    <Badge
+                      bg={weekTrend >= 0 ? "success" : "danger"}
+                      className="badge-trend"
+                    >
+                      {weekTrend >= 0 ? "+" : ""}{weekTrend.toFixed(1)} hrs
                     </Badge>
                   </div>
                   <h5 className="fw-bold mb-1">
@@ -434,7 +480,7 @@ const AttendanceOverview = () => {
                   <div className="d-flex justify-content-between align-items-start mb-2">
                     <Shield size={20} className="text-warning" />
                     <Badge bg="success" className="badge-trend">
-                      100%
+                      {attendanceData.presentPercentage}%
                     </Badge>
                   </div>
                   <h5 className="fw-bold mb-1">

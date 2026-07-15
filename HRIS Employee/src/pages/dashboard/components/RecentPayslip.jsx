@@ -172,7 +172,7 @@ const RecentPayslip = ({ recentPayslips = [], pdfRef }) => {
                             Downloading...
                           </>
                         ) : (
-                          "Download Payslip"
+                          "Download"
                         )}
                       </Button>
                       <Button

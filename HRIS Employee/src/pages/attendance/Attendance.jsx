@@ -10,7 +10,7 @@ import {
 import AdminLayout from "@/components/layout/Adminlayout";
 import api from "@/config/axios.js";
 import { useAuth } from "@/context/AuthContext.jsx";
-import { ClockHistory, PersonBadge, Download } from "react-bootstrap-icons";
+import { ClockHistory, ListCheck, Download } from "react-bootstrap-icons";
 import { useNavigate } from "react-router-dom";
 import OverviewTab from "@/pages/attendance/tabs/OverviewTab.jsx";
 import PresentAbsentTab from "@/pages/attendance/tabs/PresentAbsentTab.jsx";
@@ -556,7 +556,7 @@ const Attendance = ({ setIsAuth }) => {
 
   const tabs = [
     { key: "overview", label: "Overview", icon: <ClockHistory /> },
-    { key: "presentAbsent", label: "Present & Absent", icon: <PersonBadge /> },
+    { key: "presentAbsent", label: "Attendance Log", icon: <ListCheck /> },
     { key: "export", label: "Export", icon: <Download /> },
   ];
 

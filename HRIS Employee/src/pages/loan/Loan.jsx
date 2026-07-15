@@ -547,11 +547,11 @@ const Loan = ({ setIsAuth }) => {
         <Modal
           show={showModal}
           onHide={() => setShowModal(false)}
-          size="lg"
+          size="md"
           centered
         >
           <Modal.Header closeButton>
-            <Modal.Title className="text-white">Apply for Loan</Modal.Title>
+            <Modal.Title>Apply for Loan</Modal.Title>
           </Modal.Header>
           <Modal.Body>
             {error && <Alert variant="danger">{error}</Alert>}

@@ -330,22 +330,7 @@
 }
 
 /* Modals */
-.modal-header {
-  padding: 25px;
-  border-bottom: 2px solid #f0f0f0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #2563eb;
-  color: white;
-  border-radius: 12px 12px 0 0;
-}
-.modal-header .btn-close {
-  filter: brightness(0) invert(1);
-}
-.modal-content {
-  border-radius: 12px;
-}
+
 
 /* Face Modal Video */
 video {
