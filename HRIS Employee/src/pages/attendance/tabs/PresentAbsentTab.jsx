@@ -39,21 +39,70 @@ const PresentAbsentTab = ({
   const [currentPresentPage, setCurrentPresentPage] = useState(1);
   const [currentAbsentPage, setCurrentAbsentPage] = useState(1);
 
+  // Filter states for present table
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [minHoursFilter, setMinHoursFilter] = useState("");
+  const [searchDate, setSearchDate] = useState("");
+
   // Reset pagination when month/year changes
   useEffect(() => {
     setCurrentPresentPage(1);
     setCurrentAbsentPage(1);
   }, [selectedMonth, selectedYear]);
 
+  // Reset present pagination when filters change
+  useEffect(() => {
+    setCurrentPresentPage(1);
+  }, [statusFilter, minHoursFilter, searchDate]);
+
+  // Apply filters to attendance data
+  const getFilteredPresentData = () => {
+    let filtered = filteredAttendance;
+
+    // Filter by status
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((record) => {
+        if (statusFilter === "on-duty") {
+          return record.clock_out === null;
+        }
+        return record.status === statusFilter;
+      });
+    }
+
+    // Filter by minimum hours
+    if (minHoursFilter) {
+      const minHours = parseFloat(minHoursFilter);
+      filtered = filtered.filter(
+        (record) => parseFloat(record.hours_worked) >= minHours
+      );
+    }
+
+    // Filter by date search
+    if (searchDate) {
+      const searchDateObj = new Date(searchDate);
+      filtered = filtered.filter((record) => {
+        const recordDate = new Date(record.clock_in);
+        return (
+          recordDate.toLocaleDateString() ===
+          searchDateObj.toLocaleDateString()
+        );
+      });
+    }
+
+    return filtered;
+  };
+
+  const filteredPresentData = getFilteredPresentData();
+
   // Calculate paginated present data
   const presentStartIndex = (currentPresentPage - 1) * ROWS_PER_PAGE;
   const presentEndIndex = presentStartIndex + ROWS_PER_PAGE;
-  const paginatedPresent = filteredAttendance.slice(
+  const paginatedPresent = filteredPresentData.slice(
     presentStartIndex,
     presentEndIndex,
   );
   const totalPresentPages = Math.ceil(
-    filteredAttendance.length / ROWS_PER_PAGE,
+    filteredPresentData.length / ROWS_PER_PAGE,
   );
 
   // Calculate paginated absent data
@@ -220,7 +269,7 @@ const PresentAbsentTab = ({
           <Card className="border-0 shadow-sm rounded-4 text-center">
             <Card.Body className="py-3">
               <h6 className="text-muted small text-uppercase">Present</h6>
-              <h5 className="fw-bold mb-0">{filteredAttendance.length} days</h5>
+              <h5 className="fw-bold mb-0">{filteredPresentData.length} days</h5>
             </Card.Body>
           </Card>
         </Col>
@@ -239,7 +288,7 @@ const PresentAbsentTab = ({
             <Card.Body className="py-3">
               <h6 className="text-muted small text-uppercase">Total</h6>
               <h5 className="fw-bold mb-0">
-                {filteredAttendance.length + absentDates.length} days
+                {filteredPresentData.length + absentDates.length} days
               </h5>
             </Card.Body>
           </Card>
@@ -248,6 +297,80 @@ const PresentAbsentTab = ({
 
       {/* PRESENT TABLE */}
       <Row className="g-4">
+        {/* PRESENT TABLE FILTERS */}
+        <Col xs={12}>
+          <Card className="border-0 shadow-sm rounded-4 bg-light">
+            <Card.Body className="p-3">
+              <h6 className="fw-semibold mb-3">Filter Present Days</h6>
+              <Row className="g-3">
+                <Col xs={12} sm={6} md={3}>
+                  <Form.Group>
+                    <Form.Label className="small fw-semibold text-muted text-uppercase mb-2">
+                      Status
+                    </Form.Label>
+                    <Form.Select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="rounded-3 border-0 shadow-sm"
+                      size="sm"
+                    >
+                      <option value="all">All Status</option>
+                      <option value="Present">Present</option>
+                      <option value="Missed">Missed</option>
+                      <option value="on-duty">On Duty</option>
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
+
+                <Col xs={12} sm={6} md={3}>
+                  <Form.Group>
+                    <Form.Label className="small fw-semibold text-muted text-uppercase mb-2">
+                      Minimum Hours
+                    </Form.Label>
+                    <Form.Control
+                      type="number"
+                      placeholder="e.g., 8"
+                      value={minHoursFilter}
+                      onChange={(e) => setMinHoursFilter(e.target.value)}
+                      className="rounded-3 border-0 shadow-sm"
+                      step="0.5"
+                      min="0"
+                    />
+                  </Form.Group>
+                </Col>
+
+                <Col xs={12} sm={6} md={3}>
+                  <Form.Group>
+                    <Form.Label className="small fw-semibold text-muted text-uppercase mb-2">
+                      Search Date
+                    </Form.Label>
+                    <Form.Control
+                      type="date"
+                      value={searchDate}
+                      onChange={(e) => setSearchDate(e.target.value)}
+                      className="rounded-3 border-0 shadow-sm"
+                    />
+                  </Form.Group>
+                </Col>
+
+                <Col xs={12} sm={6} md={3} className="d-flex align-items-end">
+                  <Button
+                    variant="outline-secondary"
+                    size="sm"
+                    className="w-100 rounded-3"
+                    onClick={() => {
+                      setStatusFilter("all");
+                      setMinHoursFilter("");
+                      setSearchDate("");
+                    }}
+                  >
+                    Clear Filters
+                  </Button>
+                </Col>
+              </Row>
+            </Card.Body>
+          </Card>
+        </Col>
         <Col xs={12}>
           <Card className="border-0 shadow-sm rounded-4">
             <Card.Header className="bg-white border-0 pt-4 pb-0 px-4">
@@ -263,8 +386,13 @@ const PresentAbsentTab = ({
                     aria-hidden="true"
                   ></span>
                 </div>
-              ) : filteredAttendance.length > 0 ? (
+              ) : filteredPresentData.length > 0 ? (
                 <>
+                  <div className="mb-3 d-flex justify-content-between align-items-center">
+                    <small className="text-muted">
+                      Showing {paginatedPresent.length} of {filteredPresentData.length} records
+                    </small>
+                  </div>
                   <div className="table-responsive">
                     <Table
                       borderless
@@ -349,6 +477,21 @@ const PresentAbsentTab = ({
                     totalPages={totalPresentPages}
                   />
                 </>
+              ) : filteredAttendance.length > 0 ? (
+                <div className="text-center py-5 text-muted">
+                  <p>No records match the selected filters</p>
+                  <Button
+                    variant="outline-secondary"
+                    size="sm"
+                    onClick={() => {
+                      setStatusFilter("all");
+                      setMinHoursFilter("");
+                      setSearchDate("");
+                    }}
+                  >
+                    Clear Filters
+                  </Button>
+                </div>
               ) : (
                 <div className="text-center py-5 text-muted">
                   No present records for this month
