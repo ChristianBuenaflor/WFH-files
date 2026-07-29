@@ -131,14 +131,14 @@ const Dashboard = ({ setIsAuth }) => {
           {
             id: 3,
             label: "Total Gross Pay",
-            value: formatPeso(overview.total_payslip_amount),
+            value: formatPeso(overview.total_gross_pay),
             icon: "clipboard-data-fill",
             color: "primary",
           },
           {
             id: 4,
             label: "Total Net Pay",
-            value: formatPeso(overview.total_net_pays),
+            value: formatPeso(overview.total_net_pay),
             icon: "cash-coin",
             color: "primary",
           },
