@@ -66,7 +66,13 @@ const Sidebar = ({ show, handleClose }) => {
       <Offcanvas show={show} onHide={handleClose} className="sidebar-offcanvas">
         <Offcanvas.Header closeButton className="sidebar-header">
           <Offcanvas.Title>
-            <h5 className="sidebar-title mb-0">HRIS</h5>
+            <div className="d-flex justify-content-start align-items-center">
+              <img src={logo} alt="SnL Logo" className="sidebar-logo me-3" />
+              <span style={{ marginTop: "14px" }}>
+                <h5 className="sidebar-title-sm mb-0 text-black">SnLHR </h5>
+                <small className="text-muted mt-0 small-p">Employee Portal</small>
+              </span>
+            </div>
           </Offcanvas.Title>
         </Offcanvas.Header>
         <Offcanvas.Body className="p-0">
@@ -91,8 +97,8 @@ const Sidebar = ({ show, handleClose }) => {
       <div className="sidebar-desktop">
         <div className="sidebar-header-desktop">
           <div className="d-flex justify-content-start align-items-center">
-            <img src={logo} alt="SnL Logo" className="sidebar-logo" />
-            <h5 className="sidebar-title mb-0">HRIS</h5>
+            <img src={logo} alt="SnL Logo" className="sidebar-logo me-3" />
+            <span className=""><h5 className="sidebar-title mb-0 text-black">SnLHR </h5><h6 className="text-muted mb-0">Employee Portal</h6></span>
           </div>
         </div>
         <Nav className="flex-column sidebar-nav">

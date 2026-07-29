@@ -156,7 +156,7 @@ const AdminLayout = ({ children, setIsAuth }) => {
             >
               <List size={24} />
             </Button>
-            <h5 className="navbar-title">Employee Dashboard</h5>
+            <h5 className="navbar-title"></h5>
             <div className="navbar-profile">
               <div className="profile-info">
                 <p className="profile-name text-end d-none d-md-block">
