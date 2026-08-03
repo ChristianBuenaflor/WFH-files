@@ -219,6 +219,7 @@ const AttendanceCalendar = ({ onMonthChange }) => {
       missed: "Missed",
       weekend: "Weekend",
       absent: "Absent",
+      late: "Late",
     };
 
     return map[status] || status;
@@ -232,6 +233,7 @@ const AttendanceCalendar = ({ onMonthChange }) => {
       missed: "?",
       weekend: "-",
       absent: "✗",
+      late: "!",
     };
 
     return icons[status] || "";
@@ -365,6 +367,10 @@ const AttendanceCalendar = ({ onMonthChange }) => {
               <div className="legend-item">
                 <span className="legend-color present"></span>
                 <span className="legend-text">Present</span>
+              </div>
+              <div className="legend-item">
+                <span className="legend-color late"></span>
+                <span className="legend-text">Late</span>
               </div>
 
               <div className="legend-item">

@@ -11,9 +11,11 @@ const Overview = ({ selectedMonth, selectedYear }) => {
     present: 0,
     missed: 0,
     absent: 0,
+    late: 0,
     presentPercentage: 0,
     missedPercentage: 0,
     absentPercentage: 0,
+    latePercentage: 0,
   });
 
   const chartData = useMemo(
@@ -26,12 +28,17 @@ const Overview = ({ selectedMonth, selectedYear }) => {
       {
         name: "Missed",
         value: attendanceData.missed,
-        fill: "#ffc107",
+        fill: "#999",
       },
       {
         name: "Absent",
         value: attendanceData.absent,
         fill: "#dc3545",
+      },
+      {
+        name: "Late",
+        value: attendanceData.late,
+        fill: "#ffc107",
       },
     ],
     [attendanceData],
@@ -67,6 +74,7 @@ const Overview = ({ selectedMonth, selectedYear }) => {
           let present = 0;
           let missed = 0;
           let absent = 0;
+          let late = 0;
 
           calendar.forEach(record => {
             const status = record.status?.toLowerCase();
@@ -86,29 +94,36 @@ const Overview = ({ selectedMonth, selectedYear }) => {
             else if (status === 'missed') {
               missed++;
             }
+            else if (status === 'late') {
+              late++;
+            }
           });
 
-          console.log(`Statistics for ${month}/${year}:`, { present, missed, absent });
+          console.log(`Statistics for ${month}/${year}:`, { present, missed, absent, late });
           console.log("Today's date:", today);
 
-          const total = present + missed + absent;
+          const total = present + missed + absent + late;
 
           if (total > 0) {
             setAttendanceData({
               present,
               missed,
               absent,
+              late,
               presentPercentage: Math.round((present / total) * 100),
               missedPercentage: Math.round((missed / total) * 100),
               absentPercentage: Math.round((absent / total) * 100),
+              latePercentage: Math.round((late / total) * 100),
             });
           } else {
             setAttendanceData({
               present: 0,
               missed: 0,
               absent: 0,
+              late: 0,
               presentPercentage: 0,
               missedPercentage: 0,
+              latePercentage: 0,
               absentPercentage: 0,
             });
           }
@@ -203,7 +218,7 @@ const Overview = ({ selectedMonth, selectedYear }) => {
             <div className="attendance-stats-container mt-3">
               <Row className="g-3 mb-3">
                 {/* PRESENT */}
-                <Col xs={12} sm={4}>
+                <Col xs={12} sm={6}>
                   <div className="attendance-stat-card present-stat">
                     <div className="stat-header">
                       <div className="stat-color-indicator present"></div>
@@ -222,7 +237,7 @@ const Overview = ({ selectedMonth, selectedYear }) => {
                 </Col>
 
                 {/* MISSED */}
-                <Col xs={12} sm={4}>
+                <Col xs={12} sm={6}>
                   <div className="attendance-stat-card missed-stat">
                     <div className="stat-header">
                       <div className="stat-color-indicator missed"></div>
@@ -232,7 +247,7 @@ const Overview = ({ selectedMonth, selectedYear }) => {
                       <h2 className="mb-0">{attendanceData.missed}</h2>
                       <small className="text-muted">days</small>
                       <div className="stat-percentage mt-2">
-                        <span className="percentage-badge warning">
+                        <span className="percentage-badge missed">
                           {attendanceData.missedPercentage}%
                         </span>
                       </div>
@@ -241,7 +256,7 @@ const Overview = ({ selectedMonth, selectedYear }) => {
                 </Col>
 
                 {/* ABSENT */}
-                <Col xs={12} sm={4}>
+                <Col xs={12} sm={6}>
                   <div className="attendance-stat-card absent-stat">
                     <div className="stat-header">
                       <div className="stat-color-indicator absent"></div>
@@ -253,6 +268,25 @@ const Overview = ({ selectedMonth, selectedYear }) => {
                       <div className="stat-percentage mt-2">
                         <span className="percentage-badge danger">
                           {attendanceData.absentPercentage}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </Col>
+
+                 {/* LATE */}
+                <Col xs={12} sm={6}>
+                  <div className="attendance-stat-card late-stat">
+                    <div className="stat-header">
+                      <div className="stat-color-indicator late"></div>
+                      <h6 className="mb-0">Late</h6>
+                    </div>
+                    <div className="stat-content text-center">
+                      <h2 className="mb-0">{attendanceData.late}</h2>
+                      <small className="text-muted">days</small>
+                      <div className="stat-percentage mt-2">
+                        <span className="percentage-badge warning">
+                          {attendanceData.latePercentage}%
                         </span>
                       </div>
                     </div>

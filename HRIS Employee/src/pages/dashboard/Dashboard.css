@@ -177,6 +177,14 @@
   background: #fee2e2;
   color: #991b1b;
 }
+.percentage-badge.warning {
+  background: #ffc1078c;
+  color: rgb(48, 48, 48);
+}
+.percentage-badge.missed {
+  background: #17a2b847;
+  color: rgb(48, 48, 48);
+}
 
 /* ===============================
    TABLE
