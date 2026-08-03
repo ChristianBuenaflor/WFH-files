@@ -26,7 +26,7 @@
 
 .stat-card-modern {
   border: 1px solid #e2e8f0;
-  border-radius: 16px;
+  border-radius: 8px;
   background: #ffffff;
   padding: 16px;
   transition: all 0.2s ease;
@@ -105,7 +105,7 @@
 
 .dashboard-card-modern {
   border: 1px solid #e2e8f0;
-  border-radius: 18px;
+  border-radius: 8px;
   background: #ffffff;
   overflow: hidden;
   transition: all 0.2s ease;
@@ -141,7 +141,7 @@
 .attendance-stat-card {
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 14px;
+  border-radius: 8px;
   padding: 1.25rem;
   transition: all 0.2s ease;
 }

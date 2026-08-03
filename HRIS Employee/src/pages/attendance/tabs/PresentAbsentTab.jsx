@@ -162,7 +162,7 @@ const PresentAbsentTab = ({
   return (
     <div className="present-absent-wrapper">
       {/* FILTER SECTION */}
-      <Card className="border-0 shadow-sm rounded-4 mb-4 bg-gradient">
+      <Card className="border-0 shadow-sm rounded-2 mb-4 bg-gradient">
         <Card.Body className="p-4">
           <Row className="align-items-end g-3">
             <Col xs={12} md={3}>
@@ -251,7 +251,7 @@ const PresentAbsentTab = ({
       {/* SUMMARY STATS */}
       <Row className="g-3 mb-4">
         <Col xs={6} md={3}>
-          <Card className="border-0 shadow-sm rounded-4 text-center">
+          <Card className="border-0 shadow-sm rounded-2 text-center">
             <Card.Body className="py-3">
               <h6 className="text-muted small text-uppercase">Month</h6>
               <h5 className="fw-bold mb-0">
@@ -266,7 +266,7 @@ const PresentAbsentTab = ({
         </Col>
 
         <Col xs={6} md={3}>
-          <Card className="border-0 shadow-sm rounded-4 text-center">
+          <Card className="border-0 shadow-sm rounded-2 text-center">
             <Card.Body className="py-3">
               <h6 className="text-muted small text-uppercase">Present</h6>
               <h5 className="fw-bold mb-0">{filteredPresentData.length} days</h5>
@@ -275,7 +275,7 @@ const PresentAbsentTab = ({
         </Col>
 
         <Col xs={6} md={3}>
-          <Card className="border-0 shadow-sm rounded-4 text-center">
+          <Card className="border-0 shadow-sm rounded-2 text-center">
             <Card.Body className="py-3">
               <h6 className="text-muted small text-uppercase">Absent</h6>
               <h5 className="fw-bold mb-0">{absentDates.length} days</h5>
@@ -284,7 +284,7 @@ const PresentAbsentTab = ({
         </Col>
 
         <Col xs={6} md={3}>
-          <Card className="border-0 shadow-sm rounded-4 text-center">
+          <Card className="border-0 shadow-sm rounded-2 text-center">
             <Card.Body className="py-3">
               <h6 className="text-muted small text-uppercase">Total</h6>
               <h5 className="fw-bold mb-0">
@@ -299,7 +299,7 @@ const PresentAbsentTab = ({
       <Row className="g-4">
         {/* PRESENT TABLE FILTERS */}
         <Col xs={12}>
-          <Card className="border-0 shadow-sm rounded-4 bg-light">
+          <Card className="border-0 shadow-sm rounded-2 bg-light">
             <Card.Body className="p-3">
               <h6 className="fw-semibold mb-3">Filter Present Days</h6>
               <Row className="g-3">
@@ -372,7 +372,7 @@ const PresentAbsentTab = ({
           </Card>
         </Col>
         <Col xs={12}>
-          <Card className="border-0 shadow-sm rounded-4">
+          <Card className="border-0 shadow-sm rounded-2">
             <Card.Header className="bg-white border-0 pt-4 pb-0 px-4">
               <h5 className="fw-bold mb-0">Present Days</h5>
             </Card.Header>
@@ -503,7 +503,7 @@ const PresentAbsentTab = ({
 
         {/* ABSENT TABLE */}
         <Col xs={12}>
-          <Card className="border-0 shadow-sm rounded-4">
+          <Card className="border-0 shadow-sm rounded-2">
             <Card.Header className="bg-white border-0 pt-4 pb-0 px-4">
               <h5 className="fw-bold mb-0">Absent Days</h5>
             </Card.Header>

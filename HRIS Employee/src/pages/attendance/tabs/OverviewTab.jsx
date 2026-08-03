@@ -115,7 +115,7 @@ const OverviewTab = ({
         {/* Left Column - Status & Clock Controls */}
         <Col lg={5}>
           {/* Status Card */}
-          <Card className="border-0 rounded-4 mb-3 shadow-sm overview-status-card">
+          <Card className="border-0 rounded-2 mb-3 shadow-sm overview-status-card">
             <Card.Body className="p-3 p-md-4">
               {loadingSummary ? (
                 <div className="text-center py-4">
@@ -241,7 +241,7 @@ const OverviewTab = ({
           {/* Stats Cards Row */}
           <Row className="g-2 mb-3">
             <Col xs={6} md={4}>
-              <Card className="border-0 rounded-4 shadow-sm stat-info-card">
+              <Card className="border-0 rounded-2 shadow-sm stat-info-card">
                 <Card.Body className="p-3">
                   <div className="d-flex justify-content-between align-items-start mb-2">
                     <Calendar size={20} className="text-primary" />
@@ -259,7 +259,7 @@ const OverviewTab = ({
               </Card>
             </Col>
             <Col xs={6} md={4}>
-              <Card className="border-0 rounded-4 shadow-sm stat-info-card">
+              <Card className="border-0 rounded-2 shadow-sm stat-info-card">
                 <Card.Body className="p-3">
                   <div className="d-flex justify-content-between align-items-start mb-2">
                     <CheckCircle size={20} className="text-success" />
@@ -277,7 +277,7 @@ const OverviewTab = ({
               </Card>
             </Col>
             <Col xs={6} md={4}>
-              <Card className="border-0 rounded-4 shadow-sm stat-info-card">
+              <Card className="border-0 rounded-2 shadow-sm stat-info-card">
                 <Card.Body className="p-3">
                   <div className="d-flex justify-content-between align-items-start mb-2">
                     <Shield size={20} className="text-warning" />
@@ -297,7 +297,7 @@ const OverviewTab = ({
           </Row>
 
           {/* Monthly Target Card */}
-          <Card className="border-0 rounded-4 shadow-sm monthly-target-card">
+          <Card className="border-0 rounded-2 shadow-sm monthly-target-card">
             <Card.Body className="p-3 p-md-4">
               <div className="d-flex justify-content-between align-items-start mb-3">
                 <div>
@@ -331,7 +331,7 @@ const OverviewTab = ({
       </Row>
 
       {!loadingSummary && summary.recentAttendance.length > 0 && (
-        <Card className="border-0 shadow-sm rounded-4 mb-4">
+        <Card className="border-0 shadow-sm rounded-2 mb-4">
           <Card.Body className="p-4">
             <div className="d-flex justify-content-between align-items-center mb-3">
               <div>

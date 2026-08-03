@@ -249,7 +249,7 @@ const AttendanceOverview = () => {
         {/* Left Column - Status & Clock Controls */}
         <Col lg={5}>
           {/* Status Card */}
-          <Card className="border-0 rounded-4 mb-3 shadow-sm overview-status-card\">
+          <Card className="border-0 rounded-2 mb-3 shadow-sm overview-status-card">
             <Card.Body className="p-3 p-md-4">
               {loadingSummary ? (
                 <div className="text-center py-4">
@@ -391,7 +391,7 @@ const AttendanceOverview = () => {
         {/* Right Column - Stats & Monthly Target */}
         <Col lg={7}>
           {/* Monthly Target Card */}
-          <Card className="border-0 rounded-4 shadow-sm monthly-target-card mb-3 mb-md-3">
+          <Card className="border-0 rounded-2 shadow-sm monthly-target-card mb-3 mb-md-3">
             <Card.Body className="p-3 p-md-4">
               <div className="d-flex justify-content-between align-items-start mb-2 mb-md-3">
                 <div>
@@ -432,7 +432,7 @@ const AttendanceOverview = () => {
           {/* Stats Cards Row */}
           <Row className="g-2 g-md-3 mb-3 mb-md-3">
             <Col xs={6} md={4}>
-              <Card className="border-0 rounded-4 shadow-sm stat-info-card">
+              <Card className="border-0 rounded-2 shadow-sm stat-info-card">
                 <Card.Body className="p-3">
                   <div className="d-flex justify-content-between align-items-start mb-2">
                     <Calendar size={20} className="text-primary" />
@@ -455,7 +455,7 @@ const AttendanceOverview = () => {
               </Card>
             </Col>
             <Col xs={6} md={4}>
-              <Card className="border-0 rounded-4 shadow-sm stat-info-card">
+              <Card className="border-0 rounded-2 shadow-sm stat-info-card">
                 <Card.Body className="p-3">
                   <div className="d-flex justify-content-between align-items-start mb-2">
                     <CheckCircle size={20} className="text-success" />
@@ -475,7 +475,7 @@ const AttendanceOverview = () => {
               </Card>
             </Col>
             <Col xs={6} md={4}>
-              <Card className="border-0 rounded-4 shadow-sm stat-info-card">
+              <Card className="border-0 rounded-2 shadow-sm stat-info-card">
                 <Card.Body className="p-3">
                   <div className="d-flex justify-content-between align-items-start mb-2">
                     <Shield size={20} className="text-warning" />
