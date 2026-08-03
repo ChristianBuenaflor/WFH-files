@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   Row,
@@ -7,8 +7,6 @@ import {
   Button,
   Toast,
   ToastContainer,
-  Modal,
-  Spinner,
 } from "react-bootstrap";
 import {
   Clock,
@@ -16,17 +14,16 @@ import {
   Calendar,
   Shield,
   CheckCircle,
+  BoxArrowInDownRight,
   BoxArrowInRight,
   GraphUpArrow,
   BoxArrowLeft,
 } from "react-bootstrap-icons";
-import * as faceapi from "face-api.js";
 import "@/assets/style/global.css";
 import api from "@/config/axios";
 import ReportClockOutModal from "@/pages/attendance/components/modals/ReportClockOutModal.jsx";
 
 const AttendanceOverview = () => {
-  // ---------- Existing state ----------
   const [toasts, setToasts] = useState([]);
   const [loadingSummary, setLoadingSummary] = useState(true);
   const [loadingIn, setLoadingIn] = useState(false);
@@ -56,23 +53,7 @@ const AttendanceOverview = () => {
   const [isOnTrack, setIsOnTrack] = useState(true);
   const [lastWeekHours, setLastWeekHours] = useState(0);
 
-  // ---------- New state & refs for face verification ----------
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);          // hidden capture canvas
-  const overlayRef = useRef(null);         // visible guide overlay
-
-  const detectionInterval = useRef(null);
-  const captureTimeout = useRef(null);
-
-  const [showFaceModal, setShowFaceModal] = useState(false);
-  const [faceAligned, setFaceAligned] = useState(false);
-  const [loadingModels, setLoadingModels] = useState(true);
-  const [cameraStream, setCameraStream] = useState(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [clockAction, setClockAction] = useState(null); // 'in' or 'out'
-  const [capturedFaceData, setCapturedFaceData] = useState(null);
-
-  // ---------- Toast system ----------
+  // Toast notification function
   const showToast = (message, variant = "success") => {
     const id = Date.now();
     const toast = { id, message, variant };
@@ -82,12 +63,13 @@ const AttendanceOverview = () => {
     }, 3000);
   };
 
-  // ---------- Live session timer ----------
+  // Update session time every second when clocked in
   useEffect(() => {
     if (!summary.isClockedIn || !clockInTimestamp) {
       setSessionTime("00:00:00");
       return;
     }
+
     const interval = setInterval(() => {
       const now = new Date();
       setCurrentDateTime(now);
@@ -97,13 +79,18 @@ const AttendanceOverview = () => {
       const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
       setSessionTime(
-        `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+        `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`,
       );
     }, 1000);
+
     return () => clearInterval(interval);
   }, [summary.isClockedIn, clockInTimestamp]);
 
-  // ---------- Fetch attendance data ----------
+  useEffect(() => {
+    fetchMyAttendance();
+  }, []);
+
+  // Calculate attendance percentage from API data
   const fetchMyAttendance = async () => {
     try {
       setLoadingSummary(true);
@@ -134,11 +121,12 @@ const AttendanceOverview = () => {
         const thisMonthHours = parseFloat(data.thisMonthHours) || 0;
         const lastWeek = parseFloat(data.lastWeekHours) || 0;
 
+        // Calculate week trend
         const trend = thisWeekHours - lastWeek;
         setWeekTrend(trend);
         setLastWeekHours(lastWeek);
 
-        // On‑track logic (optional)
+        // Calculate if on track for monthly target
         const today = new Date();
         const currentDay = today.getDate();
         const lastDayOfMonth = new Date(
@@ -147,13 +135,16 @@ const AttendanceOverview = () => {
           0
         ).getDate();
         const expectedProgress = (currentDay / lastDayOfMonth) * monthlyTarget;
-        setIsOnTrack(thisMonthHours >= expectedProgress * 0.95);
+        const onTrack = thisMonthHours >= expectedProgress * 0.95; // 95% threshold for on track
+        setIsOnTrack(onTrack);
 
+        // Calculate attendance percentage - same logic as Overview.jsx
         let presentPercentage = 0;
         let present = data.present || 0;
         let missed = data.missed || 0;
         let absent = data.absent || 0;
         const total = present + missed + absent;
+
         if (total > 0) {
           presentPercentage = Math.round((present / total) * 100);
         }
@@ -182,237 +173,53 @@ const AttendanceOverview = () => {
     }
   };
 
-  // ---------- Load face‑api models ----------
-  useEffect(() => {
-    const loadModels = async () => {
-      const MODEL_URL = "https://justadudewhohacks.github.io/face-api.js/models";
-      try {
-        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-        await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-      } catch (error) {
-        console.error("Face‑api model loading failed:", error);
-        showToast("Failed to load face detection models", "danger");
-      } finally {
-        setLoadingModels(false);
-      }
-    };
-    loadModels();
-  }, []);
-
-  // ---------- Camera & face detection functions ----------
-  const startCamera = async () => {
+  // Clock In Handler
+  const handleClockIn = async () => {
+    setLoadingIn(true);
     try {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("Camera API not available. Make sure you are on HTTPS.");
-      }
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 640 }, height: { ideal: 480 } },
-      });
-      videoRef.current.srcObject = stream;
-      setCameraStream(stream);
-      videoRef.current.onloadedmetadata = () => startDetection();
-    } catch (err) {
-      console.error("Camera error:", err);
-      let errorMessage = "Camera access denied. ";
-      if (err.name === "NotAllowedError") {
-        errorMessage += "Please grant camera permission in your browser.";
-      } else if (err.name === "NotFoundError") {
-        errorMessage += "No camera device found.";
-      } else {
-        errorMessage += err.message;
-      }
-      showToast(errorMessage, "danger");
-      setShowFaceModal(false);
-    }
-  };
-
-  const stopCamera = () => {
-    if (cameraStream) {
-      cameraStream.getTracks().forEach((track) => track.stop());
-    }
-    if (detectionInterval.current) clearInterval(detectionInterval.current);
-    if (captureTimeout.current) clearTimeout(captureTimeout.current);
-    setCameraStream(null);
-  };
-
-  const drawGuide = () => {
-    const canvas = overlayRef.current;
-    const ctx = canvas.getContext("2d");
-    canvas.width = videoRef.current.videoWidth;
-    canvas.height = videoRef.current.videoHeight;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = "#00ff99";
-    ctx.lineWidth = 3;
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const radiusX = canvas.width * 0.25;
-    const radiusY = canvas.height * 0.35;
-    ctx.beginPath();
-    ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
-    ctx.stroke();
-  };
-
-  const startDetection = () => {
-    detectionInterval.current = setInterval(async () => {
-      if (!videoRef.current || isProcessing) return;
-      drawGuide();
-      const detection = await faceapi.detectSingleFace(
-        videoRef.current,
-        new faceapi.TinyFaceDetectorOptions()
-      );
-      if (detection) {
-        const box = detection.box;
-        const videoWidth = videoRef.current.videoWidth;
-        const videoHeight = videoRef.current.videoHeight;
-        const centerX = videoWidth / 2;
-        const centerY = videoHeight / 2;
-        const faceCenterX = box.x + box.width / 2;
-        const faceCenterY = box.y + box.height / 2;
-        const withinX = Math.abs(faceCenterX - centerX) < videoWidth * 0.15;
-        const withinY = Math.abs(faceCenterY - centerY) < videoHeight * 0.2;
-
-        if (withinX && withinY) {
-          setFaceAligned(true);
-          if (!captureTimeout.current) {
-            captureTimeout.current = setTimeout(() => {
-              autoCaptureAndSubmit();
-            }, 1500);
-          }
-        } else {
-          setFaceAligned(false);
-          if (captureTimeout.current) {
-            clearTimeout(captureTimeout.current);
-            captureTimeout.current = null;
-          }
-        }
-      } else {
-        setFaceAligned(false);
-      }
-    }, 500);
-  };
-
- const autoCaptureAndSubmit = async () => {
-  try {
-    setIsProcessing(true);
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0);
-
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
-    const byteString = atob(dataUrl.split(",")[1]);
-    const mimeString = dataUrl.split(",")[0].split(":")[1].split(";")[0];
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
-    const file = new File([ab], "face.jpg", { type: mimeString });
-    const formData = new FormData();
-    formData.append("face_image", file);
-
-    // If clocking out, store face data and show report modal
-    if (summary.isClockedIn) {
-      setCapturedFaceData(formData);
-      showToast("Face verified! Please complete your report.");
-      stopCamera();
-      setShowFaceModal(false);
-      setShowReportModal(true);
-    } else {
-      // Clock in – submit immediately
-      await api.post("/attendance/clock-in", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      await api.post("/attendance/clock-in");
       showToast("Clocked In Successfully!");
-      stopCamera();
-      setShowFaceModal(false);
       await fetchMyAttendance();
+    } catch (error) {
+      showToast(error.response?.data?.message || "Clock in failed", "danger");
+    } finally {
+      setLoadingIn(false);
     }
-  } catch (error) {
-    showToast(
-      error.response?.data?.message || "Verification failed",
-      "danger"
-    );
-  } finally {
-    setIsProcessing(false);
-    captureTimeout.current = null;
-  }
-};
-
-  //---------- Fetch Calucated data ----------
-
-  useEffect(() => {
-    fetchMyAttendance();
-  }, []);
-
-  // ---------- Cleanup on unmount ----------
-  useEffect(() => {
-    return () => {
-      stopCamera();
-    };
-  }, []);
-
-  // ---------- Clock handlers (now open face modal) ----------
-  const handleClockIn = () => {
-    setClockAction('in');
-    setShowFaceModal(true);
-    setTimeout(startCamera, 300);
   };
 
- const handleClockOut = () => {
-  setClockAction('out');
-  setShowFaceModal(true);
-  setTimeout(startCamera, 300);
-};
+  // Clock Out Handler (opens modal)
+  const handleClockOut = () => {
+    setShowReportModal(true);
+  };
 
-  // (Optional) If you want to keep the report modal for clock out,
-  // you can call setShowReportModal(true) instead of opening face modal.
-  // I'll keep the face modal as the primary method.
-
-  // ---------- Report submit (if kept) ----------
-const handleReportSubmit = async () => {
-  if (!reportBody || !reportBody.trim()) {
-    showToast("Please enter a report before continuing.", "warning");
-    return;
-  }
-  setLoadingOut(true);
-  try {
-    if (capturedFaceData) {
-      // Append report fields to the FormData
-      capturedFaceData.append("report_today", reportBody);
-      capturedFaceData.append("cc_emails", ccEmails);
-      capturedFaceData.append("subject", reportSubject);
-
-      await api.post("/attendance/clock-out", capturedFaceData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-    } else {
-      // Fallback: submit without face (should not happen in normal flow)
+  // Report Submit Handler (clock out with report)
+  const handleReportSubmit = async () => {
+    setLoadingOut(true);
+    try {
       const payload = {
         report_today: reportBody,
         cc_emails: ccEmails,
         subject: reportSubject,
       };
+
       await api.post("/attendance/clock-out", payload);
+      showToast("Clocked Out Successfully!");
+
+      // Clear form fields
+      setCcEmails("");
+      setReportSubject("");
+      setReportBody("");
+      setShowReportModal(false);
+
+      // Refresh attendance data
+      await fetchMyAttendance();
+    } catch (error) {
+      showToast(error.response?.data?.message || "Clock out failed", "danger");
+    } finally {
+      setLoadingOut(false);
     }
+  };
 
-    showToast("Clocked Out Successfully!");
-    // Reset fields
-    setCcEmails("");
-    setReportSubject("");
-    setReportBody("");
-    setShowReportModal(false);
-    setCapturedFaceData(null); // clear after use
-    await fetchMyAttendance();
-  } catch (error) {
-    showToast(error.response?.data?.message || "Clock out failed", "danger");
-  } finally {
-    setLoadingOut(false);
-  }
-};
-
-  // ---------- Render ----------
   return (
     <>
       {/* Toast Notifications */}
@@ -441,7 +248,8 @@ const handleReportSubmit = async () => {
       <Row className="g-3 g-md-4">
         {/* Left Column - Status & Clock Controls */}
         <Col lg={5}>
-          <Card className="border-0 rounded-4 mb-3 shadow-sm overview-status-card">
+          {/* Status Card */}
+          <Card className="border-0 rounded-4 mb-3 shadow-sm overview-status-card\">
             <Card.Body className="p-3 p-md-4">
               {loadingSummary ? (
                 <div className="text-center py-4">
@@ -610,7 +418,7 @@ const handleReportSubmit = async () => {
                   style={{
                     width: `${Math.min(
                       (summary.monthHours / monthlyTarget) * 100,
-                      100
+                      100,
                     )}%`,
                   }}
                   aria-valuenow={summary.monthHours}
@@ -690,61 +498,7 @@ const handleReportSubmit = async () => {
         </Col>
       </Row>
 
-      {/* ========== FACE VERIFICATION MODAL ========== */}
-      <Modal
-        show={showFaceModal}
-        onHide={() => {
-          setShowFaceModal(false);
-          stopCamera();
-        }}
-        centered
-        size="lg"
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>
-            {clockAction === 'out' ? 'Clock Out' : 'Clock In'} – Face Verification
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="text-center">
-          {loadingModels ? (
-            <Spinner animation="border" />
-          ) : (
-            <div style={{ position: "relative" }}>
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                style={{ width: "100%", borderRadius: 10, transform: 'scaleX(-1)' }}
-              />
-              <canvas
-                ref={overlayRef}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: "100%",
-                  transform: 'scaleX(-1)'
-                }}
-              />
-              <div className="mt-3">
-                {isProcessing ? (
-                  <Badge bg="warning">Processing...</Badge>
-                ) : (
-                  <Badge bg={faceAligned ? "success" : "danger"}>
-                    {faceAligned
-                      ? "Face Aligned – Capturing..."
-                      : "Center your face inside the oval"}
-                  </Badge>
-                )}
-              </div>
-            </div>
-          )}
-          <canvas ref={canvasRef} style={{ display: "none" }} />
-        </Modal.Body>
-      </Modal>
-
-      {/* ========== EXISTING REPORT MODAL (optional) ========== */}
+      {/* Report Clock Out Modal */}
       <ReportClockOutModal
         show={showReportModal}
         setShowReportModal={setShowReportModal}

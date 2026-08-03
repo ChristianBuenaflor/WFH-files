@@ -28,7 +28,7 @@ const Overview = ({ selectedMonth, selectedYear }) => {
       {
         name: "Missed",
         value: attendanceData.missed,
-        fill: "#999",
+        fill: "#ffc107",
       },
       {
         name: "Absent",
@@ -97,6 +97,7 @@ const Overview = ({ selectedMonth, selectedYear }) => {
             else if (status === 'late') {
               late++;
             }
+          
           });
 
           console.log(`Statistics for ${month}/${year}:`, { present, missed, absent, late });
@@ -123,8 +124,8 @@ const Overview = ({ selectedMonth, selectedYear }) => {
               late: 0,
               presentPercentage: 0,
               missedPercentage: 0,
-              latePercentage: 0,
               absentPercentage: 0,
+              latePercentage: 0,
             });
           }
         } else {

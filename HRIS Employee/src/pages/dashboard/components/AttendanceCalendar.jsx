@@ -229,7 +229,7 @@ const AttendanceCalendar = ({ onMonthChange }) => {
     const status = getAttendanceStatus(day);
 
     const icons = {
-      present: "✓",
+       present: "✓",
       missed: "?",
       weekend: "-",
       absent: "✗",
@@ -368,6 +368,7 @@ const AttendanceCalendar = ({ onMonthChange }) => {
                 <span className="legend-color present"></span>
                 <span className="legend-text">Present</span>
               </div>
+              
               <div className="legend-item">
                 <span className="legend-color late"></span>
                 <span className="legend-text">Late</span>

@@ -2,13 +2,11 @@ import React, { useState, useCallback, useMemo, useRef } from "react";
 import { Card, Button, Row, Col } from "react-bootstrap";
 import { FileEarmarkRuled, FileEarmarkText, CalendarDate, Download } from "react-bootstrap-icons";
 import { Link } from "react-router-dom";
-import PayslipPDF from "@/components/payslip/PayslipPDF";
 import api from "@/config/axios";
 import ReactDOM from "react-dom/client";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 import Offcanvas from "react-bootstrap/Offcanvas";
 import "@/pages/payslip/Payslip.css";
+import PayslipPDF from "@/components/payslip/PayslipPDF";
 
 const RecentPayslip = ({ recentPayslips = [], pdfRef }) => {
   const [downloadingId, setDownloadingId] = useState(null);
@@ -68,6 +66,12 @@ const RecentPayslip = ({ recentPayslips = [], pdfRef }) => {
       tempContainer.style.left = "-9999px";
       tempContainer.style.width = "800px";
       document.body.appendChild(tempContainer);
+
+      const [{ default: html2canvas }, { default: jsPDF }, { default: PayslipPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+        import("@/components/payslip/PayslipPDF"),
+      ]);
 
       // Render the PayslipPDF component
       const root = ReactDOM.createRoot(tempContainer);

@@ -22,7 +22,7 @@ const RichTextEditor = ({ value, onChange, placeholder, readOnly = false }) => {
     if (!editor) return null;
 
     return (
-      <div className="btn-toolbar mb-2" role="toolbar" aria-label="Formatting tools">
+      <div className="btn-toolbar mb-2 d-none" role="toolbar" aria-label="Formatting tools">
         <button
           type="button"
           className={`btn btn-sm ${editor.isActive('bold') ? 'btn-primary' : 'btn-outline-secondary'}`}

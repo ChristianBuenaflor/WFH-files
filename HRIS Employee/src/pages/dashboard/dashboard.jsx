@@ -1,4 +1,6 @@
 import React, {
+  Suspense,
+  lazy,
   useState,
   useEffect,
   useRef,
@@ -15,21 +17,49 @@ import {
   Eye,
   EyeSlash,
 } from "react-bootstrap-icons";
-import RecentReport from "@/pages/dashboard/components/RecentReport";
-import RecentPayslip from "@/pages/dashboard/components/RecentPayslip";
-import Overview from "@/pages/dashboard/components/Overview";
-import AttendanceCalendar from "@/pages/dashboard/components/AttendanceCalendar";
-import AttendanceOverview from "@/pages/dashboard/components/AttendanceOverview";
 import api from "@/config/axios";
 import "./Dashboard.css";
 import "@/assets/style/global.css";
 
+const RecentReport = lazy(() => import("@/pages/dashboard/components/RecentReport"));
+const RecentPayslip = lazy(() => import("@/pages/dashboard/components/RecentPayslip"));
+const Overview = lazy(() => import("@/pages/dashboard/components/Overview"));
+const AttendanceCalendar = lazy(() => import("@/pages/dashboard/components/AttendanceCalendar"));
+const AttendanceOverview = lazy(() => import("@/pages/dashboard/components/AttendanceOverview"));
+
+const LoadingPanel = () => (
+  <div className="text-center py-4 text-muted">
+    <div className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+    Loading...
+  </div>
+);
+
 // Memoize child components to prevent unnecessary re-renders
-const MemoizedRecentReport = React.memo(RecentReport);
-const MemoizedRecentPayslip = React.memo(RecentPayslip);
-const MemoizedOverview = React.memo(Overview);
-const MemoizedAttendanceCalendar = React.memo(AttendanceCalendar);
-const MemoizedAttendanceOverview = React.memo(AttendanceOverview);
+const MemoizedRecentReport = React.memo(({ recentReports }) => (
+  <Suspense fallback={<LoadingPanel />}>
+    <RecentReport recentReports={recentReports} />
+  </Suspense>
+));
+const MemoizedRecentPayslip = React.memo(({ recentPayslips }) => (
+  <Suspense fallback={<LoadingPanel />}>
+    <RecentPayslip recentPayslips={recentPayslips} />
+  </Suspense>
+));
+const MemoizedOverview = React.memo(({ selectedMonth, selectedYear }) => (
+  <Suspense fallback={<LoadingPanel />}>
+    <Overview selectedMonth={selectedMonth} selectedYear={selectedYear} />
+  </Suspense>
+));
+const MemoizedAttendanceCalendar = React.memo(({ onMonthChange }) => (
+  <Suspense fallback={<LoadingPanel />}>
+    <AttendanceCalendar onMonthChange={onMonthChange} />
+  </Suspense>
+));
+const MemoizedAttendanceOverview = React.memo(() => (
+  <Suspense fallback={<LoadingPanel />}>
+    <AttendanceOverview />
+  </Suspense>
+));
 
 const Dashboard = ({ setIsAuth }) => {
   const [hidePayValues, setHidePayValues] = useState({
