@@ -211,7 +211,7 @@ const Dashboard = ({ setIsAuth }) => {
           </div>
         ) : (
           <>
-            <Row className="mb-4">
+            <Row>
               <Col>
                 <h2 className="dashboard-title">Dashboard</h2>
                 <p className="dashboard-subtitle">

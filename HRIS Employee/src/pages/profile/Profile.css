@@ -435,12 +435,6 @@
   overflow: hidden;
 }
 
-.modal-header {
-  background: #2563EB;
-  color: white;
-  border-bottom: none;
-  padding: 15px 20px;
-}
 
 .modal-title {
   font-weight: 600;

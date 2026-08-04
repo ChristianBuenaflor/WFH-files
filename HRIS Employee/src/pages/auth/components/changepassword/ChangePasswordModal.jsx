@@ -1,10 +1,9 @@
 import React, { useState } from "react";
-import "./ChangePasswordModal.css";
-import { Toast, ToastContainer } from "react-bootstrap";
+import { Modal, Button, Form, Toast, ToastContainer } from "react-bootstrap";
 import { Eye, EyeSlash, Lock } from "react-bootstrap-icons";
+import "./ChangePasswordModal.css";
 import api from "@/config/axios";
 import "@/assets/style/global.css";
-
 
 const ChangePasswordModal = ({ onClose, onUpdate }) => {
   const [formData, setFormData] = useState({
@@ -110,31 +109,27 @@ const ChangePasswordModal = ({ onClose, onUpdate }) => {
   };
 
   return (
-    <div className="cpm-modal-overlay" onClick={onClose}>
-      <div className="cpm-modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="cpm-modal-header">
-          <h2>
-            <Lock size={24} className="me-2" style={{ display: "inline" }} />
+    <Modal show centered size="md" onHide={onClose}>
+      <Form onSubmit={handleSubmit}>
+        <Modal.Header closeButton>
+          <Modal.Title>
             Change Password
-          </h2>
-          <button className="cpm-modal-close" onClick={onClose}>
-            &times;
-          </button>
-        </div>
+          </Modal.Title>
+        </Modal.Header>
 
-        <form onSubmit={handleSubmit} className="cpm-modal-form">
+        <Modal.Body className="pt-2">
           <div className="cpm-form-fields">
             <div className="cpm-form-group">
-              <label htmlFor="current_password">Current Password</label>
+              <Form.Label htmlFor="current_password">Current Password</Form.Label>
               <div className="cpm-password-input-wrapper">
-                <input
+                <Form.Control
                   type={showPasswords.current_password ? "text" : "password"}
                   id="current_password"
                   name="current_password"
                   value={formData.current_password}
                   onChange={handleChange}
                   placeholder="Enter your current password"
-                  className={errors.current_password ? "cpm-input-error" : ""}
+                  isInvalid={!!errors.current_password}
                 />
                 <button
                   type="button"
@@ -159,16 +154,16 @@ const ChangePasswordModal = ({ onClose, onUpdate }) => {
             </div>
 
             <div className="cpm-form-group">
-              <label htmlFor="new_password">New Password</label>
+              <Form.Label htmlFor="new_password">New Password</Form.Label>
               <div className="cpm-password-input-wrapper">
-                <input
+                <Form.Control
                   type={showPasswords.new_password ? "text" : "password"}
                   id="new_password"
                   name="new_password"
                   value={formData.new_password}
                   onChange={handleChange}
                   placeholder="Enter your new password"
-                  className={errors.new_password ? "cpm-input-error" : ""}
+                  isInvalid={!!errors.new_password}
                 />
                 <button
                   type="button"
@@ -193,37 +188,19 @@ const ChangePasswordModal = ({ onClose, onUpdate }) => {
               <div className="cpm-password-requirements">
                 <p className="cpm-requirements-title">Password Requirements:</p>
                 <ul>
-                  <li
-                    className={
-                      formData.new_password.length >= 8 ? "valid" : ""
-                    }
-                  >
+                  <li className={formData.new_password.length >= 8 ? "valid" : ""}>
                     At least 8 characters
                   </li>
-                  <li
-                    className={
-                      /[A-Z]/.test(formData.new_password) ? "valid" : ""
-                    }
-                  >
+                  <li className={/[A-Z]/.test(formData.new_password) ? "valid" : ""}>
                     One uppercase letter
                   </li>
-                  <li
-                    className={
-                      /[a-z]/.test(formData.new_password) ? "valid" : ""
-                    }
-                  >
+                  <li className={/[a-z]/.test(formData.new_password) ? "valid" : ""}>
                     One lowercase letter
                   </li>
-                  <li
-                    className={/\d/.test(formData.new_password) ? "valid" : ""}
-                  >
+                  <li className={/\d/.test(formData.new_password) ? "valid" : ""}>
                     One number
                   </li>
-                  <li
-                    className={
-                      /[@$!%*?&]/.test(formData.new_password) ? "valid" : ""
-                    }
-                  >
+                  <li className={/[@$!%*?&]/.test(formData.new_password) ? "valid" : ""}>
                     One special character (@$!%*?&)
                   </li>
                 </ul>
@@ -231,16 +208,16 @@ const ChangePasswordModal = ({ onClose, onUpdate }) => {
             </div>
 
             <div className="cpm-form-group">
-              <label htmlFor="new_password_confirmation">Confirm New Password</label>
+              <Form.Label htmlFor="new_password_confirmation">Confirm New Password</Form.Label>
               <div className="cpm-password-input-wrapper">
-                <input
+                <Form.Control
                   type={showPasswords.new_password_confirmation ? "text" : "password"}
                   id="new_password_confirmation"
                   name="new_password_confirmation"
                   value={formData.new_password_confirmation}
                   onChange={handleChange}
                   placeholder="Confirm your new password"
-                  className={errors.new_password_confirmation ? "cpm-input-error" : ""}
+                  isInvalid={!!errors.new_password_confirmation}
                 />
                 <button
                   type="button"
@@ -252,7 +229,7 @@ const ChangePasswordModal = ({ onClose, onUpdate }) => {
                       : "Show password"
                   }
                 >
-                  {showPasswords.confirm_password ? (
+                  {showPasswords.new_password_confirmation ? (
                     <EyeSlash size={18} />
                   ) : (
                     <Eye size={18} />
@@ -264,45 +241,48 @@ const ChangePasswordModal = ({ onClose, onUpdate }) => {
               )}
             </div>
           </div>
+        </Modal.Body>
 
-          <div className="cpm-modal-footer">
-            <button
-              type="button"
-              className="cpm-btn cpm-btn-secondary"
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="cpm-btn cpm-btn-primary"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Changing..." : "Change Password"}
-            </button>
-          </div>
-        </form>
-
-        {/* Toast Notification */}
-        <ToastContainer
-          position="top-end"
-          className="p-3"
-          style={{ position: "fixed", zIndex: 9999 }}
-        >
-          <Toast
-          className={toast.type === "success" ? "glb-toast-success" : "glb-toast-danger"}
-            show={toast.show}
-            onClose={() => setShowToast({ ...toast, show: false })}
-            delay={3000}
-            autohide
+        <Modal.Footer className="border-0 pt-0">
+          <Button
+            variant="outline-secondary"
+            size="sm"
+            className="px-3"
+            onClick={onClose}
+            disabled={isSubmitting}
           >
-            <Toast.Body>{toast.message}</Toast.Body>
-          </Toast>
-        </ToastContainer>
-      </div>
-    </div>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            type="submit"
+            className="px-3"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Changing..." : "Change Password"}
+          </Button>
+        </Modal.Footer>
+      </Form>
+
+      <ToastContainer
+        position="top-end"
+        className="p-3"
+        style={{ position: "fixed", zIndex: 9999 }}
+      >
+        <Toast
+          className={toast.type === "success" ? "glb-toast-success" : "glb-toast-danger"}
+          show={toast.show}
+          onClose={() => setShowToast({ ...toast, show: false })}
+          delay={3000}
+          autohide
+        >
+          <Toast.Body>{toast.message}</Toast.Body>
+        </Toast>
+      </ToastContainer>
+    </Modal>
   );
+
 };
 
 export default ChangePasswordModal;

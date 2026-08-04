@@ -218,10 +218,12 @@
 
 .announcement-card {
   border: 1px solid #e2e8f0;
-  border-radius: 14px;
   padding: 1rem;
   transition: all 0.2s ease;
   background: #ffffff;
+  margin-bottom: 5px;
+  border-radius: 8px;
+
 }
 
 .announcement-card:hover {

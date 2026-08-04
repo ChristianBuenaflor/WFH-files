@@ -28,7 +28,7 @@ const Overview = ({ selectedMonth, selectedYear }) => {
       {
         name: "Missed",
         value: attendanceData.missed,
-        fill: "#ffc107",
+        fill: "#17a2b8",
       },
       {
         name: "Absent",
@@ -177,7 +177,7 @@ const Overview = ({ selectedMonth, selectedYear }) => {
         {!loading && !error && (
           <>
             <div className="attendance-chart-wrapper">
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={400}>
                 <PieChart>
                   <Pie
                     data={chartData}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Toast, ToastContainer } from "react-bootstrap";
+import { Modal, Button, Toast, ToastContainer, Form } from "react-bootstrap";
 import {
   PersonFill,
   PinMap,
@@ -9,7 +9,6 @@ import {
   Gear,
 } from "react-bootstrap-icons";
 import "@/pages/profile/components/modal/profile/ProfileEditModal.css";
-import "@/assets/style/global.css";
 import api from "@/config/axios";
 import { useAuth } from "@/context/AuthContext";
 
@@ -76,7 +75,7 @@ const ProfileEditModal = ({ profileData, onClose, onUpdate }) => {
         if (onUpdate) onUpdate(result);
         onClose();
       }, 1500);
-      
+
       setShowToast({
         show: true,
         message: "Profile updated successfully!",
@@ -272,185 +271,191 @@ const ProfileEditModal = ({ profileData, onClose, onUpdate }) => {
   };
 
   return (
-    <div  className="prof-modal-overlay" onClick={onClose}>
-      <div className="prof-modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="prof-modal-header">
-          <h2>Edit Profile</h2>
-          <button className="prof-modal-close" onClick={onClose}>
-            &times;
-          </button>
-        </div>
+    <Modal show centered size="lg" onHide={onClose}>
+      <form onSubmit={handleSubmit}>
+        <Modal.Header closeButton>
+          <Modal.Title>Edit Profile</Modal.Title>
+        </Modal.Header>
 
-        <div className="prof-modal-tabs">
-          {Object.entries(tabs).map(([key, tab]) => (
-            <button
-              key={key}
-              className={`prof-modal-tab ${activeTab === key ? "active" : ""}`}
-              onClick={() => setActiveTab(key)}
-              title={tab.label}
-            >
-              <span className="prof-tab-icon">{tab.icon}</span>
-              <span className="prof-tab-label">{tab.label}</span>
-            </button>
-          ))}
-        </div>
+        <Modal.Body className="pt-2">
+          <div className="prof-modal-tabs">
+            {Object.entries(tabs).map(([key, tab]) => (
+              <button
+                key={key}
+                type="button"
+                className={`prof-modal-tab ${activeTab === key ? "active" : ""}`}
+                onClick={() => setActiveTab(key)}
+                title={tab.label}
+              >
+                <span className="prof-tab-icon">{tab.icon}</span>
+                <span className="prof-tab-label">{tab.label}</span>
+              </button>
+            ))}
+          </div>
+          <div className="prof-form-container">
+            <div className="prof-form-fields grid-layout">
+              {tabs[activeTab].fields.map((fieldName) => {
+                const fieldType = getFieldType(fieldName);
+                const isEducationField =
+                  fieldName.includes("elementary") ||
+                  fieldName.includes("secondary") ||
+                  fieldName.includes("college") ||
+                  fieldName.includes("vocational") ||
+                  fieldName.includes("graduate");
 
-        <form onSubmit={handleSubmit} className="prof-modal-form">
-          <div className="prof-form-fields">
-            {tabs[activeTab].fields.map((fieldName) => {
-              const fieldType = getFieldType(fieldName);
-              const isEducationField =
-                fieldName.includes("elementary") ||
-                fieldName.includes("secondary") ||
-                fieldName.includes("college") ||
-                fieldName.includes("vocational") ||
-                fieldName.includes("graduate");
+                if (isEducationField) {
+                  const level = fieldName.split("_")[0];
+                  const prevField =
+                    tabs[activeTab].fields[
+                      tabs[activeTab].fields.indexOf(fieldName) - 1
+                    ];
+                  const showHeader = !prevField || !prevField.startsWith(level);
 
-              if (isEducationField) {
-                const level = fieldName.split("_")[0];
-                const prevField =
-                  tabs[activeTab].fields[
-                    tabs[activeTab].fields.indexOf(fieldName) - 1
-                  ];
-                const showHeader = !prevField || !prevField.startsWith(level);
-
-                if (showHeader) {
-                  return (
-                    <div key={fieldName}>
-                      <h4 className="prof-education-level">
-                        {level.charAt(0).toUpperCase() + level.slice(1)}
-                      </h4>
-                      <div className="prof-form-group">
-                        <label htmlFor={fieldName}>
-                          {fieldLabels[fieldName]}
-                        </label>
-                        <input
-                          type={fieldType}
-                          id={fieldName}
-                          name={fieldName}
-                          value={formData[fieldName] || ""}
-                          onChange={handleChange}
-                          placeholder={`Enter ${fieldLabels[fieldName].toLowerCase()}`}
-                        />
+                  if (showHeader) {
+                    return (
+                      <div key={fieldName} className="prof-form-section full-width">
+                        <h4 className="prof-education-level">
+                          {level.charAt(0).toUpperCase() + level.slice(1)}
+                        </h4>
+                        <div className="prof-form-group full-width">
+                          <label htmlFor={fieldName}>
+                            {fieldLabels[fieldName]}
+                          </label>
+                          <Form.Control
+                            type={fieldType}
+                            id={fieldName}
+                            name={fieldName}
+                            value={formData[fieldName] || ""}
+                            onChange={handleChange}
+                            placeholder={`Enter ${fieldLabels[fieldName].toLowerCase()}`}
+                            size="sm"
+                          />
+                        </div>
                       </div>
-                    </div>
-                  );
+                    );
+                  }
                 }
-              }
 
-              return (
-                <div key={fieldName} className="prof-form-group">
-                  <label htmlFor={fieldName}>{fieldLabels[fieldName]}</label>
-                  {fieldName === "sex" ? (
-                    <select
-                      id={fieldName}
-                      name={fieldName}
-                      value={formData[fieldName] || ""}
-                      onChange={handleChange}
-                    >
-                      <option value="">-- Select --</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  ) : fieldName === "civil_status" ? (
-                    <select
-                      id={fieldName}
-                      name={fieldName}
-                      value={formData[fieldName] || ""}
-                      onChange={handleChange}
-                    >
-                      <option value="">-- Select --</option>
-                      <option value="Single">Single</option>
-                      <option value="Married">Married</option>
-                      <option value="Widowed">Widowed</option>
-                      <option value="Divorced">Divorced</option>
-                    </select>
-                  ) : fieldName === "blood_type" ? (
-                    <select
-                      id={fieldName}
-                      name={fieldName}
-                      value={formData[fieldName] || ""}
-                      onChange={handleChange}
-                    >
-                      <option value="">-- Select --</option>
-                      <option value="A+">A+</option>
-                      <option value="A-">A-</option>
-                      <option value="B+">B+</option>
-                      <option value="B-">B-</option>
-                      <option value="O+">O+</option>
-                      <option value="O-">O-</option>
-                      <option value="AB+">AB+</option>
-                      <option value="AB-">AB-</option>
-                    </select>
-                  ) : (fieldName.includes("address") &&
-                      !fieldName.includes("business")) ||
-                    fieldName === "spouse_business_address" ? (
-                    <textarea
-                      id={fieldName}
-                      name={fieldName}
-                      value={formData[fieldName] || ""}
-                      onChange={handleChange}
-                      placeholder={`Enter ${fieldLabels[fieldName].toLowerCase()}`}
-                      rows="3"
-                    />
-                  ) : (
-                    <input
-                      type={fieldType}
-                      id={fieldName}
-                      name={fieldName}
-                      value={formData[fieldName] || ""}
-                      onChange={handleChange}
-                      placeholder={`Enter ${fieldLabels[fieldName].toLowerCase()}`}
-                    />
-                  )}
-                </div>
-              );
-            })}
+                return (
+                  <div key={fieldName} className="prof-form-group">
+                    <label htmlFor={fieldName}>{fieldLabels[fieldName]}</label>
+                    {fieldName === "sex" ? (
+                      <Form.Select
+                        id={fieldName}
+                        name={fieldName}
+                        value={formData[fieldName] || ""}
+                        onChange={handleChange}
+                        size="sm"
+                      >
+                        <option value="">-- Select --</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                      </Form.Select>
+                    ) : fieldName === "civil_status" ? (
+                      <Form.Select
+                        id={fieldName}
+                        name={fieldName}
+                        value={formData[fieldName] || ""}
+                        onChange={handleChange}
+                        size="sm"
+                      >
+                        <option value="">-- Select --</option>
+                        <option value="Single">Single</option>
+                        <option value="Married">Married</option>
+                        <option value="Widowed">Widowed</option>
+                        <option value="Divorced">Divorced</option>
+                      </Form.Select>
+                    ) : fieldName === "blood_type" ? (
+                      <Form.Select
+                        id={fieldName}
+                        name={fieldName}
+                        value={formData[fieldName] || ""}
+                        onChange={handleChange}
+                        size="sm"
+                      >
+                        <option value="">-- Select --</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                      </Form.Select>
+                    ) : (fieldName.includes("address") &&
+                        !fieldName.includes("business")) ||
+                      fieldName === "spouse_business_address" ? (
+                      <Form.Control
+                        as="textarea"
+                        id={fieldName}
+                        name={fieldName}
+                        value={formData[fieldName] || ""}
+                        onChange={handleChange}
+                        placeholder={`Enter ${fieldLabels[fieldName].toLowerCase()}`}
+                        rows={3}
+                        size="sm"
+                      />
+                    ) : (
+                      <Form.Control
+                        type={fieldType}
+                        id={fieldName}
+                        name={fieldName}
+                        value={formData[fieldName] || ""}
+                        onChange={handleChange}
+                        placeholder={`Enter ${fieldLabels[fieldName].toLowerCase()}`}
+                        size="sm"
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
+        </Modal.Body>
 
-          <div className="prof-modal-footer ">
-            <button
-              type="button"
-              className="prof-btn-cancel"
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="prof-btn-update"
-              disabled={isSubmitting || !hasChanges}
-              title={!hasChanges ? "No changes detected" : ""}
-            >
-              {isSubmitting ? "Updating..." : "Update Profile"}
-            </button>
-          </div>
-        </form>
-
-        {/* Toast Notification */}
-        <ToastContainer
-          position="top-end"
-          className="p-3"
-          style={{ position: "fixed", zIndex: 9999 }}
-        >
-          <Toast
-            className={
-              toast.type === "success"
-                ? "glb-toast-success"
-                : "glb-toast-danger"
-            }
-            show={toast.show}
-            onClose={() => setShowToast({ ...toast, show: false })}
-            delay={3000}
-            autohide
+        <Modal.Footer className="border-0 pt-0">
+          <Button
+            variant="outline-secondary"
+            size="sm"
+            className="px-3"
+            onClick={onClose}
+            disabled={isSubmitting}
           >
-            <Toast.Body>{toast.message}</Toast.Body>
-          </Toast>
-        </ToastContainer>
-      </div>
-    </div>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            type="submit"
+            className="px-3"
+            disabled={isSubmitting || !hasChanges}
+            title={!hasChanges ? "No changes detected" : ""}
+          >
+            {isSubmitting ? "Updating..." : "Update Profile"}
+          </Button>
+        </Modal.Footer>
+      </form>
+
+      <ToastContainer
+        position="top-end"
+        className="p-3"
+        style={{ position: "fixed", zIndex: 9999 }}
+      >
+        <Toast
+          className={
+            toast.type === "success" ? "glb-toast-success" : "glb-toast-danger"
+          }
+          show={toast.show}
+          onClose={() => setShowToast({ ...toast, show: false })}
+          delay={3000}
+          autohide
+        >
+          <Toast.Body>{toast.message}</Toast.Body>
+        </Toast>
+      </ToastContainer>
+    </Modal>
   );
 };
 

@@ -217,3 +217,8 @@ html {
 .modal-body{
   padding: 20px;
 }
+.prof-form-container{
+  max-height: 30rem;
+  overflow-y: auto;
+  padding-top: 1em;
+}
