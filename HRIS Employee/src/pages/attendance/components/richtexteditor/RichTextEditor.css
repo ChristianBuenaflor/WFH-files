@@ -11,7 +11,7 @@
 .ProseMirror {
   overflow-y: auto;
   max-height: 400px !important;
-  min-height: 290px;
+  min-height: 150px;
   padding: 0.5rem;
   border: 1px solid #ced4da;
   border-radius: 10px;
@@ -25,6 +25,15 @@
   outline: none;
   border-color: #86b7fe;
   box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+@media screen and (min-width: 768px) {
+ .ProseMirror {
+  overflow-y: auto;
+  max-height: 300px !important;
+  min-height: 290px;
+ }
+  
 }
 
 .ProseMirror p.is-editor-empty:first-child::before {

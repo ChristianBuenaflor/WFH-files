@@ -15,12 +15,17 @@ const ReportClockOutModal = ({
   reportBody,
   setReportBody,
   handleReportSubmit,
+  verificationMessage,
+  setVerificationMessage,
 }) => {
   const handleClose = () => {
     setShowReportModal(false);
     setCcEmails("");
     setReportSubject("");
     setReportBody("");
+    if (setVerificationMessage) {
+      setVerificationMessage("");
+    }
   };
 
   const getPlainText = (html) => {
@@ -39,13 +44,17 @@ const ReportClockOutModal = ({
       </Modal.Header>
 
       <Modal.Body>
+          {verificationMessage && (
+          <div className=" alert alert-success py-2" role="alert">
+            <span className="text-muted small">{verificationMessage}</span>
+          </div>
+        )}
         <Form>
           <Row>
             <Col lg={6} md={6} xs={12}>
               {/* TO */}
               <InputGroup className="mb-3">
                 <InputGroup.Text id="to-addon">TO</InputGroup.Text>
-
                 <Form.Control
                   type="text"
                   placeholder="hello@snlvirtualpartner.com"
@@ -58,9 +67,8 @@ const ReportClockOutModal = ({
               </InputGroup>
 
               {/* CC */}
-              <InputGroup>
+              <InputGroup className="mb-3">
                 <InputGroup.Text id="cc-addon">CC</InputGroup.Text>
-
                 <Form.Control
                   size="sm"
                   type="email"
@@ -80,7 +88,6 @@ const ReportClockOutModal = ({
               {/* SUBJECT */}
               <InputGroup className="mb-3">
                 <InputGroup.Text id="subject-addon">Subject</InputGroup.Text>
-
                 <Form.Control
                   size="sm"
                   type="text"
@@ -91,14 +98,16 @@ const ReportClockOutModal = ({
                   aria-describedby="subject-addon"
                 />
               </InputGroup>
+
               <h5>Daily Summary</h5>
-              <p style={{ lineHeight: "1em !important" }} className="text-muted small">Please provide a brief summary of the work you completed today. Include completed tasks, ongoing work, and any important updates or blockers before clocking out.</p>
+              <p style={{ lineHeight: "1em !important" }} className="text-muted small">
+                Please provide a brief summary of the work you completed today.
+              </p>
             </Col>
+
             <Col lg={6} md={6} xs={12}>
               {/* REPORT BODY */}
-              <Suspense
-                fallback={<div className="text-muted">Loading editor...</div>}
-              >
+              <Suspense fallback={<div className="text-muted">Loading editor...</div>}>
                 <RichTextEditor
                   value={reportBody}
                   onChange={setReportBody}
@@ -106,28 +115,19 @@ const ReportClockOutModal = ({
                 />
               </Suspense>
               <div className="d-flex justify-content-end mt-2">
-                <small className="text-muted"> {characterCount}</small>
+                <small className="text-muted">{characterCount}</small>
               </div>
             </Col>
           </Row>
         </Form>
+      
       </Modal.Body>
 
       <Modal.Footer>
-        <Button
-          size="sm"
-         variant="outline-secondary"
-          onClick={handleClose}
-        >
+        <Button size="sm" variant="outline-secondary" onClick={handleClose}>
           Cancel
         </Button>
-
-        <Button
-          variant="primary"
-          size="sm"
-          className="px-3 rounded-3"
-          onClick={handleReportSubmit}
-        >
+        <Button variant="primary" size="sm" className="px-3 rounded-3" onClick={handleReportSubmit}>
           Submit & Clock Out
         </Button>
       </Modal.Footer>

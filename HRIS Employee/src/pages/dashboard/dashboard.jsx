@@ -291,7 +291,7 @@ const Dashboard = ({ setIsAuth }) => {
             {/* ATTENDANCE CALENDAR AND OVERVIEW */}
             <Row className="mb-4">
               {/* Attendance Calendar */}
-              <Col lg={6}>
+              <Col lg={6}  className="mb-4">
                 <MemoizedAttendanceCalendar onMonthChange={handleMonthChange} />
               </Col>
 
