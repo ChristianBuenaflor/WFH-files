@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Card,
   Row,
@@ -8,7 +8,11 @@ import {
   Table,
   Dropdown,
   Pagination,
+  Modal,
+  Spinner,
 } from "react-bootstrap";
+import * as faceapi from "face-api.js";
+import api from "@/config/axios";
 import {
   Clock,
   DoorOpen,
@@ -47,10 +51,205 @@ const OverviewTab = ({
   const ROWS_PER_PAGE = 10;
   const [currentPage, setCurrentPage] = useState(1);
 
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const overlayRef = useRef(null);
+  const detectionInterval = useRef(null);
+  const captureTimeout = useRef(null);
+
+  const [showFaceModal, setShowFaceModal] = useState(false);
+  const [faceAligned, setFaceAligned] = useState(false);
+  const [loadingModels, setLoadingModels] = useState(true);
+  const [cameraStream, setCameraStream] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [clockAction, setClockAction] = useState(null);
+  const clockActionRef = useRef(null);
+  const [capturedFaceFile, setCapturedFaceFile] = useState(null);
+  const [verificationMessage, setVerificationMessage] = useState("");
+  const [captureErrorMessage, setCaptureErrorMessage] = useState("");
+
   // Reset pagination when recent attendance data changes
   useEffect(() => {
     setCurrentPage(1);
   }, [summary?.recentAttendance?.length]);
+
+  useEffect(() => {
+    const loadModels = async () => {
+      const MODEL_URL = "https://justadudewhohacks.github.io/face-api.js/models";
+      try {
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+      } catch (error) {
+        console.error("Face-api model loading failed:", error);
+      } finally {
+        setLoadingModels(false);
+      }
+    };
+    loadModels();
+  }, []);
+
+  const startCamera = async () => {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Camera API not available. Make sure you are on HTTPS.");
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 640 }, height: { ideal: 480 } },
+      });
+      videoRef.current.srcObject = stream;
+      setCameraStream(stream);
+      videoRef.current.onloadedmetadata = () => startDetection();
+    } catch (err) {
+      console.error("Camera error:", err);
+      let errorMessage = "Camera access denied. ";
+      if (err.name === "NotAllowedError") {
+        errorMessage += "Please grant camera permission in your browser.";
+      } else if (err.name === "NotFoundError") {
+        errorMessage += "No camera device found.";
+      } else {
+        errorMessage += err.message;
+      }
+      setCaptureErrorMessage(errorMessage);
+      setShowFaceModal(false);
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop());
+    }
+    if (videoRef.current && videoRef.current.srcObject) {
+      videoRef.current.srcObject = null;
+    }
+    if (detectionInterval.current) clearInterval(detectionInterval.current);
+    if (captureTimeout.current) clearTimeout(captureTimeout.current);
+    clockActionRef.current = null;
+    setCameraStream(null);
+  };
+
+  const drawGuide = () => {
+    const canvas = overlayRef.current;
+    const ctx = canvas.getContext("2d");
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = "#00ff99";
+    ctx.lineWidth = 3;
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = Math.min(canvas.width, canvas.height) * 0.32;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+    ctx.stroke();
+  };
+
+  const startDetection = () => {
+    detectionInterval.current = setInterval(async () => {
+      if (!videoRef.current || isProcessing) return;
+      drawGuide();
+      const detection = await faceapi.detectSingleFace(
+        videoRef.current,
+        new faceapi.TinyFaceDetectorOptions()
+      );
+      if (detection) {
+        const box = detection.box;
+        const videoWidth = videoRef.current.videoWidth;
+        const videoHeight = videoRef.current.videoHeight;
+        const centerX = videoWidth / 2;
+        const centerY = videoHeight / 2;
+        const faceCenterX = box.x + box.width / 2;
+        const faceCenterY = box.y + box.height / 2;
+        const withinX = Math.abs(faceCenterX - centerX) < videoWidth * 0.15;
+        const withinY = Math.abs(faceCenterY - centerY) < videoHeight * 0.2;
+
+        if (withinX && withinY) {
+          setFaceAligned(true);
+          if (!captureTimeout.current) {
+            captureTimeout.current = setTimeout(() => {
+              autoCaptureAndSubmit();
+            }, 1500);
+          }
+        } else {
+          setFaceAligned(false);
+          if (captureTimeout.current) {
+            clearTimeout(captureTimeout.current);
+            captureTimeout.current = null;
+          }
+        }
+      } else {
+        setFaceAligned(false);
+      }
+    }, 500);
+  };
+
+  const autoCaptureAndSubmit = async () => {
+    try {
+      setIsProcessing(true);
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, 0, 0);
+
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+      const byteString = atob(dataUrl.split(",")[1]);
+      const mimeString = dataUrl.split(",")[0].split(":")[1].split(";")[0];
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+      const file = new File([ab], "face.jpg", { type: mimeString });
+      const formData = new FormData();
+      formData.append("face_image", file);
+
+      const activeAction = clockActionRef.current || clockAction;
+      if (!activeAction) {
+        throw new Error("Unable to determine clock action");
+      }
+
+      if (activeAction === "out") {
+        setCapturedFaceFile(file);
+        setVerificationMessage("Face verified. Please complete your report below.");
+        setClockAction(null);
+        setShowFaceModal(false);
+        setShowReportModal(true);
+        stopCamera();
+      } else {
+        await api.post("/attendance/clock-in", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        setShowFaceModal(false);
+        setClockAction(null);
+        await fetchMyAttendance();
+      }
+    } catch (error) {
+      const message =
+        error.response?.data?.message || error.message || "Verification failed";
+      setCaptureErrorMessage(message);
+    } finally {
+      setIsProcessing(false);
+      captureTimeout.current = null;
+    }
+  };
+
+  const handleClockInClick = () => {
+    setClockAction("in");
+    clockActionRef.current = "in";
+    setCaptureErrorMessage("");
+    setVerificationMessage("");
+    setShowFaceModal(true);
+    setTimeout(startCamera, 300);
+  };
+
+  const handleClockOutClick = () => {
+    setClockAction("out");
+    clockActionRef.current = "out";
+    setCaptureErrorMessage("");
+    setVerificationMessage("");
+    setShowFaceModal(true);
+    setTimeout(startCamera, 300);
+  };
 
   // Calculate paginated recent attendance data
   const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
@@ -177,7 +376,7 @@ const OverviewTab = ({
                     <Button
                       variant="success"
                       className="px-3 py-2 flex-grow-1 btn-clock"
-                      onClick={handleClockIn}
+                      onClick={handleClockInClick}
                       disabled={
                         summary.isClockedIn ||
                         loadingSummary ||
@@ -204,7 +403,7 @@ const OverviewTab = ({
                     <Button
                       variant="danger"
                       className="px-3 py-2 flex-grow-1 btn-clock"
-                      onClick={() => setShowReportModal(true)}
+                      onClick={handleClockOutClick}
                       disabled={
                         !summary.isClockedIn ||
                         loadingSummary ||
@@ -329,6 +528,76 @@ const OverviewTab = ({
           </Card>
         </Col>
       </Row>
+
+      <Modal
+        show={showFaceModal}
+        onHide={() => {
+          setShowFaceModal(false);
+          stopCamera();
+          setCapturedFaceFile(null);
+          setCaptureErrorMessage("");
+          setClockAction(null);
+          clockActionRef.current = null;
+        }}
+        centered
+        size="lg"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>
+            {clockAction === "out" ? "Clock Out" : "Clock In"} – Face Verification
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="text-center">
+          {loadingModels ? (
+            <Spinner animation="border" />
+          ) : (
+            <div style={{ position: "relative" }}>
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                style={{ width: "100%", borderRadius: 10, transform: "scaleX(-1)" }}
+              />
+              <canvas
+                ref={overlayRef}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  transform: "scaleX(-1)",
+                }}
+              />
+              <div className="mt-3">
+                {isProcessing ? (
+                  <Badge bg="warning">Processing...</Badge>
+                ) : (
+                  <Badge bg={faceAligned ? "success" : "danger"}>
+                    {faceAligned
+                      ? "Face Aligned – Capturing..."
+                      : "Center your face inside the green circle"}
+                  </Badge>
+                )}
+              </div>
+              <div className="mt-2 text-muted">
+                {loadingModels
+                  ? "Loading face detection models..."
+                  : isProcessing
+                  ? "Please wait while we capture your image."
+                  : faceAligned
+                  ? "Hold still. Your face is aligned with the green circle."
+                  : "Position your face inside the green circle and keep your head centered."}
+              </div>
+              {captureErrorMessage && (
+                <div className="mt-3 alert alert-danger py-2 px-3 text-start" role="alert">
+                  {captureErrorMessage}
+                </div>
+              )}
+              <canvas ref={canvasRef} style={{ display: "none" }} />
+            </div>
+          )}
+        </Modal.Body>
+      </Modal>
 
       {!loadingSummary && summary.recentAttendance.length > 0 && (
         <Card className="border-0 shadow-sm rounded-2 mb-4">
