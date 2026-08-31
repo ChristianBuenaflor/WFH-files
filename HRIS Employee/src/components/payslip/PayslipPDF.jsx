@@ -14,6 +14,7 @@ const PayslipPDF = forwardRef(({ payslip, formatPeso }, ref) => {
   const totalAllowances = calculateTotal(payslip.allowances);
   const totalDeductionsAmount = calculateTotal(payslip.deductions);
   const basicSalary = Number(String(payslip.gross_pay).replace(/,/g, "")) - totalAllowances;
+  const holidays = payslip.holidays || payslip.holiday_dates || [];
 
   return (
     <div ref={ref} className="pdf-container">
@@ -75,6 +76,18 @@ const PayslipPDF = forwardRef(({ payslip, formatPeso }, ref) => {
           <div className="pdf-detail-item">
             <label className="pdf-detail-label">Late Deductions:</label>
             <span className="pdf-detail-value">{payslip.total_late_deductions > 0 ? `−${formatPeso(Number(String(payslip.total_late_deductions).replace(/,/g, "")))}` : "—"}</span>
+          </div>
+        </div>
+        <div className="pdf-detail-row">
+          <div className="pdf-detail-item">
+            <label className="pdf-detail-label">Holidays:</label>
+            <span className="pdf-detail-value">
+              {holidays.length > 0
+                ? holidays
+                    .map((holiday) => `${holiday.name} (${holiday.date})`)
+                    .join(", ")
+                : "None"}
+            </span>
           </div>
         </div>
       </div>

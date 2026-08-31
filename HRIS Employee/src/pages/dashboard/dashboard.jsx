@@ -24,7 +24,6 @@ import "@/assets/style/global.css";
 const RecentReport = lazy(() => import("@/pages/dashboard/components/RecentReport"));
 const RecentPayslip = lazy(() => import("@/pages/dashboard/components/RecentPayslip"));
 const Overview = lazy(() => import("@/pages/dashboard/components/Overview"));
-const AttendanceCalendar = lazy(() => import("@/pages/dashboard/components/AttendanceCalendar"));
 const AttendanceOverview = lazy(() => import("@/pages/dashboard/components/AttendanceOverview"));
 
 const LoadingPanel = () => (
@@ -50,11 +49,6 @@ const MemoizedOverview = React.memo(({ selectedMonth, selectedYear }) => (
     <Overview selectedMonth={selectedMonth} selectedYear={selectedYear} />
   </Suspense>
 ));
-const MemoizedAttendanceCalendar = React.memo(({ onMonthChange }) => (
-  <Suspense fallback={<LoadingPanel />}>
-    <AttendanceCalendar onMonthChange={onMonthChange} />
-  </Suspense>
-));
 const MemoizedAttendanceOverview = React.memo(() => (
   <Suspense fallback={<LoadingPanel />}>
     <AttendanceOverview />
@@ -67,23 +61,11 @@ const Dashboard = ({ setIsAuth }) => {
     netPay: true,
   });
 
-  //State for selected month and year (default to current month/year)
-  const [selectedDate, setSelectedDate] = useState({
-    month: new Date().getMonth() + 1,
-    year: new Date().getFullYear(),
-  });
-
   const togglePayVisibility = useCallback((payType) => {
     setHidePayValues((prev) => ({
       ...prev,
       [payType]: !prev[payType],
     }));
-  }, []);
-
-  //Callback to handle month change from calendar
-  const handleMonthChange = useCallback((month, year) => {
-    console.log("Month changed to:", month, year); // Debug log
-    setSelectedDate({ month, year });
   }, []);
 
   const iconMap = useMemo(
@@ -288,19 +270,10 @@ const Dashboard = ({ setIsAuth }) => {
               </Col>
             </Row>
 
-            {/* ATTENDANCE CALENDAR AND OVERVIEW */}
+            {/* ATTENDANCE OVERVIEW */}
             <Row className="mb-4">
-              {/* Attendance Calendar */}
-              <Col lg={6}  className="mb-4">
-                <MemoizedAttendanceCalendar onMonthChange={handleMonthChange} />
-              </Col>
-
-              {/* Overview - Pass selected month and year as props */}
-              <Col lg={6}>
-                <MemoizedOverview
-                  selectedMonth={selectedDate.month}
-                  selectedYear={selectedDate.year}
-                />
+              <Col>
+                <MemoizedOverview />
               </Col>
             </Row>
 

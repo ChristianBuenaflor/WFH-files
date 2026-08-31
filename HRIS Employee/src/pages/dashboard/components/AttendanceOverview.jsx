@@ -152,9 +152,8 @@ const AttendanceOverview = () => {
 
         let presentPercentage = 0;
         let present = data.present || 0;
-        let missed = data.missed || 0;
         let absent = data.absent || 0;
-        const total = present + missed + absent;
+        const total = present + absent;
         if (total > 0) {
           presentPercentage = Math.round((present / total) * 100);
         }

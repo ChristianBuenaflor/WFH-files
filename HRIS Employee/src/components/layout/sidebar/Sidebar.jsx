@@ -3,6 +3,7 @@ import { Nav, Offcanvas } from "react-bootstrap";
 import { Link, useLocation } from "react-router-dom";
 import {
   CalendarCheck,
+  CalendarDate,
   CalendarX,
   CashCoin,
   FileEarmarkText,
@@ -18,6 +19,7 @@ const Sidebar = ({ show, handleClose }) => {
 
   const iconMap = {
     "calendar-check": <CalendarCheck />,
+    "calendar-date": <CalendarDate />,
     "calendar-x": <CalendarX />,
     "cash-coin": <CashCoin />,
     "file-earmark-text": <FileEarmarkText />,
@@ -39,6 +41,12 @@ const Sidebar = ({ show, handleClose }) => {
       label: "Attendance",
       icon: "calendar-check",
       path: "/attendance",
+    },
+    {
+      id: "calendar",
+      label: "Calendar",
+      icon: "calendar-date",
+      path: "/calendar",
     },
     { id: "leave", label: "Leave", icon: "calendar-x", path: "/leave" },
     { id: "loan", label: "Loan", icon: "cash-coin", path: "/loan" },

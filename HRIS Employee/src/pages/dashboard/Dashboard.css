@@ -133,9 +133,18 @@
 ================================= */
 
 .attendance-chart-wrapper {
+  position: relative;
   background: #f8fafc;
   border-radius: 14px;
   padding: 1.5rem;
+}
+
+.chart-empty-message {
+  position: absolute;
+  inset: 50% 1.5rem auto;
+  transform: translateY(-50%);
+  text-align: center;
+  color: #64748b;
 }
 
 .attendance-stat-card {
@@ -181,11 +190,6 @@
   background: #ffc1078c;
   color: rgb(48, 48, 48);
 }
-.percentage-badge.missed {
-  background: #17a2b847;
-  color: rgb(48, 48, 48);
-}
-
 /* ===============================
    TABLE
 ================================= */

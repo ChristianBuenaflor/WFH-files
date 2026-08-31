@@ -13,6 +13,7 @@ const Payslip = lazy(() => import("@/pages/payslip/Payslip.jsx"));
 const Profile = lazy(() => import("@/pages/profile/Profile.jsx"));
 const Lesson = lazy(() => import("@/pages/lessons/Lesson.jsx"));
 const Modules = lazy(() => import("@/pages/lessons/components/Modules.jsx"));
+const HolidayPage = lazy(() => import("@/pages/calendar/HolidayPage.jsx"));
 
 // Loading component
 const LoadingScreen = () => (
@@ -63,6 +64,17 @@ const AppRoutes = ({ isAuth, setIsAuth }) => {
           element={
             isAuth ? (
               <Attendance setIsAuth={setIsAuth} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+
+        <Route
+          path="/calendar"
+          element={
+            isAuth ? (
+              <HolidayPage setIsAuth={setIsAuth} />
             ) : (
               <Navigate to="/" replace />
             )

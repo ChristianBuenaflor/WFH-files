@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Card, Button, Popover } from "react-bootstrap";
-import { ChevronLeft, ChevronRight } from "react-bootstrap-icons";
+import { Card, Button } from "react-bootstrap";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Grid3x3Gap,
+  List,
+} from "react-bootstrap-icons";
 import api from "@/config/axios";
 import "@/pages/dashboard/components/AttendanceCalendar.css";
 
@@ -9,12 +14,12 @@ const AttendanceCalendar = ({ onMonthChange }) => {
   const [calendarData, setCalendarData] = useState([]);
   const [summary, setSummary] = useState({
     present: 0,
-    missed: 0,
     absent: 0,
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [viewMode, setViewMode] = useState("grid");
 
   const hasFetched = useRef({});
   const cachedData = useRef({});
@@ -31,7 +36,6 @@ const AttendanceCalendar = ({ onMonthChange }) => {
       const year = currentDate.getFullYear();
       const cacheKey = `${year}-${month}`;
 
-      // ✅ If cached data exists, restore it
       if (cachedData.current[cacheKey]) {
         const cached = cachedData.current[cacheKey];
         setCalendarData(cached.calendar);
@@ -54,7 +58,6 @@ const AttendanceCalendar = ({ onMonthChange }) => {
           setCalendarData(calendar);
           setSummary(summaryData);
 
-          // ✅ Save data in cache
           cachedData.current[cacheKey] = {
             calendar,
             summary: summaryData,
@@ -88,16 +91,25 @@ const AttendanceCalendar = ({ onMonthChange }) => {
     return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
   };
 
-  const getAttendanceStatus = (day) => {
+  const getCalendarRecord = (day) => {
     if (!day) return null;
 
     const dateStr = `${currentDate.getFullYear()}-${String(
       currentDate.getMonth() + 1,
     ).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
-    const record = calendarData.find((item) => item.date === dateStr);
+    return calendarData.find((item) => item.date === dateStr) || null;
+  };
 
-    return record ? record.status : null;
+  const getDateFromRecord = (record) => {
+    const [year, month, day] = record.date.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  };
+
+  const getAttendanceStatus = (day) => {
+    const record = getCalendarRecord(day);
+
+    return record?.status?.toLowerCase() || null;
   };
 
   /*
@@ -178,6 +190,8 @@ const AttendanceCalendar = ({ onMonthChange }) => {
 
     if (!status) return "no-data";
 
+    if (status === "missed") return "no-data";
+
     // Build the date object for this day
     const dayDate = new Date(
       currentDate.getFullYear(),
@@ -197,17 +211,25 @@ const AttendanceCalendar = ({ onMonthChange }) => {
     return status.toLowerCase(); // other statuses stay the same
   };
 
+  const getRecordStatusClass = (record) => {
+    if (!record?.status || record.status.toLowerCase() === "missed") {
+      return "no-data";
+    }
+
+    const status = record.status.toLowerCase();
+    if (status !== "absent") return status;
+
+    const recordDate = getDateFromRecord(record);
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
+
+    if (recordDate < todayDate) return "absent";
+    if (recordDate.getTime() === todayDate.getTime()) return "absent-today";
+    return "absent-future";
+  };
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-
-  const pastAbsentCount = calendarData.filter((item) => {
-    if (item.status !== "absent") return false;
-
-    const itemDate = new Date(item.date);
-    itemDate.setHours(0, 0, 0, 0);
-
-    return itemDate <= today; // only count past or today
-  }).length;
 
   const getStatusLabel = (day) => {
     if (!day) return "";
@@ -216,13 +238,32 @@ const AttendanceCalendar = ({ onMonthChange }) => {
 
     const map = {
       present: "Present",
-      missed: "Missed",
       weekend: "Weekend",
       absent: "Absent",
       late: "Late",
+      leave: "Leave",
     };
 
-    return map[status] || status;
+    if (status === "holiday") {
+      const holiday = getCalendarRecord(day)?.holiday;
+      return holiday?.name ? `Holiday: ${holiday.name}` : "Holiday";
+    }
+
+    return map[status] || (status === "missed" ? "" : status);
+  };
+
+  const getCalendarDateLabel = (day) => {
+    if (!day) return "";
+
+    return new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      day,
+    ).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   };
 
   const getStatusIndicator = (day) => {
@@ -230,25 +271,33 @@ const AttendanceCalendar = ({ onMonthChange }) => {
 
     const icons = {
        present: "✓",
-      missed: "?",
       weekend: "-",
       absent: "✗",
       late: "!",
+      holiday: "H",
     };
 
     return icons[status] || "";
   };
 
-  const renderPopover = (day) => {
-    const status = getStatusLabel(day);
-    return (
-      <Popover id={`popover-${day}`}>
-        <Popover.Body style={{ fontSize: "12px", textAlign: "center" }}>
-          {status}
-        </Popover.Body>
-      </Popover>
-    );
+  const getRecordStatusLabel = (record) => {
+    if (!record?.status || record.status.toLowerCase() === "missed") {
+      return "No attendance record";
+    }
+
+    if (record.status.toLowerCase() === "holiday" && record.holiday?.name) {
+      return `Holiday: ${record.holiday.name}`;
+    }
+
+    return record.status.charAt(0).toUpperCase() + record.status.slice(1);
   };
+
+  const formatRecordDate = (dateString) =>
+    getDateFromRecord({ date: dateString }).toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    });
 
   /*
   |--------------------------------------------------------------------------
@@ -263,6 +312,28 @@ const AttendanceCalendar = ({ onMonthChange }) => {
           <h5 className="mb-0">Attendance Calendar</h5>
 
           <div className="calendar-controls">
+                <div className="calendar-view-toggle" aria-label="Calendar view">
+                  <button
+                    type="button"
+                    className={`view-toggle-button ${viewMode === "grid" ? "active" : ""}`}
+                    onClick={() => setViewMode("grid")}
+                    aria-label="Grid view"
+                    aria-pressed={viewMode === "grid"}
+                    title="Grid view"
+                  >
+                    <Grid3x3Gap />
+                  </button>
+                  <button
+                    type="button"
+                    className={`view-toggle-button ${viewMode === "list" ? "active" : ""}`}
+                    onClick={() => setViewMode("list")}
+                    aria-label="List view"
+                    aria-pressed={viewMode === "list"}
+                    title="List view"
+                  >
+                    <List />
+                  </button>
+                </div>
             <Button
               variant="sm"
               size="sm"
@@ -307,13 +378,6 @@ const AttendanceCalendar = ({ onMonthChange }) => {
           </Col>
 
           <Col xs={6} sm={3} className="mb-2">
-            <div className="stat-box leave">
-              <div className="stat-number">{summary.missed}</div>
-              <div className="stat-label">Missed</div>
-            </div>
-          </Col>
-
-          <Col xs={6} sm={3} className="mb-2">
             <div className="stat-box absent">
               <div className="stat-number">{pastAbsentCount}</div>
               <div className="stat-label">Absent</div>
@@ -327,39 +391,100 @@ const AttendanceCalendar = ({ onMonthChange }) => {
 
         {!loading && (
           <>
-            <div className="calendar-container">
-              <div className="calendar-grid">
-                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
-                  (day) => (
-                    <div key={day} className="weekday-header">
-                      {day}
-                    </div>
-                  ),
-                )}
+            {viewMode === "grid" ? (
+              <div className="calendar-container">
+                <div className="calendar-grid">
+                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
+                    (day) => (
+                      <div key={day} className="weekday-header">
+                        {day}
+                      </div>
+                    ),
+                  )}
 
-                {weeks.map((week, weekIndex) =>
-                  week.map((day, dayIndex) => (
-                    <div
-                      key={`${weekIndex}-${dayIndex}`}
-                      className={`calendar-day ${getStatusClass(day)}`}
-                      title={day ? getStatusLabel(day) : ""}
-                    >
-                      {day && (
-                        <div className="day-content">
-                          <span className="day-number">{day}</span>
+                  {weeks.map((week, weekIndex) =>
+                    week.map((day, dayIndex) => (
+                      <div
+                        key={`${weekIndex}-${dayIndex}`}
+                        className={`calendar-day ${getStatusClass(day)}`}
+                        tabIndex={day ? 0 : undefined}
+                      >
+                        {day && (
+                          <>
+                            <div className="day-content">
+                              <span className="day-number">{day}</span>
 
-                          {getStatusIndicator(day) && (
-                            <span className="status-indicator">
-                              {getStatusIndicator(day)}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )),
-                )}
+                              {getStatusIndicator(day) && (
+                                <span className="status-indicator">
+                                  {getStatusIndicator(day)}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="calendar-tooltip" role="tooltip">
+                              <div className="calendar-tooltip-date">
+                                {getCalendarDateLabel(day)}
+                              </div>
+                              <div className="calendar-tooltip-status">
+                                <span className="calendar-tooltip-dot" />
+                                {getStatusLabel(day) || "No attendance record"}
+                              </div>
+                              {getCalendarRecord(day)?.holiday && (
+                                <div className="calendar-tooltip-holiday">
+                                  <strong>
+                                    {getCalendarRecord(day).holiday.name}
+                                  </strong>
+                                  {getCalendarRecord(day).holiday.type && (
+                                    <span>
+                                      {getCalendarRecord(day).holiday.type}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )),
+                  )}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="calendar-list" role="list">
+                {calendarData.map((record) => (
+                  <div
+                    key={record.date}
+                    className={`calendar-list-item ${getRecordStatusClass(record)}`}
+                    role="listitem"
+                  >
+                    <div className="calendar-list-date">
+                      <span className="calendar-list-day">
+                        {getDateFromRecord(record).getDate()}
+                      </span>
+                      <span>{formatRecordDate(record.date)}</span>
+                    </div>
+                    <div className="calendar-list-status">
+                      <span className="calendar-list-status-dot" />
+                      <span>{getRecordStatusLabel(record)}</span>
+                    </div>
+                    {record.holiday && (
+                      <div className="calendar-list-holiday">
+                        <strong>{record.holiday.name}</strong>
+                        {record.holiday.type && <span>{record.holiday.type}</span>}
+                      </div>
+                    )}
+                    {record.clock_in && (
+                      <div className="calendar-list-time">
+                        {new Date(record.clock_in).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* LEGEND */}
 
@@ -375,13 +500,13 @@ const AttendanceCalendar = ({ onMonthChange }) => {
               </div>
 
               <div className="legend-item">
-                <span className="legend-color missed"></span>
-                <span className="legend-text">Missed</span>
+                <span className="legend-color weekend"></span>
+                <span className="legend-text">Weekend</span>
               </div>
 
               <div className="legend-item">
-                <span className="legend-color weekend"></span>
-                <span className="legend-text">Weekend</span>
+                <span className="legend-color holiday"></span>
+                <span className="legend-text">Holiday</span>
               </div>
 
               <div className="legend-item">

@@ -43,6 +43,7 @@ const Payslip = ({ setIsAuth }) => {
 
   // Selected payslip detail
   const [selectedPayslip, setSelectedPayslip] = useState(null);
+  const [payslipHolidays, setPayslipHolidays] = useState([]);
 
   //Deductions SSS, Philhealth, Pagibig
   const [allDeductions, setDeductions] = useState([]);
@@ -80,6 +81,58 @@ const Payslip = ({ setIsAuth }) => {
       minimumFractionDigits: 2,
     }).format(value);
 
+  const getPeriodDate = (period) => {
+    if (!period) return null;
+
+    const dateMatch = period.match(/\b(\d{4})[-/]?(\d{2})[-/]?(\d{2})\b/);
+    if (dateMatch) {
+      return new Date(
+        Number(dateMatch[1]),
+        Number(dateMatch[2]) - 1,
+        Number(dateMatch[3]),
+      );
+    }
+
+    const monthMatch = period.match(
+      /\b(January|February|March|April|May|June|July|August|September|October|November|December)(?:\s+\d{1,2})?[\s\S]{0,15}?(\d{4})\b/i,
+    );
+
+    return monthMatch
+      ? new Date(`${monthMatch[1]} 1, ${monthMatch[2]}`)
+      : null;
+  };
+
+  const fetchPayslipHolidays = async (payslip) => {
+    const suppliedHolidays = payslip?.holidays || payslip?.holiday_dates;
+    if (Array.isArray(suppliedHolidays)) {
+      setPayslipHolidays(suppliedHolidays);
+      return;
+    }
+
+    const periodDate = getPeriodDate(payslip?.period);
+    if (!periodDate) {
+      setPayslipHolidays([]);
+      return;
+    }
+
+    try {
+      const response = await api.get("/dashboard/calendar", {
+        params: {
+          month: periodDate.getMonth() + 1,
+          year: periodDate.getFullYear(),
+        },
+      });
+
+      const holidays = (response.data?.calendar || [])
+        .filter((record) => record.status === "holiday" && record.holiday)
+        .map((record) => record.holiday);
+      setPayslipHolidays(holidays);
+    } catch (error) {
+      console.error("Error fetching payslip holidays:", error);
+      setPayslipHolidays([]);
+    }
+  };
+
   // Download PDF
   const downloadPDF = async () => {
     const canvas = await html2canvas(pdfRef.current, { scale: 2 });
@@ -100,6 +153,7 @@ const Payslip = ({ setIsAuth }) => {
       const res = await api.get(`/my-payslip/${record_id}`);
       const detail = res.data?.payslip;
       setSelectedPayslip(detail);
+      await fetchPayslipHolidays(detail);
     } catch (error) {
       console.error(
         "Error fetching payslip detail:",
@@ -525,6 +579,14 @@ const Payslip = ({ setIsAuth }) => {
                     {selectedPayslip.absences} days
                   </span>
                 </div>
+                <div className="allowance-deduction-item">
+                  <span className="item-name">Holidays</span>
+                  <span className="item-amount">
+                    {payslipHolidays.length > 0
+                      ? payslipHolidays.map((holiday) => holiday.name).join(", ")
+                      : "None"}
+                  </span>
+                </div>
                 {selectedPayslip.total_late_deductions > 0 && (
                   <div className="allowance-deduction-item">
                     <span className="item-name">Late Deduction</span>
@@ -701,7 +763,11 @@ const Payslip = ({ setIsAuth }) => {
         <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
           <PayslipPDF
             ref={pdfRef}
-            payslip={selectedPayslip}
+            payslip={
+              selectedPayslip
+                ? { ...selectedPayslip, holidays: payslipHolidays }
+                : null
+            }
             formatPeso={formatPeso}
           />
         </div>
