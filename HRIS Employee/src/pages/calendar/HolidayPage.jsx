@@ -166,12 +166,6 @@ const HolidayPage = ({ setIsAuth }) => {
   const monthLabel = selectedDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
   const weekLabel = `${weekDays[0].toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${weekDays[4].toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
 
-  const getStatusLabel = (record) => {
-    if (!record) return "No attendance";
-    if (record.status === "holiday") return record.holiday?.name || "Holiday";
-    return record.status.charAt(0).toUpperCase() + record.status.slice(1);
-  };
-
   const isAttendanceVisible = (record) => {
     const status = record?.status?.toLowerCase();
     const isLeave = status === "leave";

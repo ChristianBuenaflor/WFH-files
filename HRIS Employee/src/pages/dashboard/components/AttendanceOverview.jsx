@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Card,
   Row,
@@ -44,16 +44,13 @@ const AttendanceOverview = () => {
   const [liveHoursToday, setLiveHoursToday] = useState(0);
   const [statusText, setStatusText] = useState("Off Duty");
   const [clockInTimestamp, setClockInTimestamp] = useState(null);
-  const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [sessionTime, setSessionTime] = useState("00:00:00");
   const [showReportModal, setShowReportModal] = useState(false);
   const [ccEmails, setCcEmails] = useState("");
   const [reportSubject, setReportSubject] = useState("");
   const [reportBody, setReportBody] = useState("");
-  const [monthlyTarget, setMonthlyTarget] = useState(160);
+  const monthlyTarget = 160;
   const [weekTrend, setWeekTrend] = useState(0);
-  const [isOnTrack, setIsOnTrack] = useState(true);
-  const [lastWeekHours, setLastWeekHours] = useState(0);
 
   // ---------- Face verification state & refs ----------
   const videoRef = useRef(null);
@@ -75,14 +72,14 @@ const AttendanceOverview = () => {
   const [captureErrorMessage, setCaptureErrorMessage] = useState("");
 
   // ---------- Toast system ----------
-  const showToast = (message, variant = "success") => {
+  const showToast = useCallback((message, variant = "success") => {
     const id = Date.now();
     const toast = { id, message, variant };
     setToasts((prev) => [...prev, toast]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 3000);
-  };
+  }, []);
 
   // ---------- Live session timer ----------
   useEffect(() => {
@@ -92,7 +89,6 @@ const AttendanceOverview = () => {
     }
     const interval = setInterval(() => {
       const now = new Date();
-      setCurrentDateTime(now);
       const clockInDate = new Date(clockInTimestamp);
       const diffMs = now - clockInDate;
       const hours = Math.floor(diffMs / (1000 * 60 * 60));
@@ -106,7 +102,7 @@ const AttendanceOverview = () => {
   }, [summary.isClockedIn, clockInTimestamp]);
 
   // ---------- Fetch attendance data ----------
-  const fetchMyAttendance = async () => {
+  const fetchMyAttendance = useCallback(async () => {
     try {
       setLoadingSummary(true);
       const response = await api.get("/my-attendance");
@@ -138,7 +134,6 @@ const AttendanceOverview = () => {
 
         const trend = thisWeekHours - lastWeek;
         setWeekTrend(trend);
-        setLastWeekHours(lastWeek);
 
         const today = new Date();
         const currentDay = today.getDate();
@@ -148,7 +143,7 @@ const AttendanceOverview = () => {
           0
         ).getDate();
         const expectedProgress = (currentDay / lastDayOfMonth) * monthlyTarget;
-        setIsOnTrack(thisMonthHours >= expectedProgress * 0.95);
+        const isOnTrack = thisMonthHours >= expectedProgress * 0.95;
 
         let presentPercentage = 0;
         let present = data.present || 0;
@@ -173,6 +168,9 @@ const AttendanceOverview = () => {
 
         setLiveHoursToday(hoursToday);
         setStatusText(isClockedIn ? "On Duty" : "Off Duty");
+        if (!isOnTrack) {
+          showToast("You are behind your monthly target.", "warning");
+        }
       }
     } catch (error) {
       console.error("Error fetching attendance:", error);
@@ -180,7 +178,7 @@ const AttendanceOverview = () => {
     } finally {
       setLoadingSummary(false);
     }
-  };
+  }, [monthlyTarget, showToast]);
 
   // ---------- Load face‑api models ----------
   useEffect(() => {
@@ -198,7 +196,7 @@ const AttendanceOverview = () => {
       }
     };
     loadModels();
-  }, []);
+  }, [showToast]);
 
   // ---------- Camera & face detection functions ----------
   const startCamera = async () => {
@@ -227,7 +225,7 @@ const AttendanceOverview = () => {
     }
   };
 
-  const stopCamera = () => {
+  const stopCamera = useCallback(() => {
     if (cameraStream) {
       cameraStream.getTracks().forEach((track) => track.stop());
     }
@@ -238,7 +236,7 @@ const AttendanceOverview = () => {
     if (captureTimeout.current) clearTimeout(captureTimeout.current);
     clockActionRef.current = null;
     setCameraStream(null);
-  };
+  }, [cameraStream]);
 
   const drawGuide = () => {
     const canvas = overlayRef.current;
@@ -328,6 +326,7 @@ const AttendanceOverview = () => {
         setShowReportModal(true);
         stopCamera();
       } else {
+        setLoadingIn(true);
         await api.post("/attendance/clock-in", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
@@ -343,6 +342,7 @@ const AttendanceOverview = () => {
       setCaptureErrorMessage(message);
     } finally {
       setIsProcessing(false);
+      setLoadingIn(false);
       captureTimeout.current = null;
     }
   };
@@ -350,17 +350,18 @@ const AttendanceOverview = () => {
   // ---------- Fetch data on mount ----------
   useEffect(() => {
     fetchMyAttendance();
-  }, []);
+  }, [fetchMyAttendance]);
 
   // ---------- Cleanup on unmount ----------
   useEffect(() => {
     return () => {
       stopCamera();
     };
-  }, []);
+  }, [stopCamera]);
 
   // ---------- Clock handlers (now open face modal) ----------
   const handleClockIn = () => {
+    setLoadingIn(true);
     setClockAction("in");
     clockActionRef.current = "in";
     setCaptureErrorMessage("");
@@ -370,6 +371,7 @@ const AttendanceOverview = () => {
   };
 
   const handleClockOut = () => {
+    setLoadingIn(false);
     setClockAction("out");
     clockActionRef.current = "out";
     setCaptureErrorMessage("");
@@ -599,7 +601,7 @@ const AttendanceOverview = () => {
         <Col lg={7}>
           {/* Monthly Target Card */}
           <Card className="border-0 rounded-2 shadow-sm monthly-target-card mb-3 mb-md-3">
-            <Card.Body className="p-3 p-md-4">
+            <Card.Body className="p-3 p-md-4 monthly-target-body">
               <div className="d-flex justify-content-between align-items-start mb-2 mb-md-3">
                 <div>
                   <small className="text-white text-uppercase d-block mb-1 small-text-mobile">
@@ -611,6 +613,21 @@ const AttendanceOverview = () => {
                 </div>
                 <GraphUpArrow size={24} className="text-white opacity-50" />
               </div>
+
+              <div className="monthly-target-inner-box">
+                <div className="d-flex align-items-center justify-content-between gap-2">
+                  <div>
+                    <small className="d-block text-white-50 text-uppercase small-text-mobile">
+                      Clock In
+                    </small>
+                    <div className="text-white fw-semibold fs-5">
+                      {summary.clockInTime || "8:36 PM"}
+                    </div>
+                  </div>
+                  <span className="target-mini-badge">Today</span>
+                </div>
+              </div>
+
               <small className="text-white text-opacity-75 d-block mb-2 mb-md-3 small-text-mobile">
                 {loadingSummary
                   ? "Loading..."

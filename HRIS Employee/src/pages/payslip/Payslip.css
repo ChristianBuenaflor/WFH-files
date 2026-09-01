@@ -668,6 +668,97 @@
   border-bottom: none;
 }
 
+.holidays-summary-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.25rem 0;
+}
+
+.holidays-summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.holidays-label {
+  font-size: 0.96rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.holiday-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.25rem;
+  height: 2.25rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%);
+  color: #1d4ed8;
+  border: 1px solid #93c5fd;
+  font-size: 1rem;
+  font-weight: 800;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.12);
+}
+
+.holiday-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.holiday-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #f8fbff 0%, #eef6ff 100%);
+  border: 1px solid #dbeafe;
+}
+
+.holiday-row-main {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.holiday-name {
+  color: #1f2937;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.holiday-type-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.holiday-date {
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: right;
+}
+
+.holiday-empty {
+  color: #6b7280;
+  font-size: 0.9rem;
+  padding: 0.5rem 0;
+}
+
 .item-name {
   color: #6b7280;
   font-size: 0.9rem;

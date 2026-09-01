@@ -45,28 +45,12 @@ const Payslip = ({ setIsAuth }) => {
   const [selectedPayslip, setSelectedPayslip] = useState(null);
   const [payslipHolidays, setPayslipHolidays] = useState([]);
 
-  //Deductions SSS, Philhealth, Pagibig
-  const [allDeductions, setDeductions] = useState([]);
-
-  //Remarks
-  const [remarks, setRemarks] = useState([]);
-
   //period Count page
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
 
-  //All Period Count
-  const [periodCount, setPeriodCount] = useState([]);
-
-  //Basic Salary
-  const [basicSalary, setBasicSalary] = useState(0);
-
   //`Payslips Data
   const [payslips, setPayslips] = useState([]);
-
-  //Total Allowances
-  const [totalAllowances, setTotalAllowances] = useState(0);
-  const [allowances, setAllowances] = useState([]);
 
   //Total Gross, Deductions, Net Pay
   const [totalGross, setTotalGross] = useState(0);
@@ -80,6 +64,22 @@ const Payslip = ({ setIsAuth }) => {
       currency: "PHP",
       minimumFractionDigits: 2,
     }).format(value);
+
+  const normalizeHoliday = (holiday = {}) => {
+    if (!holiday || typeof holiday !== "object") {
+      return { name: "Holiday", date: "", type: "" };
+    }
+
+    return {
+      name:
+        holiday.holiday_name ||
+        holiday.name ||
+        holiday.holiday ||
+        "Holiday",
+      date: holiday.holiday_date || holiday.date || holiday.holidayDate || "",
+      type: holiday.holiday_type || holiday.type || "",
+    };
+  };
 
   const getPeriodDate = (period) => {
     if (!period) return null;
@@ -105,7 +105,7 @@ const Payslip = ({ setIsAuth }) => {
   const fetchPayslipHolidays = async (payslip) => {
     const suppliedHolidays = payslip?.holidays || payslip?.holiday_dates;
     if (Array.isArray(suppliedHolidays)) {
-      setPayslipHolidays(suppliedHolidays);
+      setPayslipHolidays(suppliedHolidays.map((holiday) => normalizeHoliday(holiday)));
       return;
     }
 
@@ -125,7 +125,7 @@ const Payslip = ({ setIsAuth }) => {
 
       const holidays = (response.data?.calendar || [])
         .filter((record) => record.status === "holiday" && record.holiday)
-        .map((record) => record.holiday);
+        .map((record) => normalizeHoliday(record.holiday));
       setPayslipHolidays(holidays);
     } catch (error) {
       console.error("Error fetching payslip holidays:", error);
@@ -187,40 +187,10 @@ const Payslip = ({ setIsAuth }) => {
         0,
       );
 
-      // Fetch Period Count
-      const periodCount = records.map((record) => record.period || "");
-      setPeriodCount(periodCount);
-
-      // Remarks
-      const allRemarks = records.map((record) => record.remarks || "");
-      setRemarks(allRemarks);
-
-      // Basic Salary
-      const basicSalary = records.map((record) => record.basic_salary || 0);
-      setBasicSalary(basicSalary);
-
-      // Flatten deductions - REMOVED, keep with individual payslips
-      const allDeductions = records.flatMap(
-        (record) => record.deductions || [],
-      );
-      setDeductions([]);
-
-      // Flatten allowances - REMOVED, keep with individual payslips
-      const allAllowances = records.flatMap(
-        (record) => record.allowances || [],
-      );
-      setAllowances([]);
-
-      const totalAllowances = allAllowances.reduce(
-        (sum, a) => sum + Number(String(a.allowance_amount).replace(/,/g, "")),
-        0,
-      );
-
       // Set totals
       setTotalGross(totalGross);
       setTotalDeductions(totalDeductions);
       setTotalNetPay(totalNetPay);
-      setTotalAllowances(totalAllowances);
 
       // Pagination
       const pagination = res.data?.pagination;
@@ -243,7 +213,7 @@ const Payslip = ({ setIsAuth }) => {
       navigate("/");
       return;
     }
-  }, [isAuth, navigate]);
+  }, [isAuth, navigate, setIsAuth]);
 
   useEffect(() => {
     if (hasFetched.current) return;
@@ -257,14 +227,6 @@ const Payslip = ({ setIsAuth }) => {
       window.scrollTo({ top: 0, behavior: "smooth" });
       fetchPayslips(newPage);
     }
-  };
-
-  // Sample payslip data
-  const payslipData = {
-    grossPay: totalGross,
-    totalDeductions: totalDeductions,
-    netPay: totalNetPay,
-    attendanceNote: remarks,
   };
 
   if (!isAuth) {
@@ -379,7 +341,7 @@ const Payslip = ({ setIsAuth }) => {
                     payslip.remarks.toLowerCase().includes(searchLower))
                 );
               })
-              .map((payslip, index) => (
+              .map((payslip) => (
                 <Col key={payslip.record_id} lg={4} md={6} className="mb-4">
                   <Card className="payslip-card h-100 shadow-sm rounded-3">
                     <Card.Header className="payslip-card-header">
@@ -548,7 +510,9 @@ const Payslip = ({ setIsAuth }) => {
                   </p>
                   <p className="detail-generated">
                     Generated: {selectedPayslip.generated_at}
-                    <p>{selectedPayslip.employee_id || "--No employee ID--"}</p>
+                    <small className="text-muted d-block">
+                      {selectedPayslip.employee_id || "--No employee ID--"}
+                    </small>
                   </p>
                 </div>
               </div>
@@ -579,13 +543,36 @@ const Payslip = ({ setIsAuth }) => {
                     {selectedPayslip.absences} days
                   </span>
                 </div>
-                <div className="allowance-deduction-item">
-                  <span className="item-name">Holidays</span>
-                  <span className="item-amount">
-                    {payslipHolidays.length > 0
-                      ? payslipHolidays.map((holiday) => holiday.name).join(", ")
-                      : "None"}
-                  </span>
+                <div className="holidays-summary-block">
+                  <div className="holidays-summary-header">
+                    <span className="item-name holidays-label">Holidays</span>
+                    <span className="holiday-count-badge">
+                      {selectedPayslip.total_holidays || payslipHolidays.length || 0}
+                    </span>
+                  </div>
+
+                  {payslipHolidays.length > 0 ? (
+                    <div className="holiday-list">
+                      {payslipHolidays.map((holiday, idx) => {
+                        const normalizedHoliday = normalizeHoliday(holiday);
+                        return (
+                          <div key={`${normalizedHoliday.name}-${normalizedHoliday.date || idx}`} className="holiday-row">
+                            <div className="holiday-row-main">
+                              <span className="holiday-name">{normalizedHoliday.name}</span>
+                              {normalizedHoliday.type && (
+                                <span className="holiday-type-tag">{normalizedHoliday.type}</span>
+                              )}
+                            </div>
+                            {normalizedHoliday.date && (
+                              <span className="holiday-date">{normalizedHoliday.date}</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="holiday-empty">None</div>
+                  )}
                 </div>
                 {selectedPayslip.total_late_deductions > 0 && (
                   <div className="allowance-deduction-item">
@@ -709,6 +696,24 @@ const Payslip = ({ setIsAuth }) => {
                     )}
                   </span>
                 </div>
+                {Number(
+                  String(selectedPayslip.night_diff_pay ?? "0").replace(/,/g, ""),
+                ) > 0 && (
+                  <div className="allowance-deduction-item">
+                    <span className="item-name">Night Differential</span>
+                    <span className="item-amount positive">
+                      +
+                      {formatPeso(
+                        Number(
+                          String(selectedPayslip.night_diff_pay ?? "0").replace(
+                            /,/g,
+                            "",
+                          ),
+                        ),
+                      )}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Totals Summary */}

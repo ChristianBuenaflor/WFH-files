@@ -190,6 +190,151 @@
   background: #ffc1078c;
   color: rgb(48, 48, 48);
 }
+
+.overview-layout-grid {
+  width: 100%;
+}
+
+.attendance-summary-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-height: 100%;
+}
+
+.attendance-summary-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1rem 1rem 0.9rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.summary-header-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.7rem;
+}
+
+.summary-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.theme-present {
+  background: #7ccf92;
+}
+
+.theme-absent {
+  background: #f4a1a1;
+}
+
+.theme-late {
+  background: #f5d56d;
+}
+
+.summary-label {
+  color: #0f172a;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.summary-value-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  margin-bottom: 0.7rem;
+}
+
+.summary-value {
+  font-size: 2.5rem;
+  line-height: 1;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.summary-unit {
+  color: #64748b;
+  font-size: 0.8rem;
+  padding-bottom: 0.35rem;
+}
+
+.summary-pill-wrap {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.summary-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.summary-pill.present {
+  background: #dff7e5;
+  color: #2d8a4d;
+}
+
+.summary-pill.absent {
+  background: #fde8e8;
+  color: #b42318;
+}
+
+.summary-pill.late {
+  background: #fff1c2;
+  color: #8a6a00;
+}
+
+.upcoming-holidays-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.upcoming-holiday-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.55rem 0.25rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.upcoming-holiday-item:last-child {
+  border-bottom: none;
+}
+
+.holiday-bullet {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #74bd91;
+  margin-top: 0.4rem;
+  flex-shrink: 0;
+}
+
+.holiday-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.holiday-text strong {
+  font-size: 0.85rem;
+  color: #0f172a;
+}
+
+.holiday-text small {
+  color: #475569;
+  line-height: 1.4;
+}
 /* ===============================
    TABLE
 ================================= */
@@ -221,19 +366,13 @@
 ================================= */
 
 .announcement-card {
-  border: 1px solid #e2e8f0;
+  border: 1px solid #e2e8f05e;
   padding: 1rem;
   transition: all 0.2s ease;
   background: #ffffff;
-  margin-bottom: 5px;
-  border-radius: 8px;
 
 }
 
-.announcement-card:hover {
-  background: #f9fafb;
-  border-color: #cbd5e1;
-}
 
 .announcement-title {
   font-weight: 600;
@@ -326,11 +465,49 @@
 .monthly-target-card .card-body {
   position: relative;
   z-index: 1;
+  padding-top: 1.9rem !important;
+  padding-bottom: 1.9rem !important;
+  padding-left: 1.25rem !important;
+  padding-right: 1.25rem !important;
+}
+
+.monthly-target-inner-box {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 12px;
+  padding: 1rem 1rem 0.9rem;
+  margin: 0.9rem 0 1.1rem;
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(2px);
+}
+
+.monthly-target-inner-box .text-white.fw-semibold.fs-5 {
+  font-size: 1.1rem !important;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+}
+
+.target-mini-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .monthly-target-card .progress {
   background-color: rgba(255, 255, 255, 0.2);
   border-radius: 4px;
+  margin-top: 0.25rem;
 }
 
 .monthly-target-card .progress-bar {

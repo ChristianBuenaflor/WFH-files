@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Offcanvas, Modal } from "react-bootstrap";
-import { Megaphone } from "react-bootstrap-icons";
+import {
+  Megaphone,
+  Envelope,
+  EnvelopeOpen,
+} from "react-bootstrap-icons";
 import "@/components/layout/Adminlayout.css";
 import api from "@/config/axios";
 import { useAuth } from "@/context/AuthContext.jsx";
@@ -112,7 +116,12 @@ const Announcement = () => {
           <Offcanvas.Title>Announcements</Offcanvas.Title>
         </Offcanvas.Header>
         <Offcanvas.Body className="announcement-list-body">
-          {notifications.length === 0 ? (
+          {loading && notifications.length === 0 ? (
+            <div className="empty-notification text-center py-4">
+              <div className="spinner-border text-primary mb-2" role="status" aria-hidden="true"></div>
+              <p className="text-muted mb-0">Loading announcements...</p>
+            </div>
+          ) : notifications.length === 0 ? (
             <div className="empty-notification">
               <p className="text-muted mb-0">No new announcements</p>
             </div>
@@ -125,18 +134,38 @@ const Announcement = () => {
                   className={`announcement-card announcement-list-item ${!notification.is_seen ? "announcement-unread" : ""}`}
                   onClick={() => openAnnouncementModal(notification.id)}
                 >
-                  <div className="d-flex align-items-center justify-content-between">
-                    <strong>
-                      <h6>{notification.title}</h6>
+                  <div className="d-flex justify-content-between align-items-start gap-2 w-100">
+                    <strong className="text-start">
+                      <h6 className="mb-0">{notification.title}</h6>
                     </strong>
-                    <p className="text-end fst-italic mb-1 small">
-                      {formatDate(notification.created_at)}
-                    </p>
+
+                    <span
+                      aria-label={notification.is_seen ? "Read announcement" : "Unread announcement"}
+                      title={notification.is_seen ? "Read announcement" : "Unread announcement"}
+                      style={{
+                        color: notification.is_seen ? "#6c757d" : "#0d6efd",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {notification.is_seen ? (
+                        <EnvelopeOpen size={14} />
+                      ) : (
+                        <Envelope size={14} />
+                      )}
+                    </span>
                   </div>
 
                   <p className="text-muted mb-1">
                     {notification.content.substring(0, 80)}...
                   </p>
+                  <div className="d-flex justify-content-end">
+                    <small className="text-muted fs-7">
+                      {formatDate(notification.created_at)}
+                    </small>
+                  </div>
                 </button>
               ))}
             </div>

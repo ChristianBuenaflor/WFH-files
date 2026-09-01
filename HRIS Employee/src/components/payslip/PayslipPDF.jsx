@@ -4,6 +4,22 @@ import "@/components/payslip/PayslipPDF.css";
 const PayslipPDF = forwardRef(({ payslip, formatPeso }, ref) => {
   if (!payslip) return null;
 
+  const normalizeHoliday = (holiday = {}) => {
+    if (!holiday || typeof holiday !== "object") {
+      return { name: "Holiday", date: "", type: "" };
+    }
+
+    return {
+      name:
+        holiday.holiday_name ||
+        holiday.name ||
+        holiday.holiday ||
+        "Holiday",
+      date: holiday.holiday_date || holiday.date || holiday.holidayDate || "",
+      type: holiday.holiday_type || holiday.type || "",
+    };
+  };
+
   const calculateTotal = (items) => {
     return items?.reduce((sum, item) => {
       const amount = Number(String(item.allowance_amount || item.deduction_amount).replace(/,/g, ""));
@@ -11,10 +27,10 @@ const PayslipPDF = forwardRef(({ payslip, formatPeso }, ref) => {
     }, 0) || 0;
   };
 
-  const totalAllowances = calculateTotal(payslip.allowances);
   const totalDeductionsAmount = calculateTotal(payslip.deductions);
-  const basicSalary = Number(String(payslip.gross_pay).replace(/,/g, "")) - totalAllowances;
-  const holidays = payslip.holidays || payslip.holiday_dates || [];
+  const basicSalary = Number(String(payslip.base_salary || payslip.gross_base || 0).replace(/,/g, ""));
+  const nightDiff = Number(String(payslip.night_diff_pay || "0").replace(/,/g, ""));
+  const holidays = (payslip.holidays || payslip.holiday_dates || []).map((holiday) => normalizeHoliday(holiday));
 
   return (
     <div ref={ref} className="pdf-container">
@@ -84,7 +100,7 @@ const PayslipPDF = forwardRef(({ payslip, formatPeso }, ref) => {
             <span className="pdf-detail-value">
               {holidays.length > 0
                 ? holidays
-                    .map((holiday) => `${holiday.name} (${holiday.date})`)
+                    .map((holiday) => `${holiday.name}${holiday.date ? ` (${holiday.date})` : ""}`)
                     .join(", ")
                 : "None"}
             </span>
@@ -109,6 +125,12 @@ const PayslipPDF = forwardRef(({ payslip, formatPeso }, ref) => {
                 <td>Basic Salary (8.00 days @ ₱{formatPeso(basicSalary / 8)})</td>
                 <td>{formatPeso(basicSalary)}</td>
               </tr>
+              {nightDiff > 0 && (
+                <tr>
+                  <td>Night Differential</td>
+                  <td>{formatPeso(nightDiff)}</td>
+                </tr>
+              )}
               {payslip.allowances?.map((a, i) => (
                 <tr key={i}>
                   <td>{a.allowance_type}</td>
