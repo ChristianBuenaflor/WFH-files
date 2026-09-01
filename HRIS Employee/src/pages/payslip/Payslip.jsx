@@ -696,6 +696,13 @@ const Payslip = ({ setIsAuth }) => {
                     )}
                   </span>
                 </div>
+
+                <div className="allowance-deduction-item mt-2">
+                  <span className="item-name">
+                    <strong>Night Rate</strong>
+                  </span>
+                </div>
+
                 {Number(
                   String(selectedPayslip.night_diff_pay ?? "0").replace(/,/g, ""),
                 ) > 0 && (
