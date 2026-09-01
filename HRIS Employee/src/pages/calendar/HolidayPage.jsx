@@ -44,18 +44,15 @@ const HolidayPage = ({ setIsAuth }) => {
       setLoading(true);
       setError(null);
       try {
-        const visibleWeekStart = new Date(selectedDate);
-        const selectedDay = visibleWeekStart.getDay();
-        visibleWeekStart.setDate(
-          visibleWeekStart.getDate() + (selectedDay === 0 ? -6 : 1 - selectedDay),
-        );
-
         const months = new Map();
-        for (let index = 0; index < 5; index += 1) {
-          const date = new Date(visibleWeekStart);
-          date.setDate(visibleWeekStart.getDate() + index);
-          const key = `${date.getFullYear()}-${date.getMonth() + 1}`;
-          months.set(key, { month: date.getMonth() + 1, year: date.getFullYear() });
+        const startMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1);
+        const endMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 2, 1);
+
+        for (let cursor = new Date(startMonth); cursor <= endMonth; cursor.setMonth(cursor.getMonth() + 1)) {
+          const month = cursor.getMonth() + 1;
+          const year = cursor.getFullYear();
+          const key = `${year}-${month}`;
+          months.set(key, { month, year });
         }
 
         const [calendarResponses, attendanceResponse] = await Promise.all([
@@ -153,7 +150,9 @@ const HolidayPage = ({ setIsAuth }) => {
   };
 
   const holidayRecords = useMemo(
-    () => calendarData.filter((record) => getHolidayData(record)),
+    () => [...calendarData]
+      .filter((record) => getHolidayData(record))
+      .sort((a, b) => new Date(a.date) - new Date(b.date)),
     [calendarData],
   );
 
@@ -430,11 +429,11 @@ const HolidayPage = ({ setIsAuth }) => {
         {holidayRecords.length > 0 && (
           <section className="upcoming-holidays" aria-labelledby="upcoming-holidays-title">
             <div>
-              <p className="upcoming-holidays-eyebrow">This month</p>
-              <h2 id="upcoming-holidays-title">Upcoming Holidays</h2>
+              <p className="upcoming-holidays-eyebrow">All holidays</p>
+              <h2 id="upcoming-holidays-title">Holiday List</h2>
             </div>
             <div className="upcoming-holidays-list">
-              {holidayRecords.slice(0, 3).map((record) => (
+              {holidayRecords.map((record) => (
                 <button
                   type="button"
                   className="upcoming-holiday-item"
