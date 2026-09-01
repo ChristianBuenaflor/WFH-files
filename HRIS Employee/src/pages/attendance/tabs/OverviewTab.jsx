@@ -56,6 +56,7 @@ const OverviewTab = ({
   const overlayRef = useRef(null);
   const detectionInterval = useRef(null);
   const captureTimeout = useRef(null);
+  const cameraStartedRef = useRef(false);
 
   const [showFaceModal, setShowFaceModal] = useState(false);
   const [faceAligned, setFaceAligned] = useState(false);
@@ -90,16 +91,37 @@ const OverviewTab = ({
   }, []);
 
   const startCamera = async () => {
+    if (cameraStartedRef.current) return;
+    cameraStartedRef.current = true;
+
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error("Camera API not available. Make sure you are on HTTPS.");
       }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: { ideal: 640 }, height: { ideal: 480 } },
       });
-      videoRef.current.srcObject = stream;
+
+      const video = videoRef.current;
+      if (!video) {
+        throw new Error("Video element is not ready yet.");
+      }
+
+      video.srcObject = stream;
+      video.muted = true;
+      video.playsInline = true;
+      video.autoplay = true;
       setCameraStream(stream);
-      videoRef.current.onloadedmetadata = () => startDetection();
+
+      await new Promise((resolve, reject) => {
+        video.onloadedmetadata = resolve;
+        video.onerror = reject;
+        if (video.readyState >= 2) resolve();
+      });
+
+      await video.play();
+      startDetection();
     } catch (err) {
       console.error("Camera error:", err);
       let errorMessage = "Camera access denied. ";
@@ -110,6 +132,7 @@ const OverviewTab = ({
       } else {
         errorMessage += err.message;
       }
+      cameraStartedRef.current = false;
       setCaptureErrorMessage(errorMessage);
       setShowFaceModal(false);
     }
@@ -119,13 +142,21 @@ const OverviewTab = ({
     if (cameraStream) {
       cameraStream.getTracks().forEach((track) => track.stop());
     }
-    if (videoRef.current && videoRef.current.srcObject) {
+    if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
-    if (detectionInterval.current) clearInterval(detectionInterval.current);
-    if (captureTimeout.current) clearTimeout(captureTimeout.current);
+    if (detectionInterval.current) {
+      clearInterval(detectionInterval.current);
+      detectionInterval.current = null;
+    }
+    if (captureTimeout.current) {
+      clearTimeout(captureTimeout.current);
+      captureTimeout.current = null;
+    }
+    cameraStartedRef.current = false;
     clockActionRef.current = null;
     setCameraStream(null);
+    setFaceAligned(false);
   };
 
   const drawGuide = () => {
@@ -233,13 +264,31 @@ const OverviewTab = ({
     }
   };
 
+  useEffect(() => {
+    if (!showFaceModal) {
+      stopCamera();
+      return;
+    }
+
+    if (loadingModels || cameraStartedRef.current || cameraStream) {
+      return;
+    }
+
+    const startTimer = setTimeout(() => {
+      if (videoRef.current && !cameraStartedRef.current) {
+        startCamera();
+      }
+    }, 150);
+
+    return () => clearTimeout(startTimer);
+  }, [showFaceModal, loadingModels, cameraStream]);
+
   const handleClockInClick = () => {
     setClockAction("in");
     clockActionRef.current = "in";
     setCaptureErrorMessage("");
     setVerificationMessage("");
     setShowFaceModal(true);
-    setTimeout(startCamera, 300);
   };
 
   const handleClockOutClick = () => {
@@ -248,7 +297,6 @@ const OverviewTab = ({
     setCaptureErrorMessage("");
     setVerificationMessage("");
     setShowFaceModal(true);
-    setTimeout(startCamera, 300);
   };
 
   // Calculate paginated recent attendance data
