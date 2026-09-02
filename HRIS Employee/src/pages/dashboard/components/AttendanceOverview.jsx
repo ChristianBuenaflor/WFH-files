@@ -209,6 +209,10 @@ const AttendanceOverview = () => {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: { ideal: 640 }, height: { ideal: 480 } },
       });
+      if (!videoRef.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        throw new Error("Camera preview is not ready. Please try again.");
+      }
       videoRef.current.srcObject = stream;
       setCameraStream(stream);
       videoRef.current.onloadedmetadata = () => startDetection();
@@ -359,6 +363,12 @@ const AttendanceOverview = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (showFaceModal && !loadingModels) {
+      startCamera();
+    }
+  }, [showFaceModal, loadingModels]);
+
   // ---------- Clock handlers (now open face modal) ----------
   const handleClockIn = () => {
     setClockAction("in");
@@ -366,7 +376,6 @@ const AttendanceOverview = () => {
     setCaptureErrorMessage("");
     setVerificationMessage("");
     setShowFaceModal(true);
-    setTimeout(startCamera, 300);
   };
 
   const handleClockOut = () => {
@@ -375,7 +384,6 @@ const AttendanceOverview = () => {
     setCaptureErrorMessage("");
     setVerificationMessage("");
     setShowFaceModal(true);
-    setTimeout(startCamera, 300);
   };
 
   // ---------- Report submit (with face data if available) ----------

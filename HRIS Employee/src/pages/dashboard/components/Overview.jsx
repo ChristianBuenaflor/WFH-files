@@ -1,7 +1,34 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Card, Row, Col } from "react-bootstrap";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Legend,
+  Tooltip,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  LabelList,
+} from "recharts";
 import api from "@/config/axios";
+
+const getHolidayDate = (holiday = {}) => {
+  const value = holiday.holiday_date || holiday.date || holiday.holidayDate || "";
+  return value ? String(value).slice(0, 10) : "";
+};
+
+const getHolidayName = (holiday = {}) =>
+  holiday.holiday_name || holiday.name || holiday.holiday || "Holiday";
+
+const getHolidayRecords = (responseData) => {
+  if (Array.isArray(responseData)) return responseData;
+  const records = responseData?.data || responseData?.holidays || responseData?.records;
+  return Array.isArray(records) ? records : [];
+};
 
 const Overview = ({ selectedMonth, selectedYear }) => {
   const [error, setError] = useState(null);
@@ -64,25 +91,6 @@ const Overview = ({ selectedMonth, selectedYear }) => {
             }
           });
 
-          const holidayItems = calendar
-            .filter((record) => {
-              const holidayName = record.holiday?.name || record.holiday_name || record.name;
-              const holidayDate = record.date || record.holiday_date;
-              return Boolean(holidayName) && Boolean(holidayDate);
-            })
-            .map((record) => ({
-              id: record.date || record.holiday_date,
-              name: record.holiday?.name || record.holiday_name || record.name,
-              date: record.date || record.holiday_date,
-            }))
-            .filter(
-              (item, index, array) =>
-                array.findIndex((entry) => entry.id === item.id) === index,
-            )
-            .slice(0, 4);
-
-          setUpcomingHolidays(holidayItems);
-
           const total = present + absent + late;
 
           setAttendanceData({
@@ -105,6 +113,43 @@ const Overview = ({ selectedMonth, selectedYear }) => {
 
     fetchOverviewData();
   }, [monthValue, yearValue]);
+
+  useEffect(() => {
+    const fetchUpcomingHolidays = async () => {
+      try {
+        const response = await api.get("/getholidays");
+        const today = new Date();
+        const todayKey = [today.getFullYear(), today.getMonth() + 1, today.getDate()]
+          .map((value, index) => (index === 0 ? value : String(value).padStart(2, "0")))
+          .join("-");
+
+        const holidayItems = getHolidayRecords(response.data)
+          .filter((holiday) => holiday.is_archived === 0)
+          .map((holiday) => {
+            const date = getHolidayDate(holiday);
+
+            return {
+              id: date,
+              name: getHolidayName(holiday),
+              date,
+            };
+          })
+          .filter((holiday) => /^\d{4}-\d{2}-\d{2}$/.test(holiday.date) && holiday.date >= todayKey)
+          .sort((a, b) => a.date.localeCompare(b.date))
+          .filter(
+            (holiday, index, holidays) =>
+              holidays.findIndex((item) => item.id === holiday.id) === index,
+          )
+          .slice(0, 4);
+
+        setUpcomingHolidays(holidayItems);
+      } catch {
+        setUpcomingHolidays([]);
+      }
+    };
+
+    fetchUpcomingHolidays();
+  }, []);
 
   const stats = [
     {
@@ -207,40 +252,63 @@ const Overview = ({ selectedMonth, selectedYear }) => {
           </Card>
         </Col>
 
-        <Col lg={3} md={12}>
+        <Col lg={4} md={12}>
           <Card className="dashboard-card-modern h-100">
             <Card.Header className="card-header-custom">
               <h5>Attendance Summary</h5>
             </Card.Header>
             <Card.Body className="p-3">
               {!loading && !error && (
-                <div className="attendance-summary-stack">
-                  {stats.map((item) => (
-                    <div key={item.label} className="attendance-summary-card">
-                      <div className="summary-header-row">
-                        <span className={`summary-dot ${item.dotClass}`} />
-                        <span className="summary-label">{item.label}</span>
-                      </div>
+                <div className="attendance-summary-chart">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={stats} margin={{ top: 24, right: 8, left: -24, bottom: 0 }}>
+                      <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="label" tick={{ fontSize: 16 }} axisLine={false} tickLine={false} />
+                      <YAxis allowDecimals={false} axisLine={false} tickLine={false} width={32} />
+                      <Tooltip
+                        cursor={{ fill: "rgba(226, 232, 240, 0.35)" }}
+                        content={({ active, payload }) => {
+                          if (!active || !payload?.length) return null;
+                          const item = payload[0].payload;
 
-                      <div className="summary-value-row">
-                        <span className="summary-value">{item.count}</span>
-                        <span className="summary-unit">days</span>
-                      </div>
-
-                      <div className="summary-pill-wrap">
-                        <span className={`summary-pill ${item.tone}`}>
-                          {item.percentage}%
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                          return (
+                            <div className="summary-chart-tooltip">
+                              <strong>{item.label}</strong>
+                              <span>{item.count} days</span>
+                              <span>{item.percentage}%</span>
+                            </div>
+                          );
+                        }}
+                      />
+                      <Bar dataKey="count" radius={[5, 5, 0, 0]}>
+                        {stats.map((item) => (
+                          <Cell key={item.label} fill={
+                            item.tone === "present"
+                              ? "#28a745"
+                              : item.tone === "absent"
+                                ? "#dc3545"
+                                : "#ffc107"
+                          } />
+                        ))}
+                        <LabelList dataKey="count" position="top" fill="#0f172a" fontSize={16} />
+                      </Bar>
+                       <LabelList
+                          dataKey="percentage"
+                          position="insideBottom"
+                          formatter={(value) => `${value}%`}
+                          fill="#0f172a"
+                          fontSize={11}
+                          fontWeight={600}
+                        />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
               )}
             </Card.Body>
           </Card>
         </Col>
 
-        <Col lg={4} md={12}>
+        <Col lg={3} md={12}>
           <Card className="dashboard-card-modern h-100">
             <Card.Header className="card-header-custom">
               <h5>Upcoming Holidays</h5>

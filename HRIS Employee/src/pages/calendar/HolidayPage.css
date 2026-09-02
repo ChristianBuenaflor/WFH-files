@@ -35,6 +35,32 @@
   background: #fff;
 }
 
+.holiday-calendar-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 5px;
+  transition: grid-template-columns 0.32s ease;
+}
+
+.holiday-calendar-layout.sidebar-open {
+  grid-template-columns: minmax(0, 3fr) minmax(220px, 1fr);
+}
+
+.holiday-sidebar-open .teams-calendar-toolbar,
+.holiday-sidebar-open .teams-calendar-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(220px, 1fr);
+  column-gap: 14px;
+  padding-right: 10px;
+  padding-left: 10px;
+}
+
+.holiday-sidebar-open .teams-toolbar-right {
+  justify-content: flex-end;
+  padding-right: 0;
+  border-left: 1px solid #e2e8f0;
+}
+
 .teams-filter-button {
   padding: 5px 12px;
   border: 1px solid #dbe3ed;
@@ -212,7 +238,6 @@
   overflow: auto;
   min-height: calc(100vh - 128px);
   border: 1px solid #dbe3ed;
-  border-radius: 8px;
   background: #fff;
 }
 
@@ -323,11 +348,52 @@ button.teams-event {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  margin-top: 14px;
+  margin-top: 25px;
   padding: 16px 18px;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
   background: #fff;
+  animation: holiday-sidebar-enter 0.32s ease both;
+}
+
+@keyframes holiday-sidebar-enter {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.upcoming-holidays-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.holiday-sidebar-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border: 1px solid #dbe3ed;
+  border-radius: 4px;
+  background: #fff;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.holiday-sidebar-toggle:hover,
+.holiday-sidebar-toggle[aria-expanded="true"] {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
 }
 
 .upcoming-holidays-eyebrow {
@@ -350,6 +416,23 @@ button.teams-event {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.sidebar-open .upcoming-holidays {
+  align-items: stretch;
+  flex-direction: column;
+  justify-content: flex-start;
+  margin-top: 0;
+}
+
+.sidebar-open .upcoming-holidays-list {
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.sidebar-open .upcoming-holiday-item {
+  width: 100%;
+  min-width: 0;
 }
 
 .upcoming-holiday-item {
@@ -495,9 +578,10 @@ button.teams-event {
   flex-direction: column;
   justify-content: center;
   min-height: 28px;
-  height: 28px;
-  padding-top: 4px;
-  padding-bottom: 4px;
+  height: 36px;
+  min-height: 36px;
+  padding-top: 8px;
+  padding-bottom: 8px;
   line-height: 1.2;
 }
 
@@ -559,6 +643,23 @@ button.teams-event {
 }
 
 @media (max-width: 700px) {
+  .holiday-calendar-layout,
+  .holiday-calendar-layout.sidebar-open {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .holiday-sidebar-open .teams-calendar-toolbar,
+  .holiday-sidebar-open .teams-calendar-filters {
+    display: flex;
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .holiday-sidebar-open .teams-toolbar-right {
+    padding-right: 0;
+    border-left: 0;
+  }
+
   .teams-calendar-toolbar {
     align-items: flex-start;
     flex-direction: column;

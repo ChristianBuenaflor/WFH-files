@@ -18,6 +18,7 @@ const HolidayPage = ({ setIsAuth }) => {
   const [error, setError] = useState(null);
   const [activeFilter, setActiveFilter] = useState("all");
   const [selectedHoliday, setSelectedHoliday] = useState(null);
+  const [isHolidaySidebarOpen, setIsHolidaySidebarOpen] = useState(false);
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
   const [pickerDate, setPickerDate] = useState(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
   const monthPickerRef = useRef(null);
@@ -55,13 +56,14 @@ const HolidayPage = ({ setIsAuth }) => {
           months.set(key, { month, year });
         }
 
-        const [calendarResponses, attendanceResponse] = await Promise.all([
+        const [calendarResponses, attendanceResponse, holidaysResponse] = await Promise.all([
           Promise.all(
             Array.from(months.values()).map(({ month, year }) =>
               api.get("/dashboard/calendar", { params: { month, year } }),
             ),
           ),
           api.get("/my-attendance"),
+          api.get("/getholidays"),
         ]);
 
         if (isCurrentRequest) {
@@ -72,9 +74,33 @@ const HolidayPage = ({ setIsAuth }) => {
             attendanceResponse.data?.attendance ||
             attendanceResponse.data?.recentAttendance ||
             [];
+          const holidayRecords = Array.isArray(holidaysResponse.data)
+            ? holidaysResponse.data
+            : holidaysResponse.data?.data ||
+              holidaysResponse.data?.holidays ||
+              holidaysResponse.data?.records ||
+              [];
           const recordsByDate = new Map(
             calendarRecords.map((record) => [record.date, record]),
           );
+
+          holidayRecords.forEach((holiday) => {
+            if (holiday.is_archived === 1) return;
+
+            const holidayDate = holiday.holiday_date || holiday.date || holiday.holidayDate;
+            if (!holidayDate) return;
+
+            const date = String(holidayDate).slice(0, 10);
+            const existingRecord = recordsByDate.get(date) || {};
+            recordsByDate.set(date, {
+              ...existingRecord,
+              date,
+              holiday: existingRecord.holiday || {
+                name: holiday.holiday_name || holiday.name || holiday.holiday || "Holiday",
+                type: holiday.holiday_type || holiday.type || "Holiday",
+              },
+            });
+          });
 
           attendanceRecords.forEach((attendance) => {
             const attendanceDate = attendance.clock_in?.slice(0, 10) || attendance.date;
@@ -270,9 +296,14 @@ const HolidayPage = ({ setIsAuth }) => {
     setIsMonthPickerOpen(false);
   };
 
+  const selectHoliday = (record) => {
+    setSelectedHoliday(record);
+    selectCalendarDate(new Date(`${record.date}T00:00:00`));
+  };
+
   return (
     <AdminLayout setIsAuth={setIsAuth}>
-      <main className="holiday-page teams-calendar-page">
+      <main className={`holiday-page teams-calendar-page ${isHolidaySidebarOpen ? "holiday-sidebar-open" : ""}`}>
         <div className="teams-calendar-toolbar">
           <div className="teams-toolbar-left month-picker-wrapper" ref={monthPickerRef}>
             <button type="button" className="teams-today-button" onClick={() => setSelectedDate(new Date())}>Today</button>
@@ -332,10 +363,19 @@ const HolidayPage = ({ setIsAuth }) => {
           </div>
           <div className="teams-toolbar-right">
             <span>{weekLabel}</span>
+            <button
+              type="button"
+              className="holiday-sidebar-toggle"
+              onClick={() => setIsHolidaySidebarOpen((isOpen) => !isOpen)}
+              aria-label={isHolidaySidebarOpen ? "Close holiday sidebar" : "Open holiday sidebar"}
+              aria-expanded={isHolidaySidebarOpen}
+            >
+              <span aria-hidden="true">&#9776;</span>
+            </button>
           </div>
         </div>
 
-        <div className="teams-calendar-filters" role="group" aria-label="Calendar filters">
+        {/* <div className="teams-calendar-filters" role="group" aria-label="Calendar filters">
           {["all", "attendance", "holidays", "leave"].map((filter) => (
             <button
               key={filter}
@@ -347,11 +387,12 @@ const HolidayPage = ({ setIsAuth }) => {
               {filter.charAt(0).toUpperCase() + filter.slice(1)}
             </button>
           ))}
-        </div>
+        </div> */}
 
         {error && <div className="alert alert-danger">{error}</div>}
 
-        <div className="teams-calendar-shell">
+        <div className={`holiday-calendar-layout ${isHolidaySidebarOpen ? "sidebar-open" : ""}`}>
+          <div className="teams-calendar-shell">
           <div className="teams-calendar-header">
             <div className="teams-time-column-label">All day</div>
             {weekDays.map((date) => (
@@ -424,32 +465,35 @@ const HolidayPage = ({ setIsAuth }) => {
           </div>
 
           {loading && <div className="teams-calendar-loading">Loading calendar...</div>}
-        </div>
+          </div>
 
-        {holidayRecords.length > 0 && (
-          <section className="upcoming-holidays" aria-labelledby="upcoming-holidays-title">
-            <div>
-              <p className="upcoming-holidays-eyebrow">All holidays</p>
-              <h2 id="upcoming-holidays-title">Holiday List</h2>
-            </div>
-            <div className="upcoming-holidays-list">
-              {holidayRecords.map((record) => (
-                <button
-                  type="button"
-                  className="upcoming-holiday-item"
-                  key={record.date}
-                  onClick={() => setSelectedHoliday(record)}
-                >
-                  <span className="upcoming-holiday-dot" />
-                  <span>
-                    <strong>{new Date(`${record.date}T00:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</strong>
-                    <small>{getHolidayName(record)}</small>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
+          {holidayRecords.length > 0 && isHolidaySidebarOpen && (
+            <section className="upcoming-holidays" aria-labelledby="upcoming-holidays-title">
+              <div className="upcoming-holidays-header">
+                <div>
+                  <p className="upcoming-holidays-eyebrow">All holidays</p>
+                  <h2 id="upcoming-holidays-title">Holiday List</h2>
+                </div>
+              </div>
+              <div className="upcoming-holidays-list">
+                {holidayRecords.map((record) => (
+                  <button
+                    type="button"
+                    className="upcoming-holiday-item"
+                    key={record.date}
+                    onClick={() => selectHoliday(record)}
+                  >
+                    <span className="upcoming-holiday-dot" />
+                    <span>
+                      <strong>{new Date(`${record.date}T00:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</strong>
+                      <small>{getHolidayName(record)}</small>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
 
         <Modal show={Boolean(selectedHoliday)} onHide={() => setSelectedHoliday(null)} centered>
           <Modal.Header closeButton>

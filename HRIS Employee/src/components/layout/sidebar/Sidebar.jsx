@@ -10,6 +10,7 @@ import {
   BoxArrowRight,
   Speedometer2,
   FilePost,
+  JournalText,
 } from "react-bootstrap-icons";
 import "@/components/layout/sidebar/Sidebar.css";
 import logo from "@/assets/images/cropped-SnL-Logo-480x480.png";
@@ -26,6 +27,7 @@ const Sidebar = ({ show, handleClose }) => {
     speedometer2: <Speedometer2 />,
     logout: <BoxArrowRight />,
     "file-post": <FilePost />,
+    "journal-text": <JournalText />,
 
   };
 
@@ -61,6 +63,12 @@ const Sidebar = ({ show, handleClose }) => {
       label: "Lessons",
       icon: "file-post",
       path: "/lessons",
+    },
+    {
+      id: "report",
+      label: "Reports",
+      icon: "journal-text",
+      path: "/report",
     },
   ];
 

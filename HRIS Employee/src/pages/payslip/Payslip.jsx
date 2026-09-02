@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import PayslipPDF from "@/components/payslip/PayslipPDF";
+import PayslipDetails from "@/pages/payslip/components/PayslipDetails";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import "@/pages/payslip/Payslip.css";
-import Offcanvas from "react-bootstrap/Offcanvas";
 import api from "@/config/axios";
 import AdminLayout from "@/components/layout/Adminlayout";
 import {
@@ -23,7 +23,6 @@ import {
   FileText,
   CurrencyDollar,
   FileEarmarkText,
-  CalendarDate,
   Download,
 } from "react-bootstrap-icons";
 
@@ -33,6 +32,7 @@ const Payslip = ({ setIsAuth }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [show, setShow] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
 
@@ -149,7 +149,8 @@ const Payslip = ({ setIsAuth }) => {
   // Fetch payslip by ID
   const fetchPayslipById = async (record_id) => {
     try {
-      setIsLoading(true);
+      setIsDetailLoading(true);
+      setSelectedPayslip(null);
       const res = await api.get(`/my-payslip/${record_id}`);
       const detail = res.data?.payslip;
       setSelectedPayslip(detail);
@@ -160,7 +161,7 @@ const Payslip = ({ setIsAuth }) => {
         error.response?.data || error.message,
       );
     } finally {
-      setIsLoading(false);
+      setIsDetailLoading(false);
     }
   };
   // Fetch payslips with pagination
@@ -431,8 +432,8 @@ const Payslip = ({ setIsAuth }) => {
                     <Card.Footer className="payslip-card-footer">
                       <Button
                         onClick={() => {
-                          fetchPayslipById(payslip.record_id);
                           handleShow();
+                          fetchPayslipById(payslip.record_id);
                         }}
                         variant="primary"
                       >
@@ -487,7 +488,16 @@ const Payslip = ({ setIsAuth }) => {
             </div>
           )}
         </div>
-        <Offcanvas
+        <PayslipDetails
+          show={show}
+          onClose={handleClose}
+          onDownload={downloadPDF}
+          payslip={selectedPayslip}
+          isLoading={isDetailLoading}
+          holidays={payslipHolidays}
+          formatPeso={formatPeso}
+        />
+        {show && selectedPayslip && payslipHolidays.length < 0 && <Offcanvas
           show={show}
           onHide={handleClose}
           placement="bottom"
@@ -770,7 +780,7 @@ const Payslip = ({ setIsAuth }) => {
               </div>
             </Offcanvas.Body>
           )}
-        </Offcanvas>
+        </Offcanvas>}
         {/* Hidden but renderable */}
         <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
           <PayslipPDF

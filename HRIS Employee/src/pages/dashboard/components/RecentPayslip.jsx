@@ -1,19 +1,17 @@
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useState, useCallback } from "react";
 import { Card, Button, Row, Col } from "react-bootstrap";
-import { FileEarmarkRuled, FileEarmarkText, CalendarDate, Download } from "react-bootstrap-icons";
+import { FileEarmarkRuled, Download } from "react-bootstrap-icons";
 import { Link } from "react-router-dom";
 import api from "@/config/axios";
 import ReactDOM from "react-dom/client";
-import Offcanvas from "react-bootstrap/Offcanvas";
 import "@/pages/payslip/Payslip.css";
-import PayslipPDF from "@/components/payslip/PayslipPDF";
+import PayslipDetails from "@/pages/payslip/components/PayslipDetails";
 
 const RecentPayslip = ({ recentPayslips = [], pdfRef }) => {
   const [downloadingId, setDownloadingId] = useState(null);
   const [show, setShow] = useState(false);
   const [selectedPayslip, setSelectedPayslip] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const detailsPdfRef = useRef();
 
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
@@ -199,253 +197,14 @@ const RecentPayslip = ({ recentPayslips = [], pdfRef }) => {
         )}
       </Card.Body>
     </Card>
-    <Offcanvas
+    <PayslipDetails
       show={show}
-      onHide={handleClose}
-      placement="bottom"
-      className="payslip-offcanvas h-75"
-    >
-      <Offcanvas.Header closeButton className="payslip-offcanvas-header">
-        <Offcanvas.Title className="payslip-offcanvas-title">
-          <FileEarmarkText size={20} className="me-2" />
-          Payslip Details
-        </Offcanvas.Title>
-      </Offcanvas.Header>
-      {selectedPayslip && (
-        <Offcanvas.Body className="payslip-offcanvas-body p-4">
-          {/* Date Range */}
-          <div className="payslip-detail-section">
-            <div className="detail-date-info">
-              <p className="detail-date-label">
-                <CalendarDate size={16} className="me-2" />
-                {selectedPayslip.period}
-              </p>
-              <p className="detail-generated">
-                Generated: {selectedPayslip.generated_at}
-                <p>{selectedPayslip.employee_id || "--No employee ID--"}</p>
-              </p>
-            </div>
-          </div>
-
-          {/* Remarks Section */}
-          <div className="payslip-detail-section">
-            <h6 className="detail-section-title">Remarks</h6>
-            <div className="remarks-box">
-              <p className="remarks-text">
-                {selectedPayslip.remarks || "--No additional remarks--"}
-              </p>
-            </div>
-          </div>
-          {/* Attendance Information Section */}
-              <div className="payslip-detail-section">
-                <h6 className="detail-section-title">Attendance Summary</h6>
-                <div className="allowance-deduction-item">
-                  <span className="item-name">Days Worked</span>
-                  <span className="item-amount">
-                    {selectedPayslip.days_worked} days
-                  </span>
-                </div>
-                <div className="allowance-deduction-item">
-                  <span className="item-name">Absences</span>
-                  <span className="item-amount">
-                    {selectedPayslip.absences} days
-                  </span>
-                </div>
-                {selectedPayslip.total_late_deductions > 0 && (
-                  <div className="allowance-deduction-item">
-                    <span className="item-name">Late Deduction</span>
-                    <span className="item-amount negative">
-                      -{formatPeso(Number(String(selectedPayslip.total_late_deductions).replace(/,/g, "")))}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-          {/* Summary Boxes */}
-          <Row className="mb-4">
-            <Col lg={4} className="mb-2">
-              <div className="summary-detail-box summary-detail-blue">
-                <p className="summary-detail-label">Total Gross Pay</p>
-                <h6 className="summary-detail-value">
-                  {formatPeso(
-                    Number(
-                      String(selectedPayslip.gross_pay).replace(/,/g, ""),
-                    ),
-                  )}
-                </h6>
-              </div>
-            </Col>
-            <Col lg={4} className="mb-2">
-              <div className="summary-detail-box summary-detail-yellow">
-                <p className="summary-detail-label">Total Deductions</p>
-                <h6 className="summary-detail-value-danger">
-                  -{" "}
-                  {formatPeso(
-                    Number(
-                      String(selectedPayslip.total_deductions).replace(
-                        /,/g,
-                        "",
-                      ),
-                    ),
-                  )}
-                </h6>
-              </div>
-            </Col>
-            <Col lg={4} className="mb-2">
-              <div className="summary-detail-box summary-detail-green">
-                <p className="summary-detail-label">Net Pay</p>
-                <h6 className="summary-detail-value">
-                  {formatPeso(
-                    Number(
-                      String(selectedPayslip.net_pay).replace(/,/g, ""),
-                    ),
-                  )}
-                </h6>
-              </div>
-            </Col>
-          </Row>
-
-          {/* Allowances Section */}
-          <div className="payslip-detail-section">
-            <h6 className="detail-section-title">Allowances</h6>
-            {selectedPayslip.allowances &&
-            selectedPayslip.allowances.length > 0 ? (
-              selectedPayslip.allowances.map((allowance, idx) => (
-                <div key={idx} className="allowance-deduction-item">
-                  <span className="item-name">
-                    {allowance.allowance_type}
-                  </span>
-                  <span className="item-amount positive">
-                    +
-                    {formatPeso(
-                      Number(
-                        String(allowance.allowance_amount).replace(
-                          /,/g,
-                          "",
-                        ),
-                      ),
-                    )}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <p className="text-muted">No allowances</p>
-            )}
-          </div>
-
-          {/* Deductions Section */}
-          <div className="payslip-detail-section">
-            <h6 className="detail-section-title">Deductions</h6>
-            {selectedPayslip.deductions &&
-            selectedPayslip.deductions.length > 0 ? (
-              selectedPayslip.deductions.map((deduction, idx) => (
-                <div key={idx} className="allowance-deduction-item">
-                  <span className="item-name">
-                    {deduction.deduction_type}
-                  </span>
-                  <span className="item-amount negative">
-                    -
-                    {formatPeso(
-                      Number(
-                        String(deduction.deduction_amount).replace(
-                          /,/g,
-                          "",
-                        ),
-                      ),
-                    )}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <p className="text-muted">No deductions</p>
-            )}
-          </div>
-
-          {/* Basic Salary Section */}
-          <div className="payslip-detail-section">
-            <h6 className="detail-section-title">Daily Rate</h6>
-            <div className="allowance-deduction-item">
-              <span className="item-name">Basic Salary</span>
-              <span className="item-amount positive">
-                {formatPeso(
-                  Number(
-                    String(selectedPayslip.base_salary).replace(/,/g, ""),
-                  ),
-                )}
-              </span>
-            </div>
-          </div>
-
-          {/* Totals Summary */}
-          <div className="payslip-detail-section">
-            <div className="allowance-deduction-item">
-              <span className="item-name">
-                <strong>Total Gross Pay</strong>
-              </span>
-              <span className="item-amount">
-                <strong>
-                  {formatPeso(
-                    Number(
-                      String(selectedPayslip.gross_pay).replace(/,/g, ""),
-                    ),
-                  )}
-                </strong>
-              </span>
-            </div>
-            <div className="allowance-deduction-item">
-              <span className="item-name">
-                <strong>Total Deductions</strong>
-              </span>
-              <span className="item-amount negative">
-                <strong>
-                  {formatPeso(
-                    Number(
-                      String(selectedPayslip.total_deductions).replace(
-                        /,/g,
-                        "",
-                      ),
-                    ),
-                  )}
-                </strong>
-              </span>
-            </div>
-          </div>
-
-          {/* Download PDF Button */}
-          <div className="d-flex justify-content-end w-100">
-            <Button
-              className="btn-download-pdf w-100 mt-4"
-              onClick={() => downloadPayslipPDF(selectedPayslip.id)}
-              disabled={downloadingId === selectedPayslip.id}
-            >
-              {downloadingId === selectedPayslip.id ? (
-                <>
-                  <span
-                    className="spinner-border spinner-border-sm me-2"
-                    role="status"
-                    aria-hidden="true"
-                  ></span>
-                  Downloading...
-                </>
-              ) : (
-                <>
-                  <Download size={18} className="me-2" />
-                  Download as PDF
-                </>
-              )}
-            </Button>
-          </div>
-        </Offcanvas.Body>
-      )}
-    </Offcanvas>
-    {/* Hidden but renderable */}
-    <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
-      <PayslipPDF
-        ref={detailsPdfRef}
-        payslip={selectedPayslip}
-        formatPeso={formatPeso}
-      />
-    </div>
+      onClose={handleClose}
+      onDownload={() => selectedPayslip && downloadPayslipPDF(selectedPayslip.id)}
+      payslip={selectedPayslip}
+      isLoading={isLoading}
+      formatPeso={formatPeso}
+    />
     </>
   );
 };

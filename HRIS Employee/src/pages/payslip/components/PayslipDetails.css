@@ -1,0 +1,379 @@
+.payslip-details-dialog {
+    max-width: min(745px, calc(100vw - 32px));
+}
+
+.payslip-details-dialog .modal-content {
+    border: 0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.payslip-details-header {
+    padding: 14px 18px 10px;
+    border-bottom: 0;
+}
+
+.payslip-details-header .modal-title {
+    color: #202534;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.payslip-details-header p {
+    color: #687087;
+    font-size: 0.95rem;
+    margin: 3px 0 0;
+}
+
+.payslip-details-body {
+    padding: 0 18px 10px;
+    background: #fff;
+    min-width: 0;
+}
+
+.payslip-document {
+    overflow: auto;
+    border: 1px solid #d9dce4;
+    border-radius: 7px;
+    padding: 18px 20px 20px;
+    color: #202534;
+    max-height: 700px;
+}
+
+.payslip-branding {
+    border-bottom: 1px solid #d9dce4;
+    text-align: center;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+}
+
+.payslip-brand-name {
+    color: #5c6cff;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.payslip-brand-name svg {
+    font-size: 19px;
+    margin-right: 5px;
+}
+
+.payslip-branding p {
+    color: #687087;
+    font-size: 0.95rem;
+    margin: 6px 0 12px;
+}
+
+.payslip-branding h2 {
+    color: #5c6cff;
+    font-size: 14px;
+    margin: 0;
+    font-weight: 700;
+}
+
+.payslip-info-grid,
+.payslip-breakdown-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.payslip-info-panel,
+.payslip-breakdown-panel,
+.payslip-net-panel {
+    border: 1px solid #d9dce4;
+    border-radius: 10px;
+    box-shadow: 0 1px 2px #20253412;
+}
+
+.payslip-info-panel {
+    padding: 13px 16px;
+    min-height: 164px;
+}
+
+.payslip-info-panel h3 {
+    font-size: 0.95rem;
+    margin: 0 0 22px;
+    font-weight: 700;
+}
+
+.payslip-info-panel h3 svg {
+    margin-right: 6px;
+}
+
+.payslip-info-row,
+.payslip-amount-row,
+.payslip-total-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    align-items: center;
+    font-size: 0.95rem;
+}
+
+.payslip-info-row {
+    margin-bottom: 8px;
+}
+
+.payslip-info-row span {
+    color: #687087;
+}
+
+.payslip-info-row strong {
+    min-width: 0;
+    text-align: right;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+.payslip-info-row .negative,
+.payslip-total-row.negative strong {
+    color: #e53935;
+}
+
+.payslip-info-row .positive,
+.payslip-total-row.positive strong {
+    color: #08a64a;
+}
+
+.payslip-info-row .net {
+    color: #155eef;
+}
+
+.payslip-breakdown-grid {
+    margin-top: 14px;
+}
+
+.payslip-breakdown-panel {
+    overflow: hidden;
+}
+
+.payslip-breakdown-panel>h3 {
+    margin: 0;
+    padding: 9px 16px;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.payslip-breakdown-panel.earnings>h3 {
+    color: #08783b;
+    background: #effcf3;
+}
+
+.payslip-breakdown-panel.deductions>h3 {
+    color: #b42318;
+    background: #fff1f1;
+}
+
+.payslip-breakdown-panel>h3 svg {
+    margin-right: 5px;
+}
+
+.payslip-breakdown-content {
+    padding: 19px 16px 12px;
+}
+
+.payslip-holidays-panel {
+    border: 1px solid #d9dce4;
+    border-radius: 10px;
+    margin-top: 14px;
+    overflow: hidden;
+}
+
+.payslip-holidays-heading {
+    align-items: center;
+    background: #f3f6ff;
+    color: #1747b5;
+    display: flex;
+    justify-content: space-between;
+    padding: 9px 16px;
+}
+
+.payslip-holidays-heading h3 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.payslip-holidays-heading h3 svg {
+    margin-right: 6px;
+}
+
+.payslip-holidays-heading>span {
+    align-items: center;
+    background: #dbe5ff;
+    border-radius: 999px;
+    display: flex;
+    font-size: 0.8rem;
+    font-weight: 700;
+    height: 22px;
+    justify-content: center;
+    min-width: 22px;
+    padding: 0 6px;
+}
+
+.payslip-holiday-list {
+    padding: 8px 16px;
+}
+
+.payslip-holiday-row {
+    align-items: center;
+    border-bottom: 1px solid #eef0f5;
+    display: flex;
+    font-size: 0.95rem;
+    justify-content: space-between;
+    padding: 9px 0;
+}
+
+.payslip-holiday-row:last-child {
+    border-bottom: 0;
+}
+
+.payslip-holiday-row strong {
+    display: block;
+    font-weight: 600;
+}
+
+.payslip-holiday-row small {
+    color: #687087;
+    display: block;
+    font-size: 0.8rem;
+    margin-top: 2px;
+}
+
+.payslip-holiday-row>span {
+    color: #687087;
+    font-size: 0.85rem;
+    margin-left: 12px;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+.payslip-holiday-empty {
+    color: #687087;
+    font-size: 0.95rem;
+    margin: 0;
+    padding: 14px 16px;
+}
+
+.payslip-amount-row {
+    margin-bottom: 11px;
+}
+
+.payslip-total-row {
+    border-top: 1px solid #d9dce4;
+    padding-top: 12px;
+    margin-top: 3px;
+}
+
+.payslip-net-panel {
+    margin-top: 14px;
+    padding: 20px 12px;
+    text-align: center;
+}
+
+.payslip-net-panel h3 {
+    color: #1747b5;
+    font-size: 13px;
+    margin: 0 0 7px;
+}
+
+.payslip-net-panel strong {
+    color: #155eef;
+    font-size: 21px;
+}
+
+.payslip-net-panel p {
+    color: #155eef;
+    font-size: 10px;
+    margin: 5px 0 0;
+}
+
+.payslip-details-footer {
+    border-top: 0;
+    padding: 0 18px 14px;
+    gap: 5px;
+}
+
+.payslip-close-button,
+.payslip-download-button {
+    border-radius: 7px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 7px 13px;
+}
+
+.payslip-close-button {
+    border: 2px solid #7b83ff;
+    color: #202534;
+}
+
+.payslip-download-button {
+    background: #5c6cff;
+    border-color: #5c6cff;
+}
+
+.payslip-download-button svg {
+    margin-right: 6px;
+}
+
+@media (max-width: 576px) {
+    .payslip-details-dialog {
+        margin: 8px auto;
+        max-width: calc(100vw - 16px);
+    }
+
+    .payslip-details-header {
+        padding: 12px 14px 8px;
+    }
+
+    .payslip-details-header p {
+        font-size: 0.8rem;
+        padding-right: 18px;
+    }
+
+    .payslip-details-body {
+        padding: 0 10px 8px;
+    }
+
+    .payslip-document {
+        padding: 14px 12px;
+        max-height: calc(100vh - 178px);
+    }
+
+    .payslip-info-grid,
+    .payslip-breakdown-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .payslip-info-panel {
+        padding: 11px 10px;
+    }
+
+    .payslip-info-panel h3 {
+        margin-bottom: 17px;
+    }
+
+    .payslip-details-footer {
+        align-items: stretch;
+        flex-direction: column-reverse;
+        padding: 0 10px 10px;
+    }
+
+    .payslip-close-button,
+    .payslip-download-button {
+        width: 100%;
+    }
+
+}
+
+.payslip-details-loading {
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: #687087;
+    font-size: 0.95rem;
+}

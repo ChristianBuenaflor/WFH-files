@@ -158,7 +158,7 @@ const Dashboard = ({ setIsAuth }) => {
 
         setAnnouncements(announcements);
         setRecentPayslips(recent_payslips || []);
-        setRecentReports(recent_reports || []);
+        setRecentReports((recent_reports || []).slice(0, 5));
         setLoading(false);
       } catch (err) {
         console.error("Error fetching dashboard:", err);

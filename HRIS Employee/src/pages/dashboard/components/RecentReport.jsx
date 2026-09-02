@@ -6,80 +6,104 @@ const RecentReport = ({ recentReports = [] }) => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
 
-  // Helper function to strip HTML and truncate text
+  const displayReports = recentReports.slice(0, 5);
+
   const getPlainText = useCallback((html) => {
     if (!html) return "No details provided";
     const doc = new DOMParser().parseFromString(html, "text/html");
     return doc.body.textContent || "";
   }, []);
 
-  const truncateText = useCallback((text, maxLength = 50) => {
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + "...";
+  const truncateText = useCallback((text, maxLength = 48) => {
+    const safeText = text ?? "";
+    if (safeText.length <= maxLength) return safeText;
+    return safeText.substring(0, maxLength).trimEnd() + "...";
+  }, []);
+
+  const formatReportDate = useCallback((value) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "—";
+
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  }, []);
+
+  const formatReportTime = useCallback((value) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "—";
+
+    return date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   }, []);
 
   return (
     <>
-      <Card className="dashboard-card-modern">
+      <Card className="dashboard-card-modern recent-report-card">
         <Card.Header className="card-header-custom">
-          <h5>Recent Reports</h5>
+          <div className="d-flex align-items-center justify-content-between gap-2">
+            <h5>Recent Reports</h5>
+            <span className="recent-report-count">{displayReports.length}/5</span>
+          </div>
         </Card.Header>
-        <Card.Body>
-          <Table borderless striped responsive className="dashboard-table">
+        <Card.Body className="recent-report-body">
+          <Table borderless responsive className="dashboard-table recent-report-table">
             <thead>
               <tr>
                 <th>Report ID</th>
-                <th>Clock Out Time</th>
+                <th>Clock-Out</th>
                 <th>Date</th>
-                <th>Report Details</th>
+                <th>Summary</th>
                 <th>Status</th>
                 <th>Action</th>
               </tr>
             </thead>
             <tbody>
-              {recentReports.length === 0 ? (
+              {displayReports.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="text-center py-5">
-                    <JournalText size={48} className="mb-3 text-muted" />
-                    <p className="text-muted">No reports available</p>
+                    <div className="report-empty-state">
+                      <JournalText size={42} className="mb-3 text-muted" />
+                      <p className="text-muted mb-0">No reports available</p>
+                    </div>
                   </td>
                 </tr>
               ) : (
-                recentReports.map((report) => (
+                displayReports.map((report) => (
                   <tr key={report.id}>
                     <td className="report-id-cell">
-                      <span className="badge bg-primary">#{report.id}</span>
+                      <span className="report-id-pill">#{report.id}</span>
                     </td>
                     <td>
-                      <span className="report-time">
-                        {new Date(report.clock_out).toLocaleTimeString()}
+                      <span className="report-time">{formatReportTime(report.clock_out)}</span>
+                    </td>
+                    <td>
+                      <span className="report-date">{formatReportDate(report.clock_out)}</span>
+                    </td>
+                    <td>
+                      <span className="report-summary">
+                        {truncateText(getPlainText(report.report_today), 34)}
                       </span>
                     </td>
                     <td>
-                      <span className="report-date">
-                        {new Date(report.clock_out).toLocaleDateString()}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="report-details">
-                        {truncateText(getPlainText(report.report_today), 40)}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="badge bg-info">Submitted</span>
+                      <span className="report-status-badge submitted">Submitted</span>
                     </td>
                     <td>
                       <Button
                         variant="outline-primary"
                         size="sm"
-                        className="action-btn"
+                        className="recent-report-view-btn"
                         onClick={() => {
                           setSelectedReport(report);
                           setShowReportModal(true);
                         }}
                       >
                         <Eye size={14} className="me-1" />
-                        View Details
+                        View
                       </Button>
                     </td>
                   </tr>

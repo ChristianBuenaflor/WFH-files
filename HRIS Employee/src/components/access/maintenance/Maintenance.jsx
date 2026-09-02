@@ -1,20 +1,28 @@
-import React from 'react'
-import '@/components/access/maintenance/Maintenance.css'
+import React from 'react';
 import { Container } from 'react-bootstrap';
-import { Tools } from 'react-bootstrap-icons';
+import maintenanceImage from '@/assets/images/maintenance.png';
+import '@/components/access/maintenance/Maintenance.css';
 
-const Maintenance = () => {
+const Maintenance = ({
+  title = "WE'LL BE BACK SOON",
+  message = "We're currently making some updates to improve our experience. Please check back soon!"
+}) => {
   return (
-    <Container fluid className="maintenance-container">
-      <div className="maintenance-content">
-        <Tools size={50} className="maintenance-icon" />
-        <h1 className="maintenance-title">This page is currently under maintenance</h1>
-        <p className="maintenance-message">
-          Sorry for the inconvenience but we're performing some maintenance at the moment. We'll be back online shortly!
-        </p>
+    <Container fluid className="maintenance-page">
+      <div className="maintenance-scene">
+        <img
+          src={maintenanceImage}
+          alt="Maintenance illustration"
+          className="maintenance-illustration thumbnail"
+        />
+
+        <div className="maintenance-copy">
+          <h2>{title}</h2>
+          <p>{message}</p>
+        </div>
       </div>
     </Container>
-  )
-}
+  );
+};
 
-export default Maintenance
+export default Maintenance;

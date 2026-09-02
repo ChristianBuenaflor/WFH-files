@@ -4,17 +4,18 @@ import Modules from "@/pages/lessons/components/Modules";
 import AdminLayout from "@/components/layout/Adminlayout";
 import api from "@/config/axios";
 import Unauthorized from "@/components/access/unauthorized/Unauthorized";
+import Maintenance from "@/components/access/maintenance/Maintenance";
 
 //import { useAuth } from "@/context/AuthContext";
 
 const Lesson = ({ setIsAuth }) => {
- // const { updateUser } = useAuth();
+  // const { updateUser } = useAuth();
   const [lessons, setLessons] = useState([]);
   const [selectedLesson, setSelectedLesson] = useState(null);
   const [loading, setLoading] = useState(true);
-    const [isUnauthorized, setIsUnauthorized] = useState(false);
+  const [isUnauthorized, setIsUnauthorized] = useState(false);
 
-      const hasFetched = useRef(false);
+  const hasFetched = useRef(false);
 
   useEffect(() => {
     const fetchLessons = async () => {
@@ -40,7 +41,7 @@ const Lesson = ({ setIsAuth }) => {
       }
     };
     if (hasFetched.current) return;
-      hasFetched.current = true;
+    hasFetched.current = true;
     fetchLessons();
   }, []);
 
@@ -95,19 +96,25 @@ const Lesson = ({ setIsAuth }) => {
 
   return (
     <>
-      {!selectedLesson ? (
-        <LessonSelection
-          lessons={lessons}
-          setSelectedLesson={handleSelectLesson}
-          setIsAuth={setIsAuth}
-        />
-      ) : (
-        <Modules
-          lesson={selectedLesson}
-          goBack={() => setSelectedLesson(null)}
-          setIsAuth={setIsAuth}
-        />
-      )}
+    <AdminLayout setIsAuth={setIsAuth}>
+      <Maintenance />
+    </AdminLayout>
+      <div className="d-none">
+        {!selectedLesson ? (
+          <LessonSelection
+            lessons={lessons}
+            setSelectedLesson={handleSelectLesson}
+            setIsAuth={setIsAuth}
+          />
+        ) : (
+          <Modules
+            lesson={selectedLesson}
+            goBack={() => setSelectedLesson(null)}
+            setIsAuth={setIsAuth}
+          />
+        )}
+      </div>
+
     </>
   );
 };

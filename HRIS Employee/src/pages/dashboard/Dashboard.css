@@ -134,6 +134,8 @@
 
 .attendance-chart-wrapper {
   position: relative;
+  height: 338px;
+  box-sizing: border-box;
   background: #f8fafc;
   border-radius: 14px;
   padding: 1.5rem;
@@ -195,62 +197,88 @@
   width: 100%;
 }
 
-.attendance-summary-stack {
+.attendance-summary-chart {
+  height: 338px;
+  box-sizing: border-box;
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 0.5rem 0.25rem 0;
+}
+
+.summary-chart-tooltip {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
-  min-height: 100%;
+  gap: 0.2rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 0.75rem;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.1);
+}
+
+.attendance-summary-stack {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.5rem;
+  width: 100%;
 }
 
 .attendance-summary-card {
+  flex: 1 1 0;
+  min-width: 0;
   background: #ffffff;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 1rem 1rem 0.9rem;
+  border-radius: 8px;
+  padding: 0.65rem 0.5rem;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .summary-header-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.7rem;
+  justify-content: center;
+  gap: 0.3rem;
+  margin-bottom: 0.4rem;
 }
 
 .summary-dot {
-  width: 10px;
-  height: 10px;
+  width: 7px;
+  height: 7px;
   border-radius: 999px;
   display: inline-block;
 }
 
 .theme-present {
-  background: #7ccf92;
+  background: #28a745;
 }
 
 .theme-absent {
-  background: #f4a1a1;
+  background: #dc3545;
 }
 
 .theme-late {
-  background: #f5d56d;
+  background: #ffc107;
 }
 
 .summary-label {
   color: #0f172a;
-  font-size: 1rem;
+  font-size: 0.72rem;
   font-weight: 600;
 }
 
 .summary-value-row {
   display: flex;
-  align-items: flex-end;
-  gap: 0.5rem;
-  margin-bottom: 0.7rem;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.2rem;
+  margin-bottom: 0.4rem;
 }
 
 .summary-value {
-  font-size: 2.5rem;
+  font-size: 1.6rem;
   line-height: 1;
   font-weight: 700;
   color: #0f172a;
@@ -258,24 +286,43 @@
 
 .summary-unit {
   color: #64748b;
-  font-size: 0.8rem;
-  padding-bottom: 0.35rem;
+  font-size: 0.62rem;
 }
 
 .summary-pill-wrap {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
 }
 
 .summary-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 52px;
-  padding: 0.35rem 0.7rem;
+  min-width: 40px;
+  padding: 0.2rem 0.45rem;
   border-radius: 999px;
   font-weight: 600;
-  font-size: 0.75rem;
+  font-size: 0.65rem;
+}
+
+@media (max-width: 991.98px) {
+  .attendance-summary-stack {
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .attendance-summary-card {
+    padding: 0.85rem 1rem;
+  }
+
+  .summary-header-row,
+  .summary-value-row {
+    justify-content: flex-start;
+  }
+
+  .summary-pill-wrap {
+    justify-content: flex-end;
+  }
 }
 
 .summary-pill.present {
@@ -342,10 +389,12 @@
 .dashboard-table thead th {
   background: #f8fafc;
   color: #64748b;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   border: none;
+  padding: 0.9rem 0.75rem;
 }
 
 .dashboard-table tbody tr {
@@ -359,6 +408,101 @@
 .dashboard-table td {
   font-size: 0.875rem;
   color: #334155;
+  padding: 0.95rem 0.75rem;
+  vertical-align: middle;
+}
+
+.recent-report-card {
+  min-height: 100%;
+}
+
+.recent-report-body {
+  padding: 0;
+}
+
+.recent-report-table {
+  margin-bottom: 0;
+  table-layout: fixed;
+}
+
+.recent-report-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  padding: 0.3rem 0.55rem;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #0f766e;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.report-id-cell {
+  width: 110px;
+}
+
+.report-id-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.38rem 0.55rem;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+.report-time,
+.report-date {
+  color: #334155;
+  font-weight: 500;
+}
+
+.report-summary {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #475569;
+}
+
+.report-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.36rem 0.62rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.report-status-badge.submitted {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.recent-report-view-btn {
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.44rem 0.72rem;
+}
+
+.report-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+@media (max-width: 767.98px) {
+  .recent-report-table {
+    min-width: 720px;
+  }
 }
 
 /* ===============================
