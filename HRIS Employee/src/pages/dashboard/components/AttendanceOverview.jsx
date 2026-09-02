@@ -385,6 +385,7 @@ const AttendanceOverview = () => {
       return;
     }
     setLoadingOut(true);
+    setShowReportModal(false);
     try {
       if (capturedFaceFile) {
         const clockOutData = new FormData();
@@ -411,7 +412,6 @@ const AttendanceOverview = () => {
       setCcEmails("");
       setReportSubject("");
       setReportBody("");
-      setShowReportModal(false);
       setCapturedFaceFile(null);
       setVerificationMessage("");
       setClockAction(null);
