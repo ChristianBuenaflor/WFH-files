@@ -42,6 +42,22 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 0.8rem;
+}
+
+.stat-card-modern .stat-content {
+  min-height: 82px;
+}
+
+.stat-card-modern .stat-info {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.stat-label-row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
 }
 
 .stat-info p {
@@ -53,6 +69,17 @@
   font-weight: 600;
 }
 
+.stat-card-modern .stat-info p {
+  margin: 0;
+  overflow: hidden;
+  color: #53627a;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  text-transform: none;
+  white-space: nowrap;
+}
+
 .stat-info h5 {
   font-size: 1.75rem;
   font-weight: 700;
@@ -60,10 +87,79 @@
   margin: 0;
 }
 
+.stat-card-modern .stat-info h5 {
+  margin-top: 0.5rem;
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
 .stat-value-container {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.stat-trend-chart {
+  width: 72px;
+  height: 40px;
+  flex: 0 1 72px;
+  margin-left: auto;
+  opacity: 0.85;
+}
+
+.stat-trend-chart svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.stat-trend-chart polyline {
+  fill: none;
+  stroke: #76b8ff;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.25;
+}
+
+.stat-trend-2 polyline {
+  stroke: #8ed8c0;
+}
+
+.stat-trend-3 polyline {
+  stroke: #b28af4;
+}
+
+.stat-trend-4 polyline {
+  stroke: #f0c466;
+}
+
+.stat-card-modern .stat-icon {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+}
+
+.stat-card-1 .stat-icon {
+  background: #e3efff;
+  color: #2475db;
+}
+
+.stat-card-2 .stat-icon {
+  background: #e1f7ed;
+  color: #159b67;
+}
+
+.stat-card-3 .stat-icon {
+  background: #f0e6ff;
+  color: #8745dd;
+}
+
+.stat-card-4 .stat-icon {
+  background: #fff2d5;
+  color: #eba900;
 }
 
 .eye-toggle-btn {
@@ -528,6 +624,83 @@
   color: #64748b;
 }
 
+.announcement-popup-body {
+  display: grid;
+  grid-template-columns: minmax(190px, 0.8fr) minmax(0, 1.7fr);
+  min-height: 380px;
+}
+
+.announcement-popup-list {
+  border-right: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.announcement-popup-list-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e2e8f0;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.announcement-popup-list-item {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 0.35rem;
+  border: 0;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 1rem 1.25rem;
+  background: transparent;
+  text-align: left;
+  color: #334155;
+}
+
+.announcement-popup-list-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.announcement-popup-list-item:hover,
+.announcement-popup-list-item.active {
+  background: #e8f1ff;
+  color: #0f4c9a;
+}
+
+.announcement-popup-list-item strong {
+  font-size: 0.9rem;
+}
+
+.announcement-popup-list-item small {
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+.announcement-popup-detail {
+  padding: 1.5rem 1.75rem;
+}
+
+@media (max-width: 575.98px) {
+  .announcement-popup-body {
+    grid-template-columns: 1fr;
+  }
+
+  .announcement-popup-list {
+    max-height: 180px;
+    overflow-y: auto;
+    border-right: 0;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .announcement-popup-detail {
+    padding: 1.25rem;
+  }
+}
+
 /* ===============================
    PAYSLIP CARDS
 ================================= */
@@ -588,12 +761,7 @@
    MONTHLY TARGET CARD
 ================================= */
 
-/* Monthly Target Card */
-.monthly-target-card {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  position: relative;
-  overflow: hidden;
-}
+
 
 .monthly-target-card::before {
   content: "";
@@ -659,13 +827,707 @@
 }
 
 /* ===============================
+   ATTENDANCE OVERVIEW CARDS
+================================= */
+
+.attendance-overview-row > [class*="col"] {
+  display: flex;
+}
+
+.attendance-overview-card,
+.attendance-target-card {
+  width: 100%;
+  border: 1px solid #e4eaf2 !important;
+  border-radius: 12px;
+  box-shadow: 0 5px 18px rgba(15, 23, 42, 0.08) !important;
+  overflow: hidden;
+}
+
+.attendance-overview-card {
+  background: #ffffff;
+}
+
+.attendance-overview-card .card-body {
+  padding: 1.2rem 1.35rem 1.3rem !important;
+}
+
+.attendance-overview-header,
+.attendance-target-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.attendance-overview-header {
+  margin-bottom: 1.2rem;
+}
+
+.attendance-overview-title,
+.attendance-target-title {
+  margin: 0;
+  color: #10213f;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.attendance-overview-title {
+  font-size: 1.35rem;
+}
+
+.attendance-duty-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 38px;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.attendance-duty-pill.is-on-duty {
+  background: #dff6e9;
+  color: #176b49;
+}
+
+.attendance-duty-pill.is-off-duty {
+  background: #eef2f6;
+  color: #526174;
+}
+
+.attendance-duty-dot,
+.attendance-status-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+
+.attendance-duty-pill.is-on-duty .attendance-duty-dot,
+.attendance-session-status .attendance-status-dot {
+  background: #0ca66a;
+}
+
+.attendance-duty-pill.is-off-duty .attendance-duty-dot {
+  background: #94a3b8;
+}
+
+.attendance-session-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 1.05fr);
+  gap: 0.55rem;
+  margin-bottom: 1.15rem;
+}
+
+.attendance-session-main,
+.attendance-metric-tile {
+  background: #f5f8fc;
+  border-radius: 7px;
+}
+
+.attendance-session-main {
+  min-height: 146px;
+  padding: 1rem 0.8rem;
+}
+
+.attendance-label {
+  display: block;
+  color: #596b86;
+  font-size: 0.83rem;
+  line-height: 1.2;
+}
+
+.attendance-session-time {
+  margin: 1rem 0 0.75rem;
+  color: #10213f;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.attendance-session-status {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: #526174;
+  font-size: 0.9rem;
+}
+
+.attendance-metrics {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.attendance-metric-tile {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 69px;
+  padding: 0.75rem 0.85rem;
+}
+
+.attendance-metric-icon {
+  flex: 0 0 auto;
+  color: #405473;
+}
+
+.attendance-metric-tile strong {
+  display: block;
+  margin-top: 0.4rem;
+  color: #10213f;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.attendance-action-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.2rem;
+}
+
+.attendance-action-button {
+  min-height: 50px;
+  border: 0;
+  border-radius: 7px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.attendance-clock-in {
+  background: #0b995c;
+}
+
+.attendance-clock-in:hover:not(:disabled) {
+  background: #087c4b;
+}
+
+.attendance-clock-out {
+  background: #e62e43;
+}
+
+.attendance-clock-out:hover:not(:disabled) {
+  background: #c92135;
+}
+
+.attendance-target-card {
+  background: linear-gradient(105deg, #0ca58d 0%, #117da9 48%, #1b5fba 100%);
+}
+
+.attendance-target-card::before {
+  width: 260px;
+  height: 260px;
+  top: -42%;
+  right: -8%;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.attendance-target-card .card-body {
+  min-height: 100%;
+  padding: 1.2rem 1.35rem 1.3rem !important;
+}
+
+.attendance-target-title,
+.attendance-target-hours {
+  color: #ffffff;
+}
+
+.attendance-target-title {
+  font-size: 1.3rem;
+}
+
+.attendance-target-hours {
+  margin: 0.55rem 0 0;
+  font-size: 2.65rem;
+  line-height: 1;
+}
+
+.attendance-month-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.13);
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.attendance-month-selector span {
+  font-size: 1.1rem;
+  line-height: 0.7;
+}
+
+.attendance-target-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.35rem;
+}
+
+.attendance-target-copy {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0.84rem;
+}
+
+.attendance-target-copy strong,
+.attendance-target-copy span {
+  display: block;
+}
+
+.attendance-target-copy strong {
+  color: #ffffff;
+  font-size: 0.9rem;
+}
+
+.attendance-target-progress {
+  width: 100%;
+  max-width: none;
+  margin-top: 1.3rem;
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.attendance-target-progress .progress-bar {
+  background: #ffffff !important;
+}
+
+.attendance-target-ring {
+  display: flex;
+  width: 170px;
+  height: 170px;
+  flex: 0 0 170px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  border-radius: 50%;
+  background: conic-gradient(#ffffff var(--target-progress), rgba(255, 255, 255, 0.2) 0);
+  color: #ffffff;
+  position: relative;
+}
+
+.attendance-target-ring::after {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border-radius: 50%;
+  background: #166db4;
+}
+
+.attendance-target-ring strong,
+.attendance-target-ring span {
+  position: relative;
+  z-index: 1;
+}
+
+.attendance-target-ring strong {
+  font-size: 1.45rem;
+}
+
+.attendance-target-ring span {
+  margin-top: 0.2rem;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 640px) {
+  .attendance-overview-header,
+  .attendance-target-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .attendance-session-panel,
+  .attendance-target-body {
+    grid-template-columns: 1fr;
+  }
+
+  .attendance-target-body {
+    display: grid;
+  }
+
+  .attendance-target-ring {
+    width: 150px;
+    height: 150px;
+    flex-basis: 150px;
+    margin: 0 auto;
+  }
+
+  .attendance-action-row {
+    gap: 0.65rem;
+  }
+
+  .attendance-action-button {
+    padding-right: 0.4rem;
+    padding-left: 0.4rem;
+    font-size: 0.88rem;
+  }
+}
+
+/* ===============================
    RESPONSIVE
 ================================= */
 
 @media (max-width: 768px) {
- 
+  .stat-trend-chart {
+    display: none;
+  }
 
   .stat-card-modern {
     margin-bottom: 1rem;
+  }
+}
+
+/* ===============================
+   OVERVIEW PANELS
+================================= */
+
+.overview-layout-grid > .row {
+  align-items: stretch;
+}
+
+.overview-layout-grid > .row > [class*="col"] {
+  display: flex;
+}
+
+.overview-layout-grid .dashboard-card-modern {
+  width: 100%;
+  border: 1px solid #e4eaf2;
+  border-radius: 8px;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.06);
+}
+
+.overview-layout-grid .card-header-custom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 58px;
+  padding: 0.8rem 1rem;
+}
+
+.overview-layout-grid .card-header-custom h5 {
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+.overview-month-selector,
+.overview-calendar-button {
+  border: 1px solid #d6e2f2;
+  border-radius: 6px;
+  background: #f7faff;
+  color: #2167c2;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.45rem 0.65rem;
+  white-space: nowrap;
+}
+
+.overview-period-selectors {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.overview-period-selectors .overview-month-selector {
+  appearance: auto;
+  cursor: pointer;
+}
+
+.overview-month-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.overview-month-selector span {
+  font-size: 0.95rem;
+  line-height: 0.7;
+}
+
+.overview-calendar-button {
+  background: #ffffff;
+}
+
+.attendance-donut-layout {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(105px, 0.8fr);
+  align-items: center;
+  height: 214px;
+  padding: 0;
+  background: #ffffff;
+}
+
+.attendance-donut-chart {
+  position: relative;
+  width: 100%;
+  height: 190px;
+}
+
+.attendance-donut-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  transform: translate(-50%, -50%);
+  color: #10213f;
+  pointer-events: none;
+}
+
+.attendance-donut-center strong {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.attendance-donut-center span {
+  margin-top: 0.35rem;
+  color: #64748b;
+  font-size: 0.72rem;
+}
+
+.attendance-donut-legend {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.attendance-legend-item {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  gap: 0.55rem;
+  color: #263956;
+  font-size: 0.78rem;
+}
+
+.attendance-legend-item > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.attendance-legend-dot {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  margin-top: 0.25rem;
+  border-radius: 2px;
+}
+
+.attendance-legend-item strong,
+.attendance-legend-item span {
+  display: block;
+}
+
+.attendance-legend-item strong {
+  font-size: 0.95rem;
+}
+
+.attendance-legend-item span {
+  margin-top: 0.25rem;
+  color: #526174;
+}
+
+.attendance-legend-progress {
+  width: 100%;
+  height: 5px;
+  margin-top: 0.45rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e8eef5;
+}
+
+.attendance-legend-progress-fill {
+  height: 100%;
+  min-width: 2px;
+  border-radius: inherit;
+  transition: width 0.25s ease;
+}
+
+.attendance-legend-progress-fill.theme-present {
+  background: #28a745;
+}
+
+.attendance-legend-progress-fill.theme-absent {
+  background: #dc3545;
+}
+
+.attendance-legend-progress-fill.theme-late {
+  background: #ffc107;
+}
+
+.overview-layout-grid .attendance-summary-chart {
+  height: 214px;
+  width: 100%;
+  min-width: 0;
+  padding: 0.5rem 0.25rem 0;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.overview-layout-grid .attendance-summary-chart .recharts-responsive-container {
+  min-width: 0;
+}
+
+.overview-layout-grid .attendance-summary-chart .recharts-wrapper,
+.overview-layout-grid .attendance-summary-chart .recharts-surface {
+  overflow: visible;
+}
+
+.overview-layout-grid .upcoming-holidays-list {
+  gap: 0.65rem;
+}
+
+.overview-layout-grid .upcoming-holiday-item {
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 68px;
+  padding: 0.65rem 0.35rem;
+  border: 0;
+  border-radius: 7px;
+  background: #eef8f4;
+}
+
+.holiday-date-tile {
+  display: flex;
+  width: 48px;
+  min-height: 52px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  flex: 0 0 48px;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #135fc0;
+}
+
+.holiday-date-tile strong {
+  font-size: 0.65rem;
+}
+
+.holiday-date-tile span {
+  margin-top: 0.2rem;
+  color: #10213f;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.overview-layout-grid .holiday-text strong {
+  color: #10213f;
+  font-size: 0.8rem;
+}
+
+.overview-layout-grid .holiday-text small {
+  font-size: 0.68rem;
+}
+
+.overview-holidays-link {
+  display: block;
+  margin: 1.1rem 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: #1265ca;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.overview-holidays-link span {
+  margin-left: 0.35rem;
+  font-size: 1rem;
+}
+
+@media (max-width: 1024px) {
+  .overview-layout-grid .card-header-custom {
+    flex-wrap: wrap;
+    align-items: center;
+    min-height: auto;
+  }
+
+  .overview-layout-grid .card-header-custom h5 {
+    white-space: normal;
+    line-height: 1.3;
+  }
+
+  .overview-layout-grid .overview-calendar-button {
+    font-size: 0.68rem;
+    padding: 0.38rem 0.58rem;
+  }
+
+  .overview-layout-grid .upcoming-holiday-item {
+    min-width: 0;
+  }
+
+  .overview-layout-grid .holiday-text {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .overview-layout-grid .holiday-text strong,
+  .overview-layout-grid .holiday-text small {
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .overview-layout-grid .card-header-custom {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    min-height: 54px;
+  }
+
+  .overview-layout-grid .card-header-custom h5 {
+    white-space: normal;
+  }
+
+  .attendance-donut-layout {
+    display: flex;
+    height: auto;
+    min-height: 0;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .attendance-donut-chart {
+    width: 100%;
+    height: 220px;
+  }
+
+  .attendance-donut-legend {
+    width: 100%;
+    gap: 0.75rem;
+  }
+
+  .attendance-legend-item {
+    width: 100%;
+  }
+
+  .overview-layout-grid .card-body {
+    padding: 0.75rem !important;
+  }
+
+  .overview-layout-grid .attendance-summary-chart {
+    height: 250px;
+    padding: 0.5rem 0.35rem 0;
+  }
+
+  .overview-period-selectors {
+    width: 100%;
+  }
+
+  .overview-period-selectors .overview-month-selector {
+    flex: 1 1 0;
+    min-width: 0;
   }
 }

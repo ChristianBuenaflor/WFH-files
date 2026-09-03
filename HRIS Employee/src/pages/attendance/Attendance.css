@@ -150,7 +150,7 @@
 
 /* Monthly Target Card */
 .monthly-target-card {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(105deg, #0ca58d 0%, #117da9 48%, #1b5fba 100%);
   position: relative;
   overflow: hidden;
 }
@@ -284,38 +284,75 @@
 }
 
 /* Recent Attendance Table */
-.table-responsive {
+.recent-attendance-card {
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.recent-attendance-header {
+  margin-bottom: 0;
+  padding-bottom: 1rem;
+}
+
+.recent-attendance-table-wrapper {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
-.table thead th {
-  color: #6b7280;
-  font-weight: 700;
-  font-size: 16px;
-  text-transform: capitalize;
-  letter-spacing: 0.5px;
-  border: none;
-  padding: 1rem 1.5rem;
-  background-color: #f8f9fa;
-  white-space: nowrap;
-}
-.table tbody td {
-  padding: 1.2rem 1.5rem;
-  color: #333;
+
+.recent-attendance-table {
+  margin: 0;
   vertical-align: middle;
 }
+
+.recent-attendance-header-row {
+  background-color: transparent;
+}
+
+.recent-attendance-header-row th {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom-color: #e2e8f0;
+  white-space: nowrap;
+  padding: 0.75rem;
+}
+
+.recent-attendance-row {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background-color 0.2s ease;
+}
+
+.recent-attendance-row:hover {
+  background-color: #e5e7eb;
+}
+
+.recent-attendance-row td {
+  color: #475569;
+  padding: 1rem 0.75rem;
+  border-bottom-color: #f1f5f9;
+  vertical-align: middle;
+}
+
+.recent-attendance-action {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
 @media (max-width: 768px) {
-  .table thead th,
-  .table tbody td {
+  .recent-attendance-header-row th,
+  .recent-attendance-row td {
     padding: 0.75rem 1rem;
     font-size: 0.85rem;
     white-space: normal;
   }
 }
 @media (max-width: 576px) {
-  .table thead th,
-  .table tbody td {
+  .recent-attendance-header-row th,
+  .recent-attendance-row td {
     padding: 0.5rem 0.75rem;
     font-size: 0.75rem;
     white-space: normal;

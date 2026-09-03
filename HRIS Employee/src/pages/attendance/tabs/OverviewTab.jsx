@@ -648,12 +648,12 @@ const OverviewTab = ({
       </Modal>
 
       {!loadingSummary && summary.recentAttendance.length > 0 && (
-        <Card className="border-0 shadow-sm rounded-2 mb-4">
-          <Card.Body className="p-4">
-            <div className="d-flex justify-content-between align-items-center mb-3">
+        <Card className="recent-attendance-card mb-4">
+          <Card.Body className="p-0">
+            <div className="section-header-inline recent-attendance-header px-4 pt-4">
               <div>
-                <h4 className="fw-bold mb-1">Recent Attendance</h4>
-                <p className="text-muted mb-0">
+                <h4 className="section-title mb-1">Recent Attendance</h4>
+                <p className="section-subtitle">
                   Your recent attendance records
                 </p>
               </div>
@@ -679,9 +679,9 @@ const OverviewTab = ({
               </div>
             </div>
 
-            <div className="table-responsive">
-              <Table hover borderless striped className="align-middle mb-0">
-                <thead className="bg-light">
+            <div className="recent-attendance-table-wrapper">
+              <Table responsive hover className="mb-0 report-table recent-attendance-table align-middle">
+                <thead className="recent-attendance-header-row">
                   <tr>
                     <th>Date</th>
                     <th>Att. Status</th>
@@ -696,7 +696,7 @@ const OverviewTab = ({
 
                 <tbody>
                   {paginatedRecentAttendance.map((record, index) => (
-                    <tr key={record.id || index}>
+                    <tr key={record.id || index} className="recent-attendance-row">
                       <td className="fw-medium">
                         {formatDate(record.clock_in)}
                       </td>
@@ -751,7 +751,7 @@ const OverviewTab = ({
                         <Button
                           variant="outline-primary"
                           size="sm"
-                          className="px-3"
+                          className="px-3 recent-attendance-action"
                           onClick={() => handleOpenAdjustModal(record)}
                         >
                           Adjust

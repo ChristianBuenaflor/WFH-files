@@ -1,10 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Offcanvas, Modal } from "react-bootstrap";
-import {
-  Megaphone,
-  Envelope,
-  EnvelopeOpen,
-} from "react-bootstrap-icons";
+import { Megaphone } from "react-bootstrap-icons";
 import "@/components/layout/Adminlayout.css";
 import api from "@/config/axios";
 import { useAuth } from "@/context/AuthContext.jsx";
@@ -16,6 +12,7 @@ const Announcement = () => {
   const [pendingAnnouncementId, setPendingAnnouncementId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [markingAllAsRead, setMarkingAllAsRead] = useState(false);
   const { user } = useAuth();
 
   const unreadCount = notifications.filter((notification) => !notification.is_seen).length;
@@ -64,6 +61,11 @@ const Announcement = () => {
           item.id === announcementId ? { ...item, is_seen: true } : item
         )
       );
+      window.dispatchEvent(
+        new CustomEvent("announcement-seen", {
+          detail: { announcementId },
+        }),
+      );
       setShowModal(true);
     } catch (error) {
       console.error("Error fetching announcement detail:", error);
@@ -73,11 +75,63 @@ const Announcement = () => {
     }
   };
 
+  const handleMarkAllAsRead = async () => {
+    const unreadAnnouncements = notifications.filter(
+      (notification) => !notification.is_seen
+    );
+
+    if (unreadAnnouncements.length === 0) return;
+
+    setMarkingAllAsRead(true);
+    const results = await Promise.allSettled(
+      unreadAnnouncements.map((notification) =>
+        api.get(`/announcements/${notification.id}`)
+      )
+    );
+    const readAnnouncementIds = unreadAnnouncements
+      .filter((_, index) => results[index].status === "fulfilled")
+      .map((notification) => notification.id);
+
+    setNotifications((prev) =>
+      prev.map((notification) =>
+        readAnnouncementIds.includes(notification.id)
+          ? { ...notification, is_seen: true }
+          : notification
+      )
+    );
+    setMarkingAllAsRead(false);
+    readAnnouncementIds.forEach((announcementId) => {
+      window.dispatchEvent(
+        new CustomEvent("announcement-seen", {
+          detail: { announcementId },
+        }),
+      );
+    });
+  };
+
   useEffect(() => {
     if (pendingAnnouncementId && !showList) {
       fetchAnnouncementDetail(pendingAnnouncementId);
     }
   }, [pendingAnnouncementId, showList]);
+
+  useEffect(() => {
+    const handleAnnouncementSeen = (event) => {
+      const announcementId = event.detail?.announcementId;
+      if (!announcementId) return;
+
+      setNotifications((prev) =>
+        prev.map((notification) =>
+          notification.id === announcementId
+            ? { ...notification, is_seen: true }
+            : notification,
+        ),
+      );
+    };
+
+    window.addEventListener("announcement-seen", handleAnnouncementSeen);
+    return () => window.removeEventListener("announcement-seen", handleAnnouncementSeen);
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -135,26 +189,16 @@ const Announcement = () => {
                   onClick={() => openAnnouncementModal(notification.id)}
                 >
                   <div className="d-flex justify-content-between align-items-start gap-2 w-100">
-                    <strong className="text-start">
+                    <strong className="text-start announcement-item-title">
                       <h6 className="mb-0">{notification.title}</h6>
                     </strong>
 
                     <span
+                      className={`announcement-status-dot ${notification.is_seen ? "is-seen" : ""}`}
                       aria-label={notification.is_seen ? "Read announcement" : "Unread announcement"}
                       title={notification.is_seen ? "Read announcement" : "Unread announcement"}
-                      style={{
-                        color: notification.is_seen ? "#6c757d" : "#0d6efd",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                      }}
                     >
-                      {notification.is_seen ? (
-                        <EnvelopeOpen size={14} />
-                      ) : (
-                        <Envelope size={14} />
-                      )}
+                      <span aria-hidden="true" />
                     </span>
                   </div>
 
@@ -171,6 +215,16 @@ const Announcement = () => {
             </div>
           )}
         </Offcanvas.Body>
+        <div className="announcement-offcanvas-footer">
+          <button
+            type="button"
+            className=" w-100 py-2 border-0 bg-white border-top"
+            onClick={handleMarkAllAsRead}
+            disabled={unreadCount === 0 || markingAllAsRead}
+          >
+            {markingAllAsRead ? "Marking as read..." : "Mark all as read"}
+          </button>
+        </div>
       </Offcanvas>
 
       <Modal show={showModal} onHide={handleCloseModal} centered size="md">

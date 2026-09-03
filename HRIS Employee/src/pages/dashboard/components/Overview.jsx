@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Card, Row, Col } from "react-bootstrap";
+import { Card, Row, Col, Button } from "react-bootstrap";
+import { Link } from "react-router-dom";
 import {
   PieChart,
   Pie,
   Cell,
   ResponsiveContainer,
-  Legend,
   Tooltip,
   BarChart,
   Bar,
@@ -18,7 +18,21 @@ import api from "@/config/axios";
 
 const getHolidayDate = (holiday = {}) => {
   const value = holiday.holiday_date || holiday.date || holiday.holidayDate || "";
-  return value ? String(value).slice(0, 10) : "";
+  if (!value) return "";
+  const text = String(value);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Manila",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+  return `${values.year}-${values.month}-${values.day}`;
 };
 
 const getHolidayName = (holiday = {}) =>
@@ -27,7 +41,16 @@ const getHolidayName = (holiday = {}) =>
 const getHolidayRecords = (responseData) => {
   if (Array.isArray(responseData)) return responseData;
   const records = responseData?.data || responseData?.holidays || responseData?.records;
-  return Array.isArray(records) ? records : [];
+  if (Array.isArray(records)) return records;
+  if (Array.isArray(records?.data)) return records.data;
+  if (Array.isArray(records?.holidays)) return records.holidays;
+  if (Array.isArray(records?.records)) return records.records;
+  return [];
+};
+
+const isActiveHoliday = (holiday = {}) => {
+  const archived = holiday.is_archived ?? holiday.isArchived ?? false;
+  return ![1, "1", true, "true"].includes(archived);
 };
 
 const Overview = ({ selectedMonth, selectedYear }) => {
@@ -42,6 +65,13 @@ const Overview = ({ selectedMonth, selectedYear }) => {
     latePercentage: 0,
   });
   const [upcomingHolidays, setUpcomingHolidays] = useState([]);
+  const today = new Date();
+  const [overviewMonth, setOverviewMonth] = useState(
+    selectedMonth || today.getMonth() + 1,
+  );
+  const [overviewYear, setOverviewYear] = useState(
+    selectedYear || today.getFullYear(),
+  );
 
   const chartData = useMemo(
     () => [
@@ -52,8 +82,8 @@ const Overview = ({ selectedMonth, selectedYear }) => {
     [attendanceData],
   );
 
-  const monthValue = selectedMonth || new Date().getMonth() + 1;
-  const yearValue = selectedYear || new Date().getFullYear();
+  const monthValue = selectedMonth || overviewMonth;
+  const yearValue = selectedYear || overviewYear;
   const monthName = new Date(yearValue, monthValue - 1).toLocaleString("default", {
     month: "long",
   });
@@ -124,7 +154,7 @@ const Overview = ({ selectedMonth, selectedYear }) => {
           .join("-");
 
         const holidayItems = getHolidayRecords(response.data)
-          .filter((holiday) => holiday.is_archived === 0)
+          .filter(isActiveHoliday)
           .map((holiday) => {
             const date = getHolidayDate(holiday);
 
@@ -181,7 +211,31 @@ const Overview = ({ selectedMonth, selectedYear }) => {
         <Col lg={5} md={12}>
           <Card className="dashboard-card-modern h-100">
             <Card.Header className="card-header-custom">
-              <h5>Overview - {monthName} {yearValue}</h5>
+              <h5>Attendance Overview</h5>
+              <div className="overview-period-selectors">
+                <select
+                  className="overview-month-selector"
+                  value={monthValue}
+                  onChange={(event) => setOverviewMonth(Number(event.target.value))}
+                  aria-label="Select month"
+                >
+                  {Array.from({ length: 12 }, (_, index) => index + 1).map((month) => (
+                    <option key={month} value={month}>
+                      {new Date(2000, month - 1, 1).toLocaleString("en-US", { month: "long" })}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  className="overview-month-selector"
+                  value={yearValue}
+                  onChange={(event) => setOverviewYear(Number(event.target.value))}
+                  aria-label="Select year"
+                >
+                  {Array.from({ length: 7 }, (_, index) => new Date().getFullYear() - 3 + index).map((year) => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+              </div>
             </Card.Header>
             <Card.Body className="p-3">
               {error && (
@@ -200,44 +254,59 @@ const Overview = ({ selectedMonth, selectedYear }) => {
               )}
 
               {!loading && !error && (
-                <div className="attendance-chart-wrapper">
-                  <ResponsiveContainer width="100%" height={290}>
-                    <PieChart>
-                      <Pie
-                        data={chartData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={55}
-                        outerRadius={90}
-                        paddingAngle={4}
-                        dataKey="value"
-                        label={({ name, value, percent }) =>
-                          `${name}: ${value} (${(percent * 100).toFixed(0)}%)`
-                        }
-                        labelLine={true}
-                      >
-                        {chartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.fill} />
-                        ))}
-                      </Pie>
+                <div className="attendance-chart-wrapper attendance-donut-layout">
+                  <div className="attendance-donut-chart">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={chartData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={57}
+                          outerRadius={88}
+                          paddingAngle={3}
+                          dataKey="value"
+                        >
+                          {chartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.fill} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#fff",
+                            border: "1px solid #e9ecef",
+                            borderRadius: "8px",
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                          }}
+                          formatter={(value, name) => [`${value} days`, name]}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="attendance-donut-center">
+                      <strong>
+                        {attendanceData.present + attendanceData.absent + attendanceData.late}
+                      </strong>
+                      <span>Total</span>
+                    </div>
+                  </div>
 
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "#fff",
-                          border: "1px solid #e9ecef",
-                          borderRadius: "8px",
-                          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                        }}
-                        formatter={(value, name) => [`${value} days`, name]}
-                      />
-
-                      <Legend
-                        verticalAlign="bottom"
-                        height={30}
-                        wrapperStyle={{ paddingTop: "12px" }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <div className="attendance-donut-legend">
+                    {stats.map((item) => (
+                      <div className="attendance-legend-item" key={item.label}>
+                        <span className={`attendance-legend-dot ${item.dotClass}`} />
+                        <div>
+                          <strong>{item.label}</strong>
+                          <span>{item.count} ({item.percentage}%)</span>
+                          <div className="attendance-legend-progress">
+                            <div
+                              className={`attendance-legend-progress-fill ${item.dotClass}`}
+                              style={{ width: `${item.percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
 
                   {attendanceData.present === 0 &&
                     attendanceData.absent === 0 &&
@@ -256,14 +325,15 @@ const Overview = ({ selectedMonth, selectedYear }) => {
           <Card className="dashboard-card-modern h-100">
             <Card.Header className="card-header-custom">
               <h5>Attendance Summary</h5>
+              <span className="overview-period-label">{monthName} {yearValue}</span>
             </Card.Header>
             <Card.Body className="p-3">
               {!loading && !error && (
                 <div className="attendance-summary-chart">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={stats} margin={{ top: 24, right: 8, left: -24, bottom: 0 }}>
+                    <BarChart data={stats} margin={{ top: 24, right: 12, left: 12, bottom: 0 }}>
                       <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="label" tick={{ fontSize: 16 }} axisLine={false} tickLine={false} />
+                      <XAxis dataKey="label" tick={{ fontSize: 13 }} axisLine={false} tickLine={false} />
                       <YAxis allowDecimals={false} axisLine={false} tickLine={false} width={32} />
                       <Tooltip
                         cursor={{ fill: "rgba(226, 232, 240, 0.35)" }}
@@ -292,14 +362,14 @@ const Overview = ({ selectedMonth, selectedYear }) => {
                         ))}
                         <LabelList dataKey="count" position="top" fill="#0f172a" fontSize={16} />
                       </Bar>
-                       <LabelList
-                          dataKey="percentage"
-                          position="insideBottom"
-                          formatter={(value) => `${value}%`}
-                          fill="#0f172a"
-                          fontSize={11}
-                          fontWeight={600}
-                        />
+                      <LabelList
+                        dataKey="percentage"
+                        position="insideBottom"
+                        formatter={(value) => `${value}%`}
+                        fill="#0f172a"
+                        fontSize={11}
+                        fontWeight={600}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -312,21 +382,37 @@ const Overview = ({ selectedMonth, selectedYear }) => {
           <Card className="dashboard-card-modern h-100">
             <Card.Header className="card-header-custom">
               <h5>Upcoming Holidays</h5>
+              <Link to="/calendar">
+                <Button size="sm" className="overview-calendar-button">
+                  View Calendar
+                </Button>
+              </Link>
             </Card.Header>
             <Card.Body className="p-3">
               {upcomingHolidays.length > 0 ? (
                 <div className="upcoming-holidays-list">
                   {upcomingHolidays.map((holiday) => (
                     <div key={holiday.id} className="upcoming-holiday-item">
-                      <span className="holiday-bullet" />
-                      <div className="holiday-text">
+                      <div className="holiday-date-tile">
                         <strong>
-                          {new Date(`${holiday.date}T00:00:00`).toLocaleDateString("en-US", {
+                          {new Date(`${holiday.date}T16:00:00.000000Z`).toLocaleDateString("en-US", {
                             month: "short",
-                            day: "numeric",
-                          })}
+                          }).toUpperCase()}
                         </strong>
-                        <small>{holiday.name}</small>
+                        <span>
+                          {new Date(`${holiday.date}T16:00:00.000000Z`).getDate()}
+                        </span>
+                      </div>
+                      <div className="holiday-text">
+                        <strong>{holiday.name}</strong>
+                        <small>
+                          {new Date(`${holiday.date}T16:00:00.000000Z`).toLocaleDateString("en-US", {
+                            weekday: "long",
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </small>
                       </div>
                     </div>
                   ))}
@@ -335,6 +421,11 @@ const Overview = ({ selectedMonth, selectedYear }) => {
                 <div className="text-muted text-center py-4 small">
                   No upcoming holidays for this month.
                 </div>
+              )}
+              {upcomingHolidays.length > 0 && (
+                <button className="overview-holidays-link" type="button">
+                  View all holidays <span aria-hidden="true">→</span>
+                </button>
               )}
             </Card.Body>
           </Card>

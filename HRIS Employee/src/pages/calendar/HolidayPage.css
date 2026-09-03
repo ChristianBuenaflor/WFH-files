@@ -14,6 +14,8 @@
   padding: 8px 18px;
   border-bottom: 1px solid #e2e8f0;
   background: #fff;
+  margin-bottom: 5px;
+  border-radius: 8px;
 }
 
 .teams-toolbar-left,
@@ -239,6 +241,7 @@
   min-height: calc(100vh - 128px);
   border: 1px solid #dbe3ed;
   background: #fff;
+  border-radius: 8px;
 }
 
 .teams-calendar-header,
@@ -423,6 +426,7 @@ button.teams-event {
   flex-direction: column;
   justify-content: flex-start;
   margin-top: 0;
+  border-radius: 8px;
 }
 
 .sidebar-open .upcoming-holidays-list {

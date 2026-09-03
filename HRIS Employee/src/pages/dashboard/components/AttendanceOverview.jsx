@@ -12,11 +12,7 @@ import {
 } from "react-bootstrap";
 import {
   Clock,
-  Calendar,
-  Shield,
-  CheckCircle,
   BoxArrowInRight,
-  GraphUpArrow,
   BoxArrowLeft,
 } from "react-bootstrap-icons";
 import * as faceapi from "face-api.js";
@@ -45,7 +41,7 @@ const AttendanceOverview = () => {
   const [statusText, setStatusText] = useState("Off Duty");
   const [clockInTimestamp, setClockInTimestamp] = useState(null);
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
-  const [sessionTime, setSessionTime] = useState("00:00:00");
+  const [sessionTime, setSessionTime] = useState("00hr 00min");
   const [showReportModal, setShowReportModal] = useState(false);
   const [ccEmails, setCcEmails] = useState("");
   const [reportSubject, setReportSubject] = useState("");
@@ -87,7 +83,7 @@ const AttendanceOverview = () => {
   // ---------- Live session timer ----------
   useEffect(() => {
     if (!summary.isClockedIn || !clockInTimestamp) {
-      setSessionTime("00:00:00");
+      setSessionTime("00hr 00min");
       return;
     }
     const interval = setInterval(() => {
@@ -97,9 +93,8 @@ const AttendanceOverview = () => {
       const diffMs = now - clockInDate;
       const hours = Math.floor(diffMs / (1000 * 60 * 60));
       const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
       setSessionTime(
-        `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+        `${String(hours).padStart(2, "0")}hr ${String(minutes).padStart(2, "0")}min`
       );
     }, 1000);
     return () => clearInterval(interval);
@@ -461,10 +456,10 @@ const AttendanceOverview = () => {
         ))}
       </ToastContainer>
 
-      <Row className="g-3 g-md-4">
+      <Row className="attendance-overview-row g-3 g-md-4">
         {/* Left Column - Status & Clock Controls */}
         <Col lg={5}>
-          <Card className="border-0 rounded-2 mb-3 shadow-sm overview-status-card">
+          <Card className="border-0 rounded-2 mb-3 shadow-sm overview-status-card attendance-overview-card">
             <Card.Body className="p-3 p-md-4">
               {loadingSummary ? (
                 <div className="text-center py-4">
@@ -476,85 +471,46 @@ const AttendanceOverview = () => {
                 </div>
               ) : (
                 <>
-                  <div className="d-flex align-items-start justify-content-between mb-4 mb-md-4">
-                    <div>
-                      <small className="text-muted text-uppercase d-block mb-1 small-text-mobile">
-                        CURRENT STATUS
-                      </small>
-                      <div className="d-flex align-items-center gap-2">
-                        <h5 className="fw-bold mb-0">{statusText}</h5>
-                        {summary.isClockedIn && (
-                          <Badge bg="success" className="badge-checked-in">
-                            CHECKED IN
-                          </Badge>
-                        )}
-                      </div>
+                  <div className="attendance-overview-header">
+                    <h3 className="attendance-overview-title">Today's Attendance</h3>
+                    <div className={`attendance-duty-pill ${summary.isClockedIn ? "is-on-duty" : "is-off-duty"}`}>
+                      <span className="attendance-duty-dot" aria-hidden="true"></span>
+                      {statusText}
                     </div>
-                    {summary.isClockedIn && (
-                      <div
-                        className="status-dot"
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: "50%",
-                          backgroundColor: "#10b981",
-                        }}
-                      ></div>
-                    )}
                   </div>
 
-                  {summary.isClockedIn && (
-                    <div className="mb-3 mb-md-4 pb-3 pb-md-4 border-bottom">
-                      <small className="text-muted text-uppercase d-block mb-2 small-text-mobile">
-                        CURRENT SESSION
-                      </small>
-                      <h2 className="fw-bold mb-0 session-time">
-                        {sessionTime}
-                      </h2>
+                  <div className="attendance-session-panel">
+                    <div className="attendance-session-main">
+                      <span className="attendance-label">Current Session</span>
+                      <h2 className="attendance-session-time">{sessionTime}</h2>
+                      <div className="attendance-session-status">
+                        <span className="attendance-status-dot" aria-hidden="true"></span>
+                        {summary.isClockedIn ? "Checked In" : "Not Checked In"}
+                      </div>
                     </div>
-                  )}
 
-                  <Row className="g-2 g-md-3 mb-3 mb-md-4">
-                    <Col xs={6}>
-                      <div className="d-flex align-items-center gap-2 gap-md-3">
-                        <Clock
-                          size={14}
-                          className="text-muted d-none d-md-inline"
-                        />
-                        <Clock size={14} className="text-muted d-md-none" />
+                    <div className="attendance-metrics">
+                      <div className="attendance-metric-tile">
+                        <Clock className="attendance-metric-icon" size={29} />
                         <div>
-                          <small className="text-muted text-uppercase d-block small-text-mobile">
-                            CLOCK IN
-                          </small>
-                          <p className="fw-bold mb-0 small-text-mobile">
-                            {summary.clockInTime || "---"}
-                          </p>
+                          <span className="attendance-label">Clock In</span>
+                          <strong>{summary.clockInTime || "---"}</strong>
                         </div>
                       </div>
-                    </Col>
-                    <Col xs={6}>
-                      <div className="d-flex align-items-center gap-2 gap-md-3">
-                        <Clock
-                          size={14}
-                          className="text-muted d-none d-md-inline"
-                        />
-                        <Clock size={14} className="text-muted d-md-none" />
+                      <div className="attendance-metric-tile">
+                        <Clock className="attendance-metric-icon" size={29} />
                         <div>
-                          <small className="text-muted text-uppercase d-block small-text-mobile">
-                            HOURS TODAY
-                          </small>
-                          <p className="fw-bold mb-0 small-text-mobile">
-                            {liveHoursToday.toFixed(2)} hrs
-                          </p>
+                          <span className="attendance-label">Hours Today</span>
+                          <strong>{liveHoursToday.toFixed(2)} hrs</strong>
                         </div>
                       </div>
-                    </Col>
-                  </Row>
+                    </div>
+                  </div>
 
-                  <div className="d-flex gap-2 flex-column flex-sm-row">
+                  <div className="attendance-action-row">
                     <Button
                       variant="success"
-                      className="px-3 py-2 flex-grow-1 btn-clock btn-sm-full"
+                      className="attendance-action-button attendance-clock-in"
                       onClick={handleClockIn}
                       disabled={summary.isClockedIn || loadingIn || loadingOut}
                     >
@@ -576,7 +532,7 @@ const AttendanceOverview = () => {
                     </Button>
                     <Button
                       variant="danger"
-                      className="px-3 py-2 flex-grow-1 btn-clock btn-sm-full"
+                      className="attendance-action-button attendance-clock-out"
                       onClick={handleClockOut}
                       disabled={!summary.isClockedIn || loadingIn || loadingOut}
                     >
@@ -606,110 +562,61 @@ const AttendanceOverview = () => {
         {/* Right Column - Stats & Monthly Target */}
         <Col lg={7}>
           {/* Monthly Target Card */}
-          <Card className="border-0 rounded-2 shadow-sm monthly-target-card mb-3 mb-md-3">
+          <Card className="border-0 rounded-2 shadow-sm monthly-target-card attendance-target-card mb-3 mb-md-3">
             <Card.Body className="p-3 p-md-4">
-              <div className="d-flex justify-content-between align-items-start mb-2 mb-md-3">
+              <div className="attendance-target-header">
                 <div>
-                  <small className="text-white text-uppercase d-block mb-1 small-text-mobile">
-                    MONTHLY TARGET
-                  </small>
-                  <h3 className="fw-bold mb-0 text-white">
-                    {monthlyTarget} hrs
+                  <h3 className="attendance-target-title">
+                    Monthly Target
                   </h3>
+                  <h4 className="attendance-target-hours">
+                    {monthlyTarget} hrs
+                  </h4>
                 </div>
-                <GraphUpArrow size={24} className="text-white opacity-50" />
+                <div className="attendance-month-selector">
+                  {currentDateTime.toLocaleString("en-US", {
+                    month: "long",
+                    year: "numeric",
+                  })}
+                  <span aria-hidden="true">⌄</span>
+                </div>
               </div>
-              <small className="text-white text-opacity-75 d-block mb-2 mb-md-3 small-text-mobile">
-                {loadingSummary
-                  ? "Loading..."
-                  : `${summary.monthHours.toFixed(2)} hrs completed • ${(
-                      monthlyTarget - summary.monthHours
-                    ).toFixed(2)} hrs remaining`}
-              </small>
-              <div className="progress" style={{ height: "6px" }}>
+              <div className="attendance-target-body">
+                <div className="attendance-target-copy">
+                  <strong>{summary.monthHours.toFixed(2)} hrs completed</strong>
+                  <span>{(monthlyTarget - summary.monthHours).toFixed(2)} hrs remaining</span>
+                  <div className="progress attendance-target-progress" style={{ height: "8px" }}>
+                    <div
+                      className="progress-bar"
+                      role="progressbar"
+                      style={{
+                        width: `${Math.min(
+                          (summary.monthHours / monthlyTarget) * 100,
+                          100
+                        )}%`,
+                      }}
+                      aria-valuenow={summary.monthHours}
+                      aria-valuemin="0"
+                      aria-valuemax={monthlyTarget}
+                    ></div>
+                  </div>
+                </div>
                 <div
-                  className="progress-bar bg-white"
-                  role="progressbar"
+                  className="attendance-target-ring"
                   style={{
-                    width: `${Math.min(
+                    "--target-progress": `${Math.min(
                       (summary.monthHours / monthlyTarget) * 100,
                       100
                     )}%`,
                   }}
-                  aria-valuenow={summary.monthHours}
-                  aria-valuemin="0"
-                  aria-valuemax={monthlyTarget}
-                ></div>
+                >
+                  <strong>{Math.round(Math.min((summary.monthHours / monthlyTarget) * 100, 100))}%</strong>
+                  <span>Completed</span>
+                </div>
               </div>
             </Card.Body>
           </Card>
 
-          {/* Stats Cards Row */}
-          <Row className="g-2 g-md-3 mb-3 mb-md-3">
-            <Col xs={6} md={4}>
-              <Card className="border-0 rounded-2 shadow-sm stat-info-card">
-                <Card.Body className="p-3">
-                  <div className="d-flex justify-content-between align-items-start mb-2">
-                    <Calendar size={20} className="text-primary" />
-                    <Badge
-                      bg={weekTrend >= 0 ? "success" : "danger"}
-                      className="badge-trend"
-                    >
-                      {weekTrend >= 0 ? "+" : ""}{weekTrend.toFixed(1)} hrs
-                    </Badge>
-                  </div>
-                  <h5 className="fw-bold mb-1">
-                    {loadingSummary ? (
-                      <span className="spinner-border spinner-border-sm" />
-                    ) : (
-                      `${summary.weekHours.toFixed(2)} hrs`
-                    )}
-                  </h5>
-                  <small className="text-muted">This Week</small>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col xs={6} md={4}>
-              <Card className="border-0 rounded-2 shadow-sm stat-info-card">
-                <Card.Body className="p-3">
-                  <div className="d-flex justify-content-between align-items-start mb-2">
-                    <CheckCircle size={20} className="text-success" />
-                    <Badge bg="info" className="badge-trend">
-                      On track
-                    </Badge>
-                  </div>
-                  <h5 className="fw-bold mb-1">
-                    {loadingSummary ? (
-                      <span className="spinner-border spinner-border-sm" />
-                    ) : (
-                      `${summary.monthHours.toFixed(2)} hrs`
-                    )}
-                  </h5>
-                  <small className="text-muted">This Month</small>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col xs={6} md={4}>
-              <Card className="border-0 rounded-2 shadow-sm stat-info-card">
-                <Card.Body className="p-3">
-                  <div className="d-flex justify-content-between align-items-start mb-2">
-                    <Shield size={20} className="text-warning" />
-                    <Badge bg="success" className="badge-trend">
-                      {attendanceData.presentPercentage}%
-                    </Badge>
-                  </div>
-                  <h5 className="fw-bold mb-1">
-                    {loadingSummary ? (
-                      <span className="spinner-border spinner-border-sm" />
-                    ) : (
-                      `${summary.attendanceDays} days`
-                    )}
-                  </h5>
-                  <small className="text-muted">Attendance</small>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
         </Col>
       </Row>
 

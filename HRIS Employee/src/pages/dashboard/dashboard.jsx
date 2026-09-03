@@ -7,7 +7,7 @@ import React, {
   useMemo,
   useCallback,
 } from "react";
-import { Container, Row, Col, Card } from "react-bootstrap";
+import { Container, Row, Col, Card, Modal } from "react-bootstrap";
 import AdminLayout from "@/components/layout/Adminlayout";
 import {
   PersonFillCheck,
@@ -18,6 +18,7 @@ import {
   EyeSlash,
 } from "react-bootstrap-icons";
 import api from "@/config/axios";
+import { useAuth } from "@/context/AuthContext.jsx";
 import "./Dashboard.css";
 import "@/assets/style/global.css";
 
@@ -26,12 +27,28 @@ const RecentPayslip = lazy(() => import("@/pages/dashboard/components/RecentPays
 const Overview = lazy(() => import("@/pages/dashboard/components/Overview"));
 const AttendanceOverview = lazy(() => import("@/pages/dashboard/components/AttendanceOverview"));
 
+const getStatTrendPoints = (stat) => {
+  const numericValue = Number(String(stat.value).replace(/[^0-9.-]/g, "")) || 0;
+  const valueScale = Math.min(Math.log10(numericValue + 1) / 5, 1);
+  const endPoint = 28 - valueScale * 20;
+  const variation = (numericValue % 7) * 0.8;
+
+  return `2,30 16,${25 - variation} 29,${28 - valueScale * 5} 43,${18 + variation} 57,${22 - valueScale * 8} 71,${endPoint + 5} 86,${endPoint}`;
+};
+
 const LoadingPanel = () => (
   <div className="text-center py-4 text-muted">
     <div className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
     Loading...
   </div>
 );
+
+const formatPeso = (value) =>
+  new Intl.NumberFormat("en-PH", {
+    style: "currency",
+    currency: "PHP",
+    minimumFractionDigits: 2,
+  }).format(value);
 
 // Memoize child components to prevent unnecessary re-renders
 const MemoizedRecentReport = React.memo(({ recentReports }) => (
@@ -56,6 +73,7 @@ const MemoizedAttendanceOverview = React.memo(() => (
 ));
 
 const Dashboard = ({ setIsAuth }) => {
+  const { user } = useAuth();
   const [hidePayValues, setHidePayValues] = useState({
     grossPay: true,
     netPay: true,
@@ -110,11 +128,92 @@ const Dashboard = ({ setIsAuth }) => {
   ]);
 
   const [announcements, setAnnouncements] = useState([]);
+  const [dismissedAnnouncementKey, setDismissedAnnouncementKey] = useState(null);
+  const [selectedAnnouncementId, setSelectedAnnouncementId] = useState(null);
+  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const [recentPayslips, setRecentPayslips] = useState([]);
   const [recentReports, setRecentReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const hasFetched = useRef(false);
+
+  const userKey = user?.id || user?.email || user?.username;
+  const unreadAnnouncements = announcements
+    .filter((announcement) => !announcement.is_seen)
+    .sort(
+      (first, second) =>
+        new Date(second.created_at) - new Date(first.created_at),
+    );
+  const latestUnreadAnnouncement = unreadAnnouncements[0];
+  const selectedAnnouncement =
+    announcements.find(
+      (announcement) => announcement.id === selectedAnnouncementId,
+    ) || latestUnreadAnnouncement || announcements[0];
+  const announcementStorageKey =
+    userKey && latestUnreadAnnouncement?.id
+      ? `dashboard-announcement-${userKey}-${latestUnreadAnnouncement.id}`
+      : null;
+
+  useEffect(() => {
+    if (!announcementStorageKey) return;
+
+    const alreadySeen = localStorage.getItem(announcementStorageKey);
+    const shouldOpen =
+      announcementStorageKey !== dismissedAnnouncementKey && !alreadySeen;
+
+    if (shouldOpen) {
+      setShowAnnouncementModal(true);
+      localStorage.setItem(announcementStorageKey, "shown");
+    }
+  }, [announcementStorageKey, dismissedAnnouncementKey]);
+
+  useEffect(() => {
+    const handleAnnouncementSeen = (event) => {
+      const announcementId = event.detail?.announcementId;
+      if (!announcementId) return;
+
+      setAnnouncements((prev) =>
+        prev.map((announcement) =>
+          announcement.id === announcementId
+            ? { ...announcement, is_seen: true }
+            : announcement,
+        ),
+      );
+    };
+
+    window.addEventListener("announcement-seen", handleAnnouncementSeen);
+    return () => window.removeEventListener("announcement-seen", handleAnnouncementSeen);
+  }, []);
+
+  const handleAnnouncementClose = () => {
+    setShowAnnouncementModal(false);
+    if (announcementStorageKey) {
+      setDismissedAnnouncementKey(announcementStorageKey);
+    }
+  };
+
+  const handleAnnouncementSelect = async (announcementId) => {
+    setSelectedAnnouncementId(announcementId);
+
+    const announcement = announcements.find((item) => item.id === announcementId);
+    if (!announcement || announcement.is_seen) return;
+
+    try {
+      await api.get(`/announcements/${announcementId}`);
+      setAnnouncements((prev) =>
+        prev.map((item) =>
+          item.id === announcementId ? { ...item, is_seen: true } : item,
+        ),
+      );
+      window.dispatchEvent(
+        new CustomEvent("announcement-seen", {
+          detail: { announcementId },
+        }),
+      );
+    } catch (err) {
+      console.error("Error marking announcement as read:", err);
+    }
+  };
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -172,15 +271,67 @@ const Dashboard = ({ setIsAuth }) => {
     fetchDashboard();
   }, []);
 
-  const formatPeso = (value) =>
-    new Intl.NumberFormat("en-PH", {
-      style: "currency",
-      currency: "PHP",
-      minimumFractionDigits: 2,
-    }).format(value);
-
   return (
     <AdminLayout setIsAuth={setIsAuth}>
+      <Modal
+        show={showAnnouncementModal}
+        onHide={handleAnnouncementClose}
+        centered
+        size="lg"
+        backdrop="static"
+        keyboard={false}
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Announcement</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="announcement-popup-body p-0">
+          <div className="announcement-popup-list">
+            {announcements.map((announcement) => (
+              <button
+                type="button"
+                key={announcement.id}
+                className={`announcement-popup-list-item ${
+                  selectedAnnouncement?.id === announcement.id
+                    ? "active"
+                    : ""
+                }`}
+                onClick={() => handleAnnouncementSelect(announcement.id)}
+              >
+                <span className="announcement-popup-list-heading">
+                  <strong>{announcement.title}</strong>
+                  <span
+                    className={`announcement-status-dot ${announcement.is_seen ? "is-seen" : ""}`}
+                    aria-label={announcement.is_seen ? "Read announcement" : "Unread announcement"}
+                    title={announcement.is_seen ? "Read announcement" : "Unread announcement"}
+                  >
+                    <span aria-hidden="true" />
+                  </span>
+                </span>
+                <small>{new Date(announcement.created_at).toLocaleDateString()}</small>
+              </button>
+            ))}
+          </div>
+          <div className="announcement-popup-detail announcement-details">
+            <h5 className="announcement-title">{selectedAnnouncement?.title}</h5>
+            {selectedAnnouncement?.created_at && (
+              <p className="text-muted announcement-date">
+                Posted on: {new Date(selectedAnnouncement.created_at).toLocaleDateString()}
+              </p>
+            )}
+            <hr />
+            <p className="announcement-content mb-0">{selectedAnnouncement?.content}</p>
+          </div>
+        </Modal.Body>
+        <Modal.Footer className="border-0 pt-0">
+          <button
+            type="button"
+            className="btn btn-primary btn-sm px-3"
+            onClick={handleAnnouncementClose}
+          >
+            Close
+          </button>
+        </Modal.Footer>
+      </Modal>
       <Container fluid className="glb-container">
         {error && <div className="alert alert-danger">{error}</div>}
 
@@ -206,10 +357,13 @@ const Dashboard = ({ setIsAuth }) => {
             <Row className="mb-3 g-4 d-none d-md-flex">
               {stats.map((stat) => (
                 <Col md={3} key={stat.id}>
-                  <Card className="stat-card-modern">
+                  <Card className={`stat-card-modern stat-card-${stat.id}`}>
                     <Card.Body className="stat-content p-0">
+                      <div className={`stat-icon stat-icon-${stat.color}`}>
+                        {iconMap[stat.icon]}
+                      </div>
                       <div className="stat-info">
-                        <div className="d-flex align-items-center justify-content-start">
+                        <div className="stat-label-row">
                           <p>{stat.label}</p>
                           <span>
                             {(stat.id === 3 || stat.id === 4) && (
@@ -254,9 +408,15 @@ const Dashboard = ({ setIsAuth }) => {
                           </h5>
                         </div>
                       </div>
-                      <div className={`stat-icon stat-icon-${stat.color}`}>
-                        {iconMap[stat.icon]}
-                      </div>
+                      <div className={`stat-trend-chart stat-trend-${stat.id}`} aria-hidden="true">
+                          <svg viewBox="0 0 88 42" preserveAspectRatio="none">
+                            <polyline
+                              points={
+                                getStatTrendPoints(stat)
+                              }
+                            />
+                          </svg>
+                        </div>
                     </Card.Body>
                   </Card>
                 </Col>

@@ -98,7 +98,7 @@ const PayslipDetails = ({ show, onClose, onDownload, payslip: payslipData, holid
                         <section className="payslip-net-panel">
                             <h3>NET PAYABLE AMOUNT</h3>
                             <strong>{formatPeso(toAmount(payslip.net_pay))}</strong>
-                            <p>This amount will be deposited to your registered bank account</p>
+                            <p>This amount will be deposited to your registered bank account or E-Wallet</p>
                         </section>
                     </div>
                 )}

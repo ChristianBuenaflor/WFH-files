@@ -11,6 +11,40 @@ const getDateKey = (date) => {
   return `${year}-${month}-${day}`;
 };
 
+const getHolidayDateKey = (value) => {
+  if (!value) return "";
+  const text = String(value);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Manila",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map(({ type, value: partValue }) => [type, partValue]));
+  return `${values.year}-${values.month}-${values.day}`;
+};
+
+const isArchived = (record = {}) =>
+  [1, "1", true, "true"].includes(record.is_archived ?? record.isArchived);
+
+const inFlightRequests = new Map();
+
+const getSharedRequest = (key, request) => {
+  if (inFlightRequests.has(key)) return inFlightRequests.get(key);
+
+  const sharedRequest = request().finally(() => {
+    inFlightRequests.delete(key);
+  });
+
+  inFlightRequests.set(key, sharedRequest);
+  return sharedRequest;
+};
+
 const HolidayPage = ({ setIsAuth }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [calendarData, setCalendarData] = useState([]);
@@ -59,11 +93,14 @@ const HolidayPage = ({ setIsAuth }) => {
         const [calendarResponses, attendanceResponse, holidaysResponse] = await Promise.all([
           Promise.all(
             Array.from(months.values()).map(({ month, year }) =>
-              api.get("/dashboard/calendar", { params: { month, year } }),
+              getSharedRequest(
+                `calendar:${year}-${month}`,
+                () => api.get("/dashboard/calendar", { params: { month, year } }),
+              ),
             ),
           ),
-          api.get("/my-attendance"),
-          api.get("/getholidays"),
+          getSharedRequest("my-attendance", () => api.get("/my-attendance")),
+          getSharedRequest("getholidays", () => api.get("/getholidays")),
         ]);
 
         if (isCurrentRequest) {
@@ -85,17 +122,18 @@ const HolidayPage = ({ setIsAuth }) => {
           );
 
           holidayRecords.forEach((holiday) => {
-            if (holiday.is_archived === 1) return;
+            if (isArchived(holiday)) return;
 
             const holidayDate = holiday.holiday_date || holiday.date || holiday.holidayDate;
             if (!holidayDate) return;
 
-            const date = String(holidayDate).slice(0, 10);
+            const date = getHolidayDateKey(holidayDate);
+            if (!date) return;
             const existingRecord = recordsByDate.get(date) || {};
             recordsByDate.set(date, {
               ...existingRecord,
               date,
-              holiday: existingRecord.holiday || {
+              holiday: {
                 name: holiday.holiday_name || holiday.name || holiday.holiday || "Holiday",
                 type: holiday.holiday_type || holiday.type || "Holiday",
               },
@@ -267,8 +305,16 @@ const HolidayPage = ({ setIsAuth }) => {
   const getHolidayName = (record) =>
     getHolidayData(record)?.name || "Holiday";
 
-  const getHolidayType = (record) =>
-    getHolidayData(record)?.type || "Holiday";
+  const getHolidayType = (record) => {
+    const type = getHolidayData(record)?.type;
+
+    if (typeof type === "string") return type;
+    if (type && typeof type === "object") {
+      return type.type_name || type.name || type.description || "Holiday";
+    }
+
+    return "Holiday";
+  };
 
   const showHoliday = activeFilter === "all" || activeFilter === "holidays";
 

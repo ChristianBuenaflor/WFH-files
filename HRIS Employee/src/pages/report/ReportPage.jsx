@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Alert, Button, Card, Col, Container, Form, Row, Spinner, Table } from "react-bootstrap";
+import { Alert, Button, Card, Col, Container, Form, Modal, Row, Spinner, Table } from "react-bootstrap";
 import { Download, Eye, FileText, Search } from "react-bootstrap-icons";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext.jsx";
@@ -37,14 +37,8 @@ const ReportPage = ({ setIsAuth }) => {
 
 		const loadReports = async () => {
 			try {
-				let records;
-				try {
-					const response = await api.get("/my-reports");
-					records = response.data?.reports || response.data?.data || [];
-				} catch {
-					const response = await api.get("/dashboard/employees");
-					records = response.data?.recent_reports || [];
-				}
+				const response = await api.get("/dashboard/employees");
+				const records = response.data?.recent_reports || [];
 				setReports(Array.isArray(records) ? records : []);
 			} catch (requestError) {
 				console.error("Error loading reports:", requestError);
@@ -100,7 +94,39 @@ const ReportPage = ({ setIsAuth }) => {
 					<div className="report-toolbar"><div className="report-search"><Search /><Form.Control value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search reports" aria-label="Search reports" /></div><Form.Select value={period} onChange={(event) => setPeriod(event.target.value)} aria-label="Filter report period" className="report-period-select"><option value="all">All time</option><option value="month">This month</option><option value="year">This year</option></Form.Select></div>
 					{loading ? <div className="report-loading"><Spinner animation="border" size="sm" /> Loading reports...</div> : <Table responsive hover className="report-table"><thead><tr><th>Report ID</th><th>Date</th><th>Clock-out</th><th>Summary</th><th>Status</th><th aria-label="Actions" /></tr></thead><tbody>{filteredReports.length ? filteredReports.map((report) => <tr key={report.id}><td><span className="report-id">#{report.id}</span></td><td>{formatDate(report.clock_out)}</td><td>{new Date(report.clock_out).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</td><td className="report-summary-cell">{getReportText(report) || "No details provided"}</td><td><span className="report-status">Submitted</span></td><td><Button variant="outline-primary" size="sm" onClick={() => setSelectedReport(report)}><Eye className="me-1" /> View</Button></td></tr>) : <tr><td colSpan="6" className="report-empty">No reports match the selected filters.</td></tr>}</tbody></Table>}
 				</Card.Body></Card>
-				{selectedReport && <Card className="report-detail-card"><Card.Body><div className="report-detail-heading"><div><p className="report-eyebrow">Report #{selectedReport.id}</p><h2>{selectedReport.subject || "Work report"}</h2><span>{formatDate(selectedReport.clock_out, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</span></div><Button variant="light" onClick={() => setSelectedReport(null)}>Close</Button></div><div className="report-content" dangerouslySetInnerHTML={{ __html: selectedReport.report_today || "<p>No details provided.</p>" }} /></Card.Body></Card>}
+				<Modal show={Boolean(selectedReport)} onHide={() => setSelectedReport(null)} size="lg" centered>
+					<Modal.Header closeButton>
+						<Modal.Title>Report Details</Modal.Title>
+					</Modal.Header>
+					<Modal.Body>
+						{selectedReport && <>
+							<Row className="mb-4">
+								<Col md={6}>
+									<div className="p-3 bg-light rounded">
+										<small className="text-muted d-block">Date</small>
+										<strong>{formatDate(selectedReport.clock_out, { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</strong>
+									</div>
+								</Col>
+								<Col md={6}>
+									<div className="p-3 bg-light rounded">
+										<small className="text-muted d-block">Time</small>
+										<strong>{new Date(selectedReport.clock_out).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</strong>
+									</div>
+								</Col>
+							</Row>
+							<div className="mb-4">
+								<h6 className="fw-bold mb-3">Report Content</h6>
+								<div className="report-full-content p-4 bg-light rounded" style={{ maxHeight: "400px", overflowY: "auto", fontSize: "0.95rem", lineHeight: "1.6" }}>
+									<div dangerouslySetInnerHTML={{ __html: selectedReport.report_today || "<p class='text-muted'>No content provided</p>" }} />
+								</div>
+							</div>
+							<div className="text-muted small"><strong>Report ID:</strong> #{selectedReport.id} | <strong>Status:</strong> Submitted</div>
+						</>}
+					</Modal.Body>
+					<Modal.Footer>
+						<Button variant="secondary" onClick={() => setSelectedReport(null)}>Close</Button>
+					</Modal.Footer>
+				</Modal>
 			</Container>
 		</AdminLayout>
 	);
