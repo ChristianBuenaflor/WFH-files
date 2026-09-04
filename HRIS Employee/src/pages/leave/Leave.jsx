@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Container,
   Row,
@@ -47,15 +47,6 @@ const Leave = ({ setIsAuth }) => {
 
   const [calculatedDays, setCalculatedDays] = useState(0);
 
-  // Fetch user data and leaves on component mount
-  useEffect(() => {
-if (hasFetched.current) return;
-      hasFetched.current = true;
-    fetchLeaves();
-    fetchLeaveTypes();
-    fetchLeaveBalances();
-  }, []);
-
   // Calculate days when dates change
   useEffect(() => {
     if (formData.start_date && formData.end_date) {
@@ -67,7 +58,7 @@ if (hasFetched.current) return;
   }, [formData.start_date, formData.end_date]);
 
   // Fetch user's leave requests
-  const fetchLeaves = async () => {
+  const fetchLeaves = useCallback(async () => {
     try {
       setLoading(true);
       const response = await api.get("/my-leaves");
@@ -81,10 +72,10 @@ if (hasFetched.current) return;
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Fetch leave types
-  const fetchLeaveTypes = async () => {
+  const fetchLeaveTypes = useCallback(async () => {
     try {
       const response = await api.get("/dropdown/leave-types");
 
@@ -94,9 +85,9 @@ if (hasFetched.current) return;
     } catch (err) {
       console.error("Failed to fetch leave types:", err);
     }
-  };
+  }, []);
   // Fetch leave balances
-  const fetchLeaveBalances = async () => {
+  const fetchLeaveBalances = useCallback(async () => {
     try {
       const response = await api.get("/my-leaves-balance");
       if (response.data.isSuccess) {
@@ -105,7 +96,16 @@ if (hasFetched.current) return;
     } catch (err) {
       console.error("Failed to fetch leave balances:", err);
     }
-  };
+  }, []);
+
+  // Fetch user data and leaves on component mount
+  useEffect(() => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+    fetchLeaves();
+    fetchLeaveTypes();
+    fetchLeaveBalances();
+  }, [fetchLeaves, fetchLeaveTypes, fetchLeaveBalances]);
 
   // Handle form input changes
   const handleFormChange = (e) => {
@@ -223,7 +223,7 @@ if (hasFetched.current) return;
       navigate("/");
       return;
     }
-  }, [isAuth, navigate]);
+  }, [isAuth, navigate, setIsAuth]);
 
   if (!isAuth) {
     return null;

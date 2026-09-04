@@ -138,7 +138,9 @@ export const useFaceVerificationCamera = ({ onFaceCaptured, showToast, onCameraE
               captureTimeout.current = setTimeout(async () => {
                 const result = await autoCaptureAndSubmit();
                 if (result && onFaceCaptured) {
+                  setCapturedFaceFile(result.file);
                   await onFaceCaptured(result);
+                  setShowFaceModal(false);
                 }
               }, 1500);
             }
@@ -152,7 +154,7 @@ export const useFaceVerificationCamera = ({ onFaceCaptured, showToast, onCameraE
         } else {
           setFaceAligned(false);
         }
-      } catch (error) {
+      } catch {
         // ignore detection errors while the camera is settling
       }
     }, 500);
@@ -162,17 +164,19 @@ export const useFaceVerificationCamera = ({ onFaceCaptured, showToast, onCameraE
     if (cameraStartedRef.current) return;
     cameraStartedRef.current = true;
 
+    let stream;
     try {
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error("Camera API not available. Use HTTPS.");
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia({
+      stream = await navigator.mediaDevices.getUserMedia({
         video: { width: { ideal: 640 }, height: { ideal: 480 } },
       });
 
       const video = videoRef.current;
       if (!video) {
+        stream.getTracks().forEach((track) => track.stop());
         throw new Error("Video element not ready");
       }
 
@@ -182,13 +186,17 @@ export const useFaceVerificationCamera = ({ onFaceCaptured, showToast, onCameraE
       video.autoplay = true;
       setCameraStream(stream);
 
-      video.onloadedmetadata = () => {
-        startDetection();
-      };
+      await new Promise((resolve, reject) => {
+        video.onloadedmetadata = resolve;
+        video.onerror = reject;
+        if (video.readyState >= 2) resolve();
+      });
 
       await video.play();
+      startDetection();
     } catch (err) {
       console.error("Camera start error:", err);
+      stream?.getTracks().forEach((track) => track.stop());
       let msg = "Camera access denied. ";
       if (err.name === "NotAllowedError") msg += "Please grant camera permission.";
       else if (err.name === "NotFoundError") msg += "No camera found.";
@@ -208,13 +216,7 @@ export const useFaceVerificationCamera = ({ onFaceCaptured, showToast, onCameraE
     setCaptureErrorMessage("");
     setVerificationMessage("");
     setShowFaceModal(true);
-
-    setTimeout(() => {
-      if (videoRef.current && !cameraStartedRef.current) {
-        startCamera();
-      }
-    }, 200);
-  }, [startCamera]);
+  }, []);
 
   const closeFaceModal = useCallback(() => {
     setShowFaceModal(false);
@@ -231,7 +233,17 @@ export const useFaceVerificationCamera = ({ onFaceCaptured, showToast, onCameraE
       stopCamera();
       return;
     }
-  }, [showFaceModal, stopCamera]);
+
+    if (loadingModels || cameraStartedRef.current || cameraStream) return;
+
+    const startTimer = setTimeout(() => {
+      if (videoRef.current && !cameraStartedRef.current) {
+        startCamera();
+      }
+    }, 150);
+
+    return () => clearTimeout(startTimer);
+  }, [showFaceModal, loadingModels, cameraStream, startCamera, stopCamera]);
 
   useEffect(() => {
     const loadModels = async () => {

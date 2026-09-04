@@ -256,7 +256,7 @@ const Overview = ({ selectedMonth, selectedYear }) => {
               {!loading && !error && (
                 <div className="attendance-chart-wrapper attendance-donut-layout">
                   <div className="attendance-donut-chart">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height={190} minWidth={0} minHeight={0}>
                       <PieChart>
                         <Pie
                           data={chartData}
@@ -330,7 +330,7 @@ const Overview = ({ selectedMonth, selectedYear }) => {
             <Card.Body className="p-3">
               {!loading && !error && (
                 <div className="attendance-summary-chart">
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height={200} minWidth={0} minHeight={0}>
                     <BarChart data={stats} margin={{ top: 24, right: 12, left: 12, bottom: 0 }}>
                       <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
                       <XAxis dataKey="label" tick={{ fontSize: 13 }} axisLine={false} tickLine={false} />

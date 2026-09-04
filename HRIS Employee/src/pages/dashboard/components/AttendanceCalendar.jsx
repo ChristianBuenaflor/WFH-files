@@ -12,7 +12,7 @@ import "@/pages/dashboard/components/AttendanceCalendar.css";
 const AttendanceCalendar = ({ onMonthChange }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [calendarData, setCalendarData] = useState([]);
-  const [summary, setSummary] = useState({
+  const [, setSummary] = useState({
     present: 0,
     absent: 0,
   });

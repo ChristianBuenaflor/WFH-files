@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
   Container,
   Button,
@@ -13,7 +13,7 @@ import { useAuth } from "@/context/AuthContext.jsx";
 import { ClockHistory, ListCheck, Download } from "react-bootstrap-icons";
 import { useNavigate } from "react-router-dom";
 import OverviewTab from "@/pages/attendance/tabs/OverviewTab.jsx";
-import PresentAbsentTab from "@/pages/attendance/tabs/PresentAbsentTab.jsx";
+import AttendanceLogTab from "@/pages/attendance/tabs/AttendanceLogTab.jsx";
 import DRTAdjustmentModal from "@/pages/attendance/components/modals/DRTAdjustmentModal.jsx";
 import ReportClockOutModal from "@/pages/attendance/components/modals/ReportClockOutModal.jsx";
 import ForgotClockInModal from "@/pages/attendance/components/modals/ForgotClockInModal.jsx";
@@ -47,9 +47,10 @@ const Attendance = ({ setIsAuth }) => {
 
   const [clockInTimestamp, setClockInTimestamp] = useState(null);
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
-  const [sessionTime, setSessionTime] = useState("00:00:00");
+    const [sessionTime, setSessionTime] = useState("00hr 00min");
 
   const [showReportModal, setShowReportModal] = useState(false);
+  const [capturedFaceFile, setCapturedFaceFile] = useState(null);
   const [ccEmails, setCcEmails] = useState("");
   const [reportBody, setReportBody] = useState("");
   const [reportSubject, setReportSubject] = useState("");
@@ -89,10 +90,21 @@ const Attendance = ({ setIsAuth }) => {
 
   const navigate = useNavigate();
 
+  // ----------------- TOASTS -----------------
+  const removeToast = useCallback((id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  const showToast = useCallback((message, type = "success") => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => removeToast(id), 6000);
+  }, [removeToast]);
+
   // Update session time every second when clocked in
   useEffect(() => {
     if (!summary.isClockedIn || !clockInTimestamp) {
-      setSessionTime("00:00:00");
+      setSessionTime("00hr 00min");
       return;
     }
 
@@ -103,9 +115,8 @@ const Attendance = ({ setIsAuth }) => {
       const diffMs = now - clockInDate;
       const hours = Math.floor(diffMs / (1000 * 60 * 60));
       const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
       setSessionTime(
-        `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+        `${String(hours).padStart(2, "0")}hr ${String(minutes).padStart(2, "0")}min`
       );
     }, 1000);
 
@@ -113,7 +124,7 @@ const Attendance = ({ setIsAuth }) => {
   }, [summary.isClockedIn, clockInTimestamp]);
 
   // ----------------- FETCH ATTENDANCE -----------------
-  const fetchMyAttendance = async () => {
+  const fetchMyAttendance = useCallback(async () => {
     try {
       setLoadingSummary(true);
       const response = await api.get("/my-attendance");
@@ -153,16 +164,16 @@ const Attendance = ({ setIsAuth }) => {
 
         setClockInTimestamp(isClockedIn ? rawTimestamp : null);
       }
-    } catch (error) {
+    } catch {
       showToast("Failed to load attendance summary", "danger");
     } finally {
       setLoadingSummary(false);
       setIsInitialLoading(false);
     }
-  };
+  }, [showToast]);
 
   // ---------- FETCH ABSENCES FOR SELECTED MONTH ----------
-  const fetchMonthlyAbsences = async (month, year) => {
+  const fetchMonthlyAbsences = useCallback(async (month, year) => {
     setLoadingPresentAbsent(true);
     try {
       const response = await api.get("/my-absence", {
@@ -180,10 +191,10 @@ const Attendance = ({ setIsAuth }) => {
     } finally {
       setLoadingPresentAbsent(false);
     }
-  };
+  }, [showToast]);
 
   // ---------- FETCH PRESENT RECORDS FOR SELECTED MONTH ----------
-  const fetchMonthlyPresent = async (month, year) => {
+  const fetchMonthlyPresent = useCallback(async (month, year) => {
     setLoadingPresentAbsent(true);
     try {
       const response = await api.get("/my-attendance");
@@ -211,7 +222,7 @@ const Attendance = ({ setIsAuth }) => {
     } finally {
       setLoadingPresentAbsent(false);
     }
-  };
+  }, [showToast]);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -228,7 +239,7 @@ const Attendance = ({ setIsAuth }) => {
       hasFetched.current = true;
       fetchMyAttendance();
     }
-  }, [isAuth]);
+  }, [isAuth, fetchMyAttendance]);
 
   // Live clock
   useEffect(() => {
@@ -253,7 +264,7 @@ const Attendance = ({ setIsAuth }) => {
   ]);
 
   // ----------------- AUTO CLOCK-OUT AFTER 15 HOURS -----------------
-  const autoClockOut = async () => {
+  const autoClockOut = useCallback(async () => {
     autoClockOutTriggered.current = true;
     try {
       await api.post("/attendance/clock-out");
@@ -266,7 +277,7 @@ const Attendance = ({ setIsAuth }) => {
         "danger",
       );
     }
-  };
+  }, [fetchMyAttendance, showToast]);
 
   useEffect(() => {
     if (
@@ -276,7 +287,7 @@ const Attendance = ({ setIsAuth }) => {
     ) {
       autoClockOut();
     }
-  }, [liveHoursToday, summary.isClockedIn]);
+  }, [autoClockOut, liveHoursToday, summary.isClockedIn]);
 
   // ----------------- CLOCK IN HANDLER -----------------
   const handleClockIn = async () => {
@@ -298,18 +309,28 @@ const Attendance = ({ setIsAuth }) => {
   const handleClockOut = async () => {
     setLoadingOut(true);
     try {
-      const payload = {
-        report_today: reportBody,
-        cc_emails: ccEmails,
-        subject: reportSubject,
-      };
-
-      await api.post("/attendance/clock-out", payload);
+      if (capturedFaceFile) {
+        const clockOutData = new FormData();
+        clockOutData.append("face_image", capturedFaceFile);
+        clockOutData.append("report_today", reportBody);
+        clockOutData.append("cc_emails", ccEmails);
+        clockOutData.append("subject", reportSubject);
+        await api.post("/attendance/clock-out", clockOutData, {
+          headers: { "Content-Type": undefined },
+        });
+      } else {
+        await api.post("/attendance/clock-out", {
+          report_today: reportBody,
+          cc_emails: ccEmails,
+          subject: reportSubject,
+        });
+      }
       showToast("Clocked Out Successfully!");
 
       setCcEmails("");
       setReportSubject("");
       setReportBody("");
+      setCapturedFaceFile(null);
       setClockInTimestamp(null);
       autoClockOutTriggered.current = false;
 
@@ -373,17 +394,6 @@ const Attendance = ({ setIsAuth }) => {
     }
     setShowReportModal(false);
     await handleClockOut();
-  };
-
-  // ----------------- TOASTS -----------------
-  const showToast = (message, type = "success") => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => removeToast(id), 6000);
-  };
-
-  const removeToast = (id) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
   // ----------------- FORMAT HELPERS -----------------
@@ -500,7 +510,7 @@ const Attendance = ({ setIsAuth }) => {
         reason: forgotClockInForm.reason,
       };
       console.log("Forgot Clock In Payload:", payload);
-      const res = await api.post("/request/clock/date", payload);
+      await api.post("/request/clock/date", payload);
       setLoading(false);
       showToast("Clock-in adjustment request submitted!", "success");
       setShowForgotModal(false);
@@ -591,7 +601,14 @@ const Attendance = ({ setIsAuth }) => {
       fetchMonthlyPresent(selectedMonth, selectedYear);
       fetchMonthlyAbsences(selectedMonth, selectedYear);
     }
-  }, [selectedMonth, selectedYear, activeTab, isAuth]);
+  }, [
+    selectedMonth,
+    selectedYear,
+    activeTab,
+    isAuth,
+    fetchMonthlyPresent,
+    fetchMonthlyAbsences,
+  ]);
 
   // ----------------- INITIAL LOADING -----------------
   if (isInitialLoading) {
@@ -670,12 +687,15 @@ const Attendance = ({ setIsAuth }) => {
             formatDate={formatDate}
             formatTimeRange={formatTimeRange}
             formatHoursWorked={formatHoursWorked}
+            fetchMyAttendance={fetchMyAttendance}
+            showToast={showToast}
+            setCapturedFaceFile={setCapturedFaceFile}
           />
         )}
 
         {/* ========== MODERN REDESIGNED PRESENT & ABSENT TAB ========== */}
         {activeTab === "presentAbsent" && (
-          <PresentAbsentTab
+          <AttendanceLogTab
             selectedMonth={selectedMonth}
             setSelectedMonth={setSelectedMonth}
             selectedYear={selectedYear}

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "react-bootstrap";
 import AdminLayout from "@/components/layout/Adminlayout";
 import api from "@/config/axios";
-import "@/pages/calendar/HolidayPage.css";
+import "@/pages/calendar/CalendarPage.css";
 
 const getDateKey = (date) => {
   const year = date.getFullYear();
@@ -33,6 +33,7 @@ const isArchived = (record = {}) =>
   [1, "1", true, "true"].includes(record.is_archived ?? record.isArchived);
 
 const inFlightRequests = new Map();
+const REQUEST_DEBOUNCE_MS = 250;
 
 const getSharedRequest = (key, request) => {
   if (inFlightRequests.has(key)) return inFlightRequests.get(key);
@@ -45,12 +46,11 @@ const getSharedRequest = (key, request) => {
   return sharedRequest;
 };
 
-const HolidayPage = ({ setIsAuth }) => {
+const CalendarPage = ({ setIsAuth }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [calendarData, setCalendarData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeFilter, setActiveFilter] = useState("all");
   const [selectedHoliday, setSelectedHoliday] = useState(null);
   const [isHolidaySidebarOpen, setIsHolidaySidebarOpen] = useState(false);
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
@@ -74,108 +74,105 @@ const HolidayPage = ({ setIsAuth }) => {
 
   useEffect(() => {
     let isCurrentRequest = true;
+    let debounceTimer = null;
 
     const fetchCalendar = async () => {
       setLoading(true);
       setError(null);
+
       try {
-        const months = new Map();
-        const startMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1);
-        const endMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 2, 1);
+        const month = selectedDate.getMonth() + 1;
+        const year = selectedDate.getFullYear();
 
-        for (let cursor = new Date(startMonth); cursor <= endMonth; cursor.setMonth(cursor.getMonth() + 1)) {
-          const month = cursor.getMonth() + 1;
-          const year = cursor.getFullYear();
-          const key = `${year}-${month}`;
-          months.set(key, { month, year });
-        }
-
-        const [calendarResponses, attendanceResponse, holidaysResponse] = await Promise.all([
-          Promise.all(
-            Array.from(months.values()).map(({ month, year }) =>
-              getSharedRequest(
-                `calendar:${year}-${month}`,
-                () => api.get("/dashboard/calendar", { params: { month, year } }),
-              ),
-            ),
+        const [calendarResponse, attendanceResponse, holidaysResponse] = await Promise.all([
+          getSharedRequest(
+            `calendar:${year}-${month}`,
+            () => api.get("/dashboard/calendar", { params: { month, year } }),
           ),
           getSharedRequest("my-attendance", () => api.get("/my-attendance")),
           getSharedRequest("getholidays", () => api.get("/getholidays")),
         ]);
 
-        if (isCurrentRequest) {
-          const calendarRecords = calendarResponses.flatMap(
-            (response) => response.data?.calendar || [],
-          );
-          const attendanceRecords =
-            attendanceResponse.data?.attendance ||
-            attendanceResponse.data?.recentAttendance ||
+        if (!isCurrentRequest) return;
+
+        const calendarRecords = calendarResponse.data?.calendar || [];
+        const attendanceRecords =
+          attendanceResponse.data?.attendance ||
+          attendanceResponse.data?.recentAttendance ||
+          [];
+        const holidayRecords = Array.isArray(holidaysResponse.data)
+          ? holidaysResponse.data
+          : holidaysResponse.data?.data ||
+            holidaysResponse.data?.holidays ||
+            holidaysResponse.data?.records ||
             [];
-          const holidayRecords = Array.isArray(holidaysResponse.data)
-            ? holidaysResponse.data
-            : holidaysResponse.data?.data ||
-              holidaysResponse.data?.holidays ||
-              holidaysResponse.data?.records ||
-              [];
-          const recordsByDate = new Map(
-            calendarRecords.map((record) => [record.date, record]),
+
+        const recordsByDate = new Map(
+          calendarRecords.map((record) => [record.date, record]),
+        );
+
+        holidayRecords.forEach((holiday) => {
+          if (isArchived(holiday)) return;
+
+          const holidayDate = holiday.holiday_date || holiday.date || holiday.holidayDate;
+          if (!holidayDate) return;
+
+          const date = getHolidayDateKey(holidayDate);
+          if (!date) return;
+          const existingRecord = recordsByDate.get(date) || {};
+          recordsByDate.set(date, {
+            ...existingRecord,
+            date,
+            holiday: {
+              name: holiday.holiday_name || holiday.name || holiday.holiday || "Holiday",
+              type: holiday.holiday_type || holiday.type || "Holiday",
+            },
+          });
+        });
+
+        attendanceRecords.forEach((attendance) => {
+          const attendanceDate = attendance.clock_in?.slice(0, 10) || attendance.date;
+          if (!attendanceDate) return;
+
+          const existingRecord = recordsByDate.get(attendanceDate) || {};
+          const normalizedHoliday = existingRecord.holiday || attendance.holiday || (
+            attendance.holiday_name ? {
+              name: attendance.holiday_name,
+              type: attendance.holiday_type || attendance.type || "Holiday",
+            } : null
           );
 
-          holidayRecords.forEach((holiday) => {
-            if (isArchived(holiday)) return;
-
-            const holidayDate = holiday.holiday_date || holiday.date || holiday.holidayDate;
-            if (!holidayDate) return;
-
-            const date = getHolidayDateKey(holidayDate);
-            if (!date) return;
-            const existingRecord = recordsByDate.get(date) || {};
-            recordsByDate.set(date, {
-              ...existingRecord,
-              date,
-              holiday: {
-                name: holiday.holiday_name || holiday.name || holiday.holiday || "Holiday",
-                type: holiday.holiday_type || holiday.type || "Holiday",
-              },
-            });
+          recordsByDate.set(attendanceDate, {
+            ...existingRecord,
+            ...attendance,
+            date: attendanceDate,
+            status: attendance.status || existingRecord.status || "present",
+            holiday: normalizedHoliday,
           });
+        });
 
-          attendanceRecords.forEach((attendance) => {
-            const attendanceDate = attendance.clock_in?.slice(0, 10) || attendance.date;
-            if (!attendanceDate) return;
-
-            const existingRecord = recordsByDate.get(attendanceDate) || {};
-            const normalizedHoliday = existingRecord.holiday || attendance.holiday || (
-              attendance.holiday_name ? {
-                name: attendance.holiday_name,
-                type: attendance.holiday_type || attendance.type || "Holiday",
-              } : null
-            );
-
-            recordsByDate.set(attendanceDate, {
-              ...existingRecord,
-              ...attendance,
-              date: attendanceDate,
-              status: attendance.status || existingRecord.status || "present",
-              holiday: normalizedHoliday,
-            });
-          });
-
-          setCalendarData(Array.from(recordsByDate.values()));
-        }
+        setCalendarData(Array.from(recordsByDate.values()));
       } catch (requestError) {
-        if (isCurrentRequest) {
-          setError(requestError.response?.data?.message || "Failed to load calendar");
+        if (!isCurrentRequest) return;
+
+        if (requestError.response?.status === 429) {
+          setError("Too many requests. Please wait a moment and try again.");
+          return;
         }
+
+        setError(requestError.response?.data?.message || "Failed to load calendar");
       } finally {
-        if (isCurrentRequest) setLoading(false);
+        if (isCurrentRequest) {
+          setLoading(false);
+        }
       }
     };
 
-    fetchCalendar();
+    debounceTimer = setTimeout(fetchCalendar, REQUEST_DEBOUNCE_MS);
 
     return () => {
       isCurrentRequest = false;
+      if (debounceTimer) clearTimeout(debounceTimer);
     };
   }, [selectedDate]);
 
@@ -235,9 +232,7 @@ const HolidayPage = ({ setIsAuth }) => {
     const isAttendance = ["present", "late", "absent", "missed"].includes(status);
 
     if (record?.holiday && status === "absent") return false;
-    if (activeFilter === "all") return isAttendance || isLeave;
-    if (activeFilter === "attendance") return isAttendance;
-    return activeFilter === "leave" && isLeave;
+    return isAttendance || isLeave;
   };
 
   const getAttendanceEvents = (record) => {
@@ -316,7 +311,7 @@ const HolidayPage = ({ setIsAuth }) => {
     return "Holiday";
   };
 
-  const showHoliday = activeFilter === "all" || activeFilter === "holidays";
+  const showHoliday = true;
 
   const getMonthGrid = (baseDate) => {
     const monthStart = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
@@ -513,7 +508,7 @@ const HolidayPage = ({ setIsAuth }) => {
           {loading && <div className="teams-calendar-loading">Loading calendar...</div>}
           </div>
 
-          {holidayRecords.length > 0 && isHolidaySidebarOpen && (
+          {isHolidaySidebarOpen && (
             <section className="upcoming-holidays" aria-labelledby="upcoming-holidays-title">
               <div className="upcoming-holidays-header">
                 <div>
@@ -521,22 +516,27 @@ const HolidayPage = ({ setIsAuth }) => {
                   <h2 id="upcoming-holidays-title">Holiday List</h2>
                 </div>
               </div>
-              <div className="upcoming-holidays-list">
-                {holidayRecords.map((record) => (
-                  <button
-                    type="button"
-                    className="upcoming-holiday-item"
-                    key={record.date}
-                    onClick={() => selectHoliday(record)}
-                  >
-                    <span className="upcoming-holiday-dot" />
-                    <span>
-                      <strong>{new Date(`${record.date}T00:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</strong>
-                      <small>{getHolidayName(record)}</small>
-                    </span>
-                  </button>
-                ))}
-              </div>
+
+              {holidayRecords.length > 0 ? (
+                <div className="upcoming-holidays-list">
+                  {holidayRecords.map((record) => (
+                    <button
+                      type="button"
+                      className="upcoming-holiday-item"
+                      key={record.date}
+                      onClick={() => selectHoliday(record)}
+                    >
+                      <span className="upcoming-holiday-dot" />
+                      <span>
+                        <strong>{new Date(`${record.date}T00:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</strong>
+                        <small>{getHolidayName(record)}</small>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="upcoming-holidays-empty">No holiday records available.</p>
+              )}
             </section>
           )}
         </div>
@@ -574,4 +574,4 @@ const HolidayPage = ({ setIsAuth }) => {
   );
 };
 
-export default HolidayPage;
+export default CalendarPage;

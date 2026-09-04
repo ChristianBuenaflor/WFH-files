@@ -47,4 +47,7 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
+// This hook is kept here for the existing public API. Move it to a separate
+// module when adding other shared non-component exports to this file.
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);

@@ -25,9 +25,6 @@ const Login = ({ setIsAuth }) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  /* =======================
-     TOAST FUNCTIONS
-  ======================== */
   const showToast = (message, type = "success") => {
     const id = Date.now();
     const newToast = {
@@ -39,7 +36,6 @@ const Login = ({ setIsAuth }) => {
     
     setToasts((prevToasts) => [...prevToasts, newToast]);
 
-    // Auto-hide after 2.5 seconds
     setTimeout(() => {
       setToasts((prevToasts) => 
         prevToasts.map(toast => 
@@ -47,23 +43,23 @@ const Login = ({ setIsAuth }) => {
         )
       );
       
-      // Clean up after fade animation
       setTimeout(() => {
         setToasts((prevToasts) => prevToasts.filter(toast => toast.id !== id));
       }, 300);
     }, 2500);
   };
 
-  // Handle redirect after toast is shown
   useEffect(() => {
     if (pendingRedirect) {
       const timer = setTimeout(() => {
+        if (setIsAuth) setIsAuth(true);
+        localStorage.setItem("isAuth", "true");
         navigate(pendingRedirect);
-      }, 2800); // Navigate after toast has been visible
+      }, 2800); 
 
       return () => clearTimeout(timer);
     }
-  }, [pendingRedirect, navigate]);
+  }, [pendingRedirect, navigate, setIsAuth]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -74,13 +70,10 @@ const Login = ({ setIsAuth }) => {
       const response = await api.post("/login", formData);
       console.log("Login response:", response.data);
 
-      // Store user data and token using AuthContext
       if (response.data.token && response.data.user) {
         login(response.data.user, response.data.token);
       }
 
-      if (setIsAuth) setIsAuth(true);
-      localStorage.setItem("isAuth", "true");
       setLoading(false);
       showToast("Login successful! Redirecting to dashboard...", "success");
       
@@ -90,10 +83,8 @@ const Login = ({ setIsAuth }) => {
       console.error("Login error:", error);
       const errorMessage = error.response?.data?.message || "Login failed. Please check your credentials.";
 
-      // Show error toast (no redirect)
       showToast(errorMessage, "danger");
       
-      // Reset loading state for error case
       setLoading(false);
     }
   };

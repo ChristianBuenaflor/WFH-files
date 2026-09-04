@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Button, Dropdown } from "react-bootstrap";
 import {
   List,
@@ -42,14 +42,7 @@ const AdminLayout = ({ children, setIsAuth }) => {
   const handleChangePassword = () => {
     setShowChangePasswordModal(true);
   };
-  useEffect(() => {
-    if (user) {
-      if (hasFetched.current) return;
-      hasFetched.current = true;
-      fetchUserData();
-    }
-  }, [user]);
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     if (!user) return; // Ensure user data is available before making the API call
 
     try {
@@ -70,7 +63,15 @@ const AdminLayout = ({ children, setIsAuth }) => {
     } catch (error) {
       console.error("Error fetching user data:", error);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      if (hasFetched.current) return;
+      hasFetched.current = true;
+      fetchUserData();
+    }
+  }, [user, fetchUserData]);
 
   const handleChangePasswordUpdate = async (formData) => {
     try {

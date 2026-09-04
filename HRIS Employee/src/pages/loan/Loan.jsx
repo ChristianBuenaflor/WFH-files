@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Container,
   Row,
@@ -40,7 +40,7 @@ const Loan = ({ setIsAuth }) => {
   const [loanTypes, setLoanTypes] = useState([]);
 
   //loading
-  const [loading, setLoading] = useState(false);
+  const [loading,] = useState(false);
   const [loadingLoanTypes, setLoadingLoanTypes] = useState(false);
 
   // Error & Success Messages
@@ -70,16 +70,8 @@ const Loan = ({ setIsAuth }) => {
 
   const [selectedLoanType, setSelectedLoanType] = useState(null);
 
-  // Fetch loans on mount and when filters change
-  useEffect(() => {
-    if (hasFetched.current) return;
-    hasFetched.current = true;
-    fetchLoans();
-    fetchLoanTypes();
-  }, [currentPage, statusFilter, searchTerm]);
-
   // Fetch user's loans
-  const fetchLoans = async () => {
+  const fetchLoans = useCallback(async () => {
     try {
       setLoadingLoanTypes(true);
       const response = await api.get("/my-loans", {
@@ -103,10 +95,10 @@ const Loan = ({ setIsAuth }) => {
     } finally {
       setLoadingLoanTypes(false);
     }
-  };
+  }, [currentPage, searchTerm, statusFilter]);
 
   // Fetch loan types
-  const fetchLoanTypes = async () => {
+  const fetchLoanTypes = useCallback(async () => {
     try {
       const response = await api.get("/dropdown/loan-types");
       if (
@@ -122,7 +114,15 @@ const Loan = ({ setIsAuth }) => {
     } catch (err) {
       console.error("Failed to fetch loan types:", err);
     }
-  };
+  }, []);
+
+  // Fetch loans on mount and when filters change
+  useEffect(() => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+    fetchLoans();
+    fetchLoanTypes();
+  }, [currentPage, statusFilter, searchTerm, fetchLoans, fetchLoanTypes]);
 
   // Handle form input changes
   const handleFormChange = (e) => {
@@ -318,7 +318,7 @@ const Loan = ({ setIsAuth }) => {
       navigate("/");
       return;
     }
-  }, [isAuth, navigate]);
+  }, [isAuth, navigate, setIsAuth]);
 
   if (!isAuth) {
     return null;

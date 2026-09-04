@@ -829,6 +829,40 @@
 /* ===============================
    ATTENDANCE OVERVIEW CARDS
 ================================= */
+.attendance-target-dropdown-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.attendance-target-select {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  padding: 0.7rem 2.4rem 0.7rem 0.9rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-width: 138px;
+  outline: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background-image: linear-gradient(45deg, transparent 50%, #ffffff 50%), linear-gradient(135deg, #ffffff 50%, transparent 50%);
+  background-position: calc(100% - 18px) calc(50% - 2px), calc(100% - 12px) calc(50% - 2px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
+.attendance-target-select:focus {
+  border-color: rgba(255, 255, 255, 0.52);
+  box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.12);
+}
+
+.attendance-target-select option {
+  color: #10213f;
+}
 
 .attendance-overview-row > [class*="col"] {
   display: flex;

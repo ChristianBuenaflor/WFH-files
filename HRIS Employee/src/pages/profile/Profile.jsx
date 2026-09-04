@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import "@/pages/profile/Profile.css";
 import ProfileEditModal from "@/pages/profile/components/modal/profile/ProfileEditModal";
@@ -39,25 +39,7 @@ const Profile = ({ setIsAuth }) => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
-  // Add this useEffect to handle redirection when not authenticated
-  useEffect(() => {
-    if (!isAuth) {
-      if (setIsAuth) setIsAuth(false);
-      navigate("/");
-      return;
-    }
-  }, [isAuth, navigate]);
-
-  useEffect(() => {
-    if (isAuth) {
-      if (hasFetched.current) return;
-      hasFetched.current = true;
-      fetchProfileData(true);
-      setIsLoading(true); //
-    }
-  }, [isAuth]);
-
-  const fetchProfileData = async () => {
+  const fetchProfileData = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -158,7 +140,25 @@ const Profile = ({ setIsAuth }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  // Add this useEffect to handle redirection when not authenticated
+  useEffect(() => {
+    if (!isAuth) {
+      if (setIsAuth) setIsAuth(false);
+      navigate("/");
+      return;
+    }
+  }, [isAuth, navigate, setIsAuth]);
+
+  useEffect(() => {
+    if (isAuth) {
+      if (hasFetched.current) return;
+      hasFetched.current = true;
+      fetchProfileData();
+      setIsLoading(true);
+    }
+  }, [isAuth, fetchProfileData]);
 
   const handleUpdateProfile = async (updatedData) => {
     try {

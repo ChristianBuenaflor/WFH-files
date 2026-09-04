@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Card, Row, Col, Form, Button } from "react-bootstrap";
 import { Download } from "react-bootstrap-icons";
 
@@ -8,10 +8,8 @@ const ExportTab = ({
   loadingExport,
   month,
   year,
-  status,
   setMonth,
   setYear,
-  setStatus,
 }) => {
   return (
     <Row>

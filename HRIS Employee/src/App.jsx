@@ -3,16 +3,9 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import AppRoutes from "./routes/AppRoutes";
 
 const App = () => {
-  const [isAuth, setIsAuth] = useState(false);
-
-  useEffect(() => {
-    const auth = localStorage.getItem("isAuth");
-    if (auth === "true") {
-      setIsAuth(true);
-    } else {
-      setIsAuth(false);
-    }
-  }, []);
+  const [isAuth, setIsAuth] = useState(
+    () => localStorage.getItem("isAuth") === "true"
+  );
 
   // Listen for storage changes (when logout happens)
   useEffect(() => {

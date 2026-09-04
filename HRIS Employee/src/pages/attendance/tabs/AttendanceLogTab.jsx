@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Card,
   Row,
   Col,
   Table,
-  Badge,
   Form,
   Button,
   OverlayTrigger,
@@ -13,15 +12,60 @@ import {
 import {
   CalendarDate,
   ClockHistory,
-  PersonBadge,
   QuestionCircle,
-  Clock,
-  DoorOpen,
   ChevronLeft,
   ChevronRight,
 } from "react-bootstrap-icons";
 
-const PresentAbsentTab = ({
+const PaginationControls = ({ currentPage, setCurrentPage, totalPages }) => {
+  if (totalPages <= 1) return null;
+
+  return (
+    <div className="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+      <div className="text-muted small">
+        Page {currentPage} of {totalPages}
+      </div>
+      <div className="pagination-controls">
+        <Button
+          variant="outline-secondary"
+          size="sm"
+          disabled={currentPage === 1}
+          onClick={() => setCurrentPage(currentPage - 1)}
+          className="me-2"
+        >
+          <ChevronLeft size={16} /> Previous
+        </Button>
+
+        <div className="d-inline-flex gap-1">
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <Button
+              key={page}
+              variant={currentPage === page ? "primary" : "outline-secondary"}
+              size="sm"
+              onClick={() => setCurrentPage(page)}
+              className="page-btn"
+              style={{ minWidth: "32px" }}
+            >
+              {page}
+            </Button>
+          ))}
+        </div>
+
+        <Button
+          variant="outline-secondary"
+          size="sm"
+          disabled={currentPage === totalPages}
+          onClick={() => setCurrentPage(currentPage + 1)}
+          className="ms-2"
+        >
+          Next <ChevronRight size={16} />
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+const AttendanceLogTab = ({
   selectedMonth,
   setSelectedMonth,
   selectedYear,
@@ -43,17 +87,6 @@ const PresentAbsentTab = ({
   const [statusFilter, setStatusFilter] = useState("all");
   const [minHoursFilter, setMinHoursFilter] = useState("");
   const [searchDate, setSearchDate] = useState("");
-
-  // Reset pagination when month/year changes
-  useEffect(() => {
-    setCurrentPresentPage(1);
-    setCurrentAbsentPage(1);
-  }, [selectedMonth, selectedYear]);
-
-  // Reset present pagination when filters change
-  useEffect(() => {
-    setCurrentPresentPage(1);
-  }, [statusFilter, minHoursFilter, searchDate]);
 
   // Apply filters to attendance data
   const getFilteredPresentData = () => {
@@ -111,54 +144,6 @@ const PresentAbsentTab = ({
   const paginatedAbsent = absentDates.slice(absentStartIndex, absentEndIndex);
   const totalAbsentPages = Math.ceil(absentDates.length / ROWS_PER_PAGE);
 
-  // Pagination component renderer
-  const PaginationControls = ({ currentPage, setCurrentPage, totalPages }) => {
-    if (totalPages <= 1) return null;
-
-    return (
-      <div className="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
-        <div className="text-muted small">
-          Page {currentPage} of {totalPages}
-        </div>
-        <div className="pagination-controls">
-          <Button
-            variant="outline-secondary"
-            size="sm"
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage(currentPage - 1)}
-            className="me-2"
-          >
-            <ChevronLeft size={16} /> Previous
-          </Button>
-
-          <div className="d-inline-flex gap-1">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <Button
-                key={page}
-                variant={currentPage === page ? "primary" : "outline-secondary"}
-                size="sm"
-                onClick={() => setCurrentPage(page)}
-                className="page-btn"
-                style={{ minWidth: "32px" }}
-              >
-                {page}
-              </Button>
-            ))}
-          </div>
-
-          <Button
-            variant="outline-secondary"
-            size="sm"
-            disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage(currentPage + 1)}
-            className="ms-2"
-          >
-            Next <ChevronRight size={16} />
-          </Button>
-        </div>
-      </div>
-    );
-  };
   return (
     <div className="present-absent-wrapper">
       {/* FILTER SECTION */}
@@ -173,7 +158,11 @@ const PresentAbsentTab = ({
 
                 <Form.Select
                   value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                  onChange={(e) => {
+                    setSelectedMonth(parseInt(e.target.value));
+                    setCurrentPresentPage(1);
+                    setCurrentAbsentPage(1);
+                  }}
                   className="rounded-3 border-0 shadow-sm"
                 >
                   {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
@@ -195,7 +184,11 @@ const PresentAbsentTab = ({
 
                 <Form.Select
                   value={selectedYear}
-                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                  onChange={(e) => {
+                    setSelectedYear(parseInt(e.target.value));
+                    setCurrentPresentPage(1);
+                    setCurrentAbsentPage(1);
+                  }}
                   className="rounded-3 border-0 shadow-sm"
                 >
                   {Array.from(
@@ -310,7 +303,10 @@ const PresentAbsentTab = ({
                     </Form.Label>
                     <Form.Select
                       value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
+                      onChange={(e) => {
+                        setStatusFilter(e.target.value);
+                        setCurrentPresentPage(1);
+                      }}
                       className="rounded-3 border-0 shadow-sm"
                       size="sm"
                     >
@@ -331,7 +327,10 @@ const PresentAbsentTab = ({
                       type="number"
                       placeholder="e.g., 8"
                       value={minHoursFilter}
-                      onChange={(e) => setMinHoursFilter(e.target.value)}
+                      onChange={(e) => {
+                        setMinHoursFilter(e.target.value);
+                        setCurrentPresentPage(1);
+                      }}
                       className="rounded-3 border-0 shadow-sm"
                       step="0.5"
                       min="0"
@@ -347,7 +346,10 @@ const PresentAbsentTab = ({
                     <Form.Control
                       type="date"
                       value={searchDate}
-                      onChange={(e) => setSearchDate(e.target.value)}
+                      onChange={(e) => {
+                        setSearchDate(e.target.value);
+                        setCurrentPresentPage(1);
+                      }}
                       className="rounded-3 border-0 shadow-sm"
                     />
                   </Form.Group>
@@ -362,6 +364,7 @@ const PresentAbsentTab = ({
                       setStatusFilter("all");
                       setMinHoursFilter("");
                       setSearchDate("");
+                      setCurrentPresentPage(1);
                     }}
                   >
                     Clear Filters
@@ -372,8 +375,8 @@ const PresentAbsentTab = ({
           </Card>
         </Col>
         <Col xs={12}>
-          <Card className="border-0 shadow-sm rounded-2">
-            <Card.Header className="bg-white border-0 pt-4 pb-0 px-4">
+          <Card className="attendance-report-card">
+            <Card.Header className="attendance-report-card-header">
               <h5 className="fw-bold mb-0">Present Days</h5>
             </Card.Header>
 
@@ -394,13 +397,8 @@ const PresentAbsentTab = ({
                     </small>
                   </div>
                   <div className="table-responsive">
-                    <Table
-                      borderless
-                      hover
-                      striped
-                      className="align-middle mb-0"
-                    >
-                      <thead className="text-muted small">
+                    <Table responsive hover className="attendance-report-table">
+                      <thead>
                         <tr>
                           <th>Date</th>
                           <th>Clock In</th>
@@ -413,7 +411,7 @@ const PresentAbsentTab = ({
                       <tbody>
                         {paginatedPresent.map((record, idx) => (
                           <tr key={record.id || idx}>
-                            <td className="fw-medium">
+                            <td className="attendance-date-cell">
                               {new Date(record.clock_in).toLocaleDateString(
                                 "en-US",
                                 {
@@ -424,17 +422,12 @@ const PresentAbsentTab = ({
                             </td>
 
                             <td>
-                              <Clock size={14} className="text-muted me-1" />
                               {formatTime(record.clock_in)}
                             </td>
 
                             <td>
                               {record.clock_out ? (
                                 <>
-                                  <DoorOpen
-                                    size={14}
-                                    className="text-muted me-1"
-                                  />
                                   {formatTime(record.clock_out)}
                                 </>
                               ) : (
@@ -446,24 +439,17 @@ const PresentAbsentTab = ({
 
                             <td>
                               {record.clock_out === null && (
-                                <Badge bg="secondary" className="px-3 py-2">
+                                <span className="attendance-status attendance-status-duty">
                                   On Duty
-                                </Badge>
+                                </span>
                               )}
 
                               {record.clock_out !== null && (
-                                <Badge
-                                  bg={
-                                    record.status === "Present"
-                                      ? "success"
-                                      : record.status === "Missed"
-                                        ? "info"
-                                        : "danger"
-                                  }
-                                  className="px-3 py-2"
+                                <span
+                                  className={`attendance-status attendance-status-${record.status?.toLowerCase()}`}
                                 >
                                   {record.status}
-                                </Badge>
+                                </span>
                               )}
                             </td>
                           </tr>
@@ -487,6 +473,7 @@ const PresentAbsentTab = ({
                       setStatusFilter("all");
                       setMinHoursFilter("");
                       setSearchDate("");
+                      setCurrentPresentPage(1);
                     }}
                   >
                     Clear Filters
@@ -503,8 +490,8 @@ const PresentAbsentTab = ({
 
         {/* ABSENT TABLE */}
         <Col xs={12}>
-          <Card className="border-0 shadow-sm rounded-2">
-            <Card.Header className="bg-white border-0 pt-4 pb-0 px-4">
+          <Card className="attendance-report-card">
+            <Card.Header className="attendance-report-card-header">
               <h5 className="fw-bold mb-0">Absent Days</h5>
             </Card.Header>
 
@@ -520,8 +507,8 @@ const PresentAbsentTab = ({
               ) : absentDates.length > 0 ? (
                 <>
                   <div className="table-responsive">
-                    <Table borderless hover className="align-middle mb-0">
-                      <thead className="text-muted small">
+                    <Table responsive hover className="attendance-report-table">
+                      <thead>
                         <tr>
                           <th>Date</th>
                           <th>Status</th>
@@ -531,7 +518,7 @@ const PresentAbsentTab = ({
                       <tbody>
                         {paginatedAbsent.map((date, idx) => (
                           <tr key={idx}>
-                            <td className="fw-medium">
+                            <td className="attendance-date-cell">
                               {new Date(date).toLocaleDateString("en-US", {
                                 weekday: "short",
                                 month: "short",
@@ -541,9 +528,9 @@ const PresentAbsentTab = ({
                             </td>
 
                             <td>
-                              <Badge bg="danger" className="px-3 py-2">
+                              <span className="attendance-status attendance-status-absent">
                                 Absent
-                              </Badge>
+                              </span>
                             </td>
                           </tr>
                         ))}
@@ -569,4 +556,4 @@ const PresentAbsentTab = ({
   );
 };
 
-export default React.memo(PresentAbsentTab);
+export default React.memo(AttendanceLogTab);

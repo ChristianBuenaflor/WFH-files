@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Card,
   Row,
@@ -24,7 +24,7 @@ const AttendanceOverview = () => {
   // ---------- Existing state ----------
   const [toasts, setToasts] = useState([]);
   const [loadingSummary, setLoadingSummary] = useState(true);
-  const [loadingIn, setLoadingIn] = useState(false);
+  const [loadingIn] = useState(false);
   const [loadingOut, setLoadingOut] = useState(false);
   const [summary, setSummary] = useState({
     clockInTime: null,
@@ -34,22 +34,28 @@ const AttendanceOverview = () => {
     monthHours: 0,
     attendanceDays: 0,
   });
-  const [attendanceData, setAttendanceData] = useState({
+  const [, setAttendanceData] = useState({
     presentPercentage: 0,
   });
   const [liveHoursToday, setLiveHoursToday] = useState(0);
   const [statusText, setStatusText] = useState("Off Duty");
   const [clockInTimestamp, setClockInTimestamp] = useState(null);
-  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+  const [, setCurrentDateTime] = useState(new Date());
   const [sessionTime, setSessionTime] = useState("00hr 00min");
   const [showReportModal, setShowReportModal] = useState(false);
   const [ccEmails, setCcEmails] = useState("");
   const [reportSubject, setReportSubject] = useState("");
   const [reportBody, setReportBody] = useState("");
-  const [monthlyTarget, setMonthlyTarget] = useState(160);
-  const [weekTrend, setWeekTrend] = useState(0);
-  const [isOnTrack, setIsOnTrack] = useState(true);
-  const [lastWeekHours, setLastWeekHours] = useState(0);
+  const [monthlyTarget] = useState(160);
+  const [selectedTargetMonth, setSelectedTargetMonth] = useState(
+    new Date().getMonth() + 1,
+  );
+  const [selectedTargetYear, setSelectedTargetYear] = useState(
+    new Date().getFullYear(),
+  );
+  const [, setWeekTrend] = useState(0);
+  const [, setIsOnTrack] = useState(true);
+  const [, setLastWeekHours] = useState(0);
 
   // ---------- Face verification state & refs ----------
   const videoRef = useRef(null);
@@ -58,11 +64,13 @@ const AttendanceOverview = () => {
 
   const detectionInterval = useRef(null);
   const captureTimeout = useRef(null);
+  const cameraStreamRef = useRef(null);
+  const startDetectionRef = useRef(null);
 
   const [showFaceModal, setShowFaceModal] = useState(false);
   const [faceAligned, setFaceAligned] = useState(false);
   const [loadingModels, setLoadingModels] = useState(true);
-  const [cameraStream, setCameraStream] = useState(null);
+  const [, setCameraStream] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [clockAction, setClockAction] = useState(null); // 'in' or 'out'
   const clockActionRef = useRef(null);
@@ -71,14 +79,14 @@ const AttendanceOverview = () => {
   const [captureErrorMessage, setCaptureErrorMessage] = useState("");
 
   // ---------- Toast system ----------
-  const showToast = (message, variant = "success") => {
+  const showToast = useCallback((message, variant = "success") => {
     const id = Date.now();
     const toast = { id, message, variant };
     setToasts((prev) => [...prev, toast]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 3000);
-  };
+  }, []);
 
   // ---------- Live session timer ----------
   useEffect(() => {
@@ -101,7 +109,45 @@ const AttendanceOverview = () => {
   }, [summary.isClockedIn, clockInTimestamp]);
 
   // ---------- Fetch attendance data ----------
-  const fetchMyAttendance = async () => {
+  const monthOptions = React.useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, index) => ({
+        value: index + 1,
+        label: new Date(2000, index, 1).toLocaleString("en-US", {
+          month: "long",
+        }),
+      })),
+    [],
+  );
+
+  const yearOptions = React.useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return Array.from({ length: 5 }, (_, index) => currentYear - 2 + index);
+  }, []);
+
+  const selectedMonthHours = React.useMemo(() => {
+    const allRecords = summary?.recentAttendance || [];
+
+    if (allRecords.length > 0) {
+      const monthTotal = allRecords.reduce((total, record) => {
+        const recordDate = new Date(record.clock_in || record.clockIn || record.date);
+        if (Number.isNaN(recordDate.getTime())) return total;
+
+        const matchesSelectedMonth =
+          recordDate.getMonth() + 1 === selectedTargetMonth &&
+          recordDate.getFullYear() === selectedTargetYear;
+
+        if (!matchesSelectedMonth) return total;
+        return total + (Number(record.hours_worked) || 0);
+      }, 0);
+
+      if (monthTotal > 0) return monthTotal;
+    }
+
+    return Number(summary.monthHours) || 0;
+  }, [summary, selectedTargetMonth, selectedTargetYear]);
+
+  const fetchMyAttendance = useCallback(async () => {
     try {
       setLoadingSummary(true);
       const response = await api.get("/my-attendance");
@@ -160,6 +206,7 @@ const AttendanceOverview = () => {
           weekHours: thisWeekHours,
           monthHours: thisMonthHours,
           attendanceDays: parseInt(data.attendanceRate, 10) || 0,
+          recentAttendance: data.recentAttendance || [],
         });
 
         setAttendanceData({
@@ -175,7 +222,7 @@ const AttendanceOverview = () => {
     } finally {
       setLoadingSummary(false);
     }
-  };
+  }, [monthlyTarget, showToast]);
 
   // ---------- Load face‑api models ----------
   useEffect(() => {
@@ -193,10 +240,10 @@ const AttendanceOverview = () => {
       }
     };
     loadModels();
-  }, []);
+  }, [showToast]);
 
   // ---------- Camera & face detection functions ----------
-  const startCamera = async () => {
+  const startCamera = useCallback(async () => {
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error("Camera API not available. Make sure you are on HTTPS.");
@@ -209,8 +256,9 @@ const AttendanceOverview = () => {
         throw new Error("Camera preview is not ready. Please try again.");
       }
       videoRef.current.srcObject = stream;
+      cameraStreamRef.current = stream;
       setCameraStream(stream);
-      videoRef.current.onloadedmetadata = () => startDetection();
+      videoRef.current.onloadedmetadata = () => startDetectionRef.current?.();
     } catch (err) {
       console.error("Camera error:", err);
       let errorMessage = "Camera access denied. ";
@@ -224,11 +272,12 @@ const AttendanceOverview = () => {
       showToast(errorMessage, "danger");
       setShowFaceModal(false);
     }
-  };
+  }, [showToast]);
 
-  const stopCamera = () => {
-    if (cameraStream) {
-      cameraStream.getTracks().forEach((track) => track.stop());
+  const stopCamera = useCallback(() => {
+    if (cameraStreamRef.current) {
+      cameraStreamRef.current.getTracks().forEach((track) => track.stop());
+      cameraStreamRef.current = null;
     }
     if (videoRef.current && videoRef.current.srcObject) {
       videoRef.current.srcObject = null;
@@ -237,7 +286,7 @@ const AttendanceOverview = () => {
     if (captureTimeout.current) clearTimeout(captureTimeout.current);
     clockActionRef.current = null;
     setCameraStream(null);
-  };
+  }, []);
 
   const drawGuide = () => {
     const canvas = overlayRef.current;
@@ -294,6 +343,8 @@ const AttendanceOverview = () => {
     }, 500);
   };
 
+  startDetectionRef.current = startDetection;
+
   const autoCaptureAndSubmit = async () => {
     try {
       setIsProcessing(true);
@@ -349,20 +400,20 @@ const AttendanceOverview = () => {
   // ---------- Fetch data on mount ----------
   useEffect(() => {
     fetchMyAttendance();
-  }, []);
+  }, [fetchMyAttendance]);
 
   // ---------- Cleanup on unmount ----------
   useEffect(() => {
     return () => {
       stopCamera();
     };
-  }, []);
+  }, [stopCamera]);
 
   useEffect(() => {
     if (showFaceModal && !loadingModels) {
       startCamera();
     }
-  }, [showFaceModal, loadingModels]);
+  }, [showFaceModal, loadingModels, startCamera]);
 
   // ---------- Clock handlers (now open face modal) ----------
   const handleClockIn = () => {
@@ -566,36 +617,48 @@ const AttendanceOverview = () => {
             <Card.Body className="p-3 p-md-4">
               <div className="attendance-target-header">
                 <div>
-                  <h3 className="attendance-target-title">
-                    Monthly Target
-                  </h3>
-                  <h4 className="attendance-target-hours">
-                    {monthlyTarget} hrs
-                  </h4>
+                  <h3 className="attendance-target-title">Monthly Target</h3>
+                  <h4 className="attendance-target-hours">{monthlyTarget} hrs</h4>
                 </div>
-                <div className="attendance-month-selector">
-                  {currentDateTime.toLocaleString("en-US", {
-                    month: "long",
-                    year: "numeric",
-                  })}
-                  <span aria-hidden="true">⌄</span>
+                <div className="attendance-target-dropdown-wrap">
+                  <select
+                    className="attendance-target-select"
+                    value={selectedTargetMonth}
+                    onChange={(event) => setSelectedTargetMonth(Number(event.target.value))}
+                    aria-label="Select month"
+                  >
+                    {monthOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    className="attendance-target-select"
+                    value={selectedTargetYear}
+                    onChange={(event) => setSelectedTargetYear(Number(event.target.value))}
+                    aria-label="Select year"
+                  >
+                    {yearOptions.map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div className="attendance-target-body">
                 <div className="attendance-target-copy">
-                  <strong>{summary.monthHours.toFixed(2)} hrs completed</strong>
-                  <span>{(monthlyTarget - summary.monthHours).toFixed(2)} hrs remaining</span>
+                  <strong>{selectedMonthHours.toFixed(2)} hrs completed</strong>
+                  <span>{(monthlyTarget - selectedMonthHours).toFixed(2)} hrs remaining</span>
                   <div className="progress attendance-target-progress" style={{ height: "8px" }}>
                     <div
                       className="progress-bar"
                       role="progressbar"
                       style={{
-                        width: `${Math.min(
-                          (summary.monthHours / monthlyTarget) * 100,
-                          100
-                        )}%`,
+                        width: `${Math.min((selectedMonthHours / monthlyTarget) * 100, 100)}%`,
                       }}
-                      aria-valuenow={summary.monthHours}
+                      aria-valuenow={selectedMonthHours}
                       aria-valuemin="0"
                       aria-valuemax={monthlyTarget}
                     ></div>
@@ -605,18 +668,17 @@ const AttendanceOverview = () => {
                   className="attendance-target-ring"
                   style={{
                     "--target-progress": `${Math.min(
-                      (summary.monthHours / monthlyTarget) * 100,
-                      100
+                      (selectedMonthHours / monthlyTarget) * 100,
+                      100,
                     )}%`,
                   }}
                 >
-                  <strong>{Math.round(Math.min((summary.monthHours / monthlyTarget) * 100, 100))}%</strong>
+                  <strong>{Math.round(Math.min((selectedMonthHours / monthlyTarget) * 100, 100))}%</strong>
                   <span>Completed</span>
                 </div>
               </div>
             </Card.Body>
           </Card>
-
         </Col>
       </Row>
 

@@ -162,8 +162,12 @@ const Dashboard = ({ setIsAuth }) => {
       announcementStorageKey !== dismissedAnnouncementKey && !alreadySeen;
 
     if (shouldOpen) {
-      setShowAnnouncementModal(true);
       localStorage.setItem(announcementStorageKey, "shown");
+      const openModalTask = window.setTimeout(() => {
+        setShowAnnouncementModal(true);
+      }, 0);
+
+      return () => window.clearTimeout(openModalTask);
     }
   }, [announcementStorageKey, dismissedAnnouncementKey]);
 

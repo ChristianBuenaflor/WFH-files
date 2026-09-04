@@ -15,7 +15,6 @@ import { useAuth } from "@/context/AuthContext";
 const ProfileEditModal = ({ profileData, onClose, onUpdate }) => {
   const { updateUser } = useAuth();
   const [formData, setFormData] = useState(profileData);
-  const [updateprofileData, setupdateprofileData] = useState(null);
   const [activeTab, setActiveTab] = useState("personal");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setShowToast] = useState({
@@ -40,29 +39,24 @@ const ProfileEditModal = ({ profileData, onClose, onUpdate }) => {
   };
 
   const updateProfile = async (updateData) => {
-    try {
-      // Create a clean object without null/undefined values
-      const cleanData = Object.keys(updateData).reduce((acc, key) => {
-        if (
-          updateData[key] !== null &&
-          updateData[key] !== undefined &&
-          updateData[key] !== ""
-        ) {
-          acc[key] = updateData[key];
-        }
-        return acc;
-      }, {});
-
-      const response = await api.post("/update-profile", cleanData);
-      setupdateprofileData(response.data);
-      // Update auth context with new user data
-      if (response.data) {
-        updateUser(response.data);
+    // Create a clean object without null/undefined values
+    const cleanData = Object.keys(updateData).reduce((acc, key) => {
+      if (
+        updateData[key] !== null &&
+        updateData[key] !== undefined &&
+        updateData[key] !== ""
+      ) {
+        acc[key] = updateData[key];
       }
-      return response.data;
-    } catch (error) {
-      throw error;
+      return acc;
+    }, {});
+
+    const response = await api.post("/update-profile", cleanData);
+    // Update auth context with new user data
+    if (response.data) {
+      updateUser(response.data);
     }
+    return response.data;
   };
 
   const handleSubmit = async (e) => {

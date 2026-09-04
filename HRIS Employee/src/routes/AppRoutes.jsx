@@ -13,7 +13,7 @@ const Payslip = lazy(() => import("@/pages/payslip/Payslip.jsx"));
 const Profile = lazy(() => import("@/pages/profile/Profile.jsx"));
 const Lesson = lazy(() => import("@/pages/lessons/Lesson.jsx"));
 const Modules = lazy(() => import("@/pages/lessons/components/Modules.jsx"));
-const HolidayPage = lazy(() => import("@/pages/calendar/HolidayPage.jsx"));
+const CalendarPage = lazy(() => import("@/pages/calendar/CalendarPage.jsx"));
 const ReportPage = lazy(() => import("@/pages/report/ReportPage.jsx"));
 
 // Loading component
@@ -75,7 +75,7 @@ const AppRoutes = ({ isAuth, setIsAuth }) => {
           path="/calendar"
           element={
             isAuth ? (
-              <HolidayPage setIsAuth={setIsAuth} />
+              <CalendarPage setIsAuth={setIsAuth} />
             ) : (
               <Navigate to="/" replace />
             )

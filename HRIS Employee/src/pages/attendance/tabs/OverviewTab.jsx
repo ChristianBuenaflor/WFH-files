@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Card,
   Row,
@@ -16,39 +16,36 @@ import api from "@/config/axios";
 import {
   Clock,
   DoorOpen,
-  ThreeDots,
   ChevronLeft,
   ChevronRight,
-  GraphUpArrow,
-  Calendar,
-  Shield,
-  CheckCircle,
 } from "react-bootstrap-icons";
-import { Link } from "react-router-dom";
 
 const OverviewTab = ({
-  formattedDate,
-  formattedTime,
   loadingSummary,
-  badgeVariant,
-  badgeText,
   summary,
   sessionTime,
   liveHoursToday,
   statusText,
-  handleClockIn,
   handleOpenAdjustModal,
   setShowReportModal,
   loadingIn,
   loadingOut,
-  isClockOutDisabled,
   showDropdown,
   setShowDropdown,
   formatDate,
   formatTimeRange,
   formatHoursWorked,
+  fetchMyAttendance,
+  showToast,
 }) => {
   const ROWS_PER_PAGE = 10;
+  const monthlyTarget = 160;
+  const [selectedTargetMonth, setSelectedTargetMonth] = useState(
+    new Date().getMonth() + 1,
+  );
+  const [selectedTargetYear, setSelectedTargetYear] = useState(
+    new Date().getFullYear(),
+  );
   const [currentPage, setCurrentPage] = useState(1);
 
   const videoRef = useRef(null);
@@ -57,6 +54,7 @@ const OverviewTab = ({
   const detectionInterval = useRef(null);
   const captureTimeout = useRef(null);
   const cameraStartedRef = useRef(false);
+  const startDetectionRef = useRef(null);
 
   const [showFaceModal, setShowFaceModal] = useState(false);
   const [faceAligned, setFaceAligned] = useState(false);
@@ -65,8 +63,8 @@ const OverviewTab = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [clockAction, setClockAction] = useState(null);
   const clockActionRef = useRef(null);
-  const [capturedFaceFile, setCapturedFaceFile] = useState(null);
-  const [verificationMessage, setVerificationMessage] = useState("");
+  const [, setCapturedFaceFile] = useState(null);
+  const [, setVerificationMessage] = useState("");
   const [captureErrorMessage, setCaptureErrorMessage] = useState("");
 
   // Reset pagination when recent attendance data changes
@@ -90,7 +88,8 @@ const OverviewTab = ({
     loadModels();
   }, []);
 
-  const startCamera = async () => {
+  // Start Camera and Face Detection
+  const startCamera = useCallback(async () => {
     if (cameraStartedRef.current) return;
     cameraStartedRef.current = true;
 
@@ -121,9 +120,10 @@ const OverviewTab = ({
       });
 
       await video.play();
-      startDetection();
+      startDetectionRef.current?.();
     } catch (err) {
       console.error("Camera error:", err);
+      showToast("Camera access denied. No camera device found.");
       let errorMessage = "Camera access denied. ";
       if (err.name === "NotAllowedError") {
         errorMessage += "Please grant camera permission in your browser.";
@@ -136,9 +136,10 @@ const OverviewTab = ({
       setCaptureErrorMessage(errorMessage);
       setShowFaceModal(false);
     }
-  };
+  }, [showToast,]);
 
-  const stopCamera = () => {
+  // Stop Camera and Face Detection
+  const stopCamera = useCallback(() => {
     if (cameraStream) {
       cameraStream.getTracks().forEach((track) => track.stop());
     }
@@ -157,7 +158,7 @@ const OverviewTab = ({
     clockActionRef.current = null;
     setCameraStream(null);
     setFaceAligned(false);
-  };
+  }, [cameraStream]);
 
   const drawGuide = () => {
     const canvas = overlayRef.current;
@@ -214,6 +215,8 @@ const OverviewTab = ({
     }, 500);
   };
 
+  startDetectionRef.current = startDetection;
+
   const autoCaptureAndSubmit = async () => {
     try {
       setIsProcessing(true);
@@ -253,6 +256,7 @@ const OverviewTab = ({
         setShowFaceModal(false);
         setClockAction(null);
         await fetchMyAttendance();
+        showToast("Clocked In Successfully!");
       }
     } catch (error) {
       const message =
@@ -281,7 +285,7 @@ const OverviewTab = ({
     }, 150);
 
     return () => clearTimeout(startTimer);
-  }, [showFaceModal, loadingModels, cameraStream]);
+  }, [showFaceModal, loadingModels, cameraStream, startCamera, stopCamera]);
 
   const handleClockInClick = () => {
     setClockAction("in");
@@ -300,6 +304,44 @@ const OverviewTab = ({
   };
 
   // Calculate paginated recent attendance data
+  const monthOptions = React.useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, index) => ({
+        value: index + 1,
+        label: new Date(2000, index, 1).toLocaleString("en-US", {
+          month: "long",
+        }),
+      })),
+    [],
+  );
+
+  const yearOptions = React.useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return Array.from({ length: 5 }, (_, index) => currentYear - 2 + index);
+  }, []);
+
+  const selectedMonthHours = React.useMemo(() => {
+    const monthlyRecords = summary?.recentAttendance?.filter((record) => {
+      const recordDate = new Date(record.clock_in || record.clockIn || record.date);
+      if (Number.isNaN(recordDate.getTime())) return false;
+
+      return (
+        recordDate.getMonth() + 1 === selectedTargetMonth &&
+        recordDate.getFullYear() === selectedTargetYear &&
+        Number(record.hours_worked || 0) > 0
+      );
+    });
+
+    if (monthlyRecords && monthlyRecords.length > 0) {
+      return monthlyRecords.reduce(
+        (total, record) => total + Number(record.hours_worked || 0),
+        0,
+      );
+    }
+
+    return Number(summary?.monthHours || 0);
+  }, [summary?.recentAttendance, summary?.monthHours, selectedTargetMonth, selectedTargetYear]);
+
   const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
   const endIndex = startIndex + ROWS_PER_PAGE;
   const paginatedRecentAttendance =
@@ -358,11 +400,9 @@ const OverviewTab = ({
   };
   return (
     <>
-      <Row className="g-3 g-md-4">
-        {/* Left Column - Status & Clock Controls */}
+      <Row className="attendance-overview-row g-3 g-md-4">
         <Col lg={5}>
-          {/* Status Card */}
-          <Card className="border-0 rounded-2 mb-3 shadow-sm overview-status-card">
+          <Card className="border-0 rounded-2 mb-3 shadow-sm overview-status-card attendance-overview-card">
             <Card.Body className="p-3 p-md-4">
               {loadingSummary ? (
                 <div className="text-center py-4">
@@ -374,63 +414,48 @@ const OverviewTab = ({
                 </div>
               ) : (
                 <>
-                  <div className="d-flex align-items-start justify-content-between mb-4">
-                    <div>
-                      <small className="text-muted text-uppercase d-block mb-1">CURRENT STATUS</small>
-                      <div className="d-flex align-items-center gap-2">
-                        <h5 className="fw-bold mb-0">{statusText}</h5>
-                        <Badge bg="success" className="badge-checked-in">
-                          CHECKED IN
-                        </Badge>
+                  <div className="attendance-overview-header">
+                    <h3 className="attendance-overview-title">Today's Attendance</h3>
+                    <div className={`attendance-duty-pill ${summary.isClockedIn ? "is-on-duty" : "is-off-duty"}`}>
+                      <span className="attendance-duty-dot" aria-hidden="true"></span>
+                      {statusText}
+                    </div>
+                  </div>
+
+                  <div className="attendance-session-panel">
+                    <div className="attendance-session-main">
+                      <span className="attendance-label">Current Session</span>
+                      <h2 className="attendance-session-time">{sessionTime}</h2>
+                      <div className="attendance-session-status">
+                        <span className="attendance-status-dot" aria-hidden="true"></span>
+                        {summary.isClockedIn ? "Checked In" : "Not Checked In"}
                       </div>
                     </div>
-                    <div className="status-dot" style={{
-                      width: 12,
-                      height: 12,
-                      borderRadius: "50%",
-                      backgroundColor: "#10b981",
-                    }}></div>
-                  </div>
 
-                  <div className="mb-4 pb-4 border-bottom">
-                    <small className="text-muted text-uppercase d-block mb-2">CURRENT SESSION</small>
-                    <h2 className="fw-bold mb-0 session-time">
-                      {sessionTime}
-                    </h2>
-                  </div>
-
-                  <Row className="g-3 mb-4">
-                    <Col xs={6}>
-                      <div className="d-flex align-items-center gap-2">
-                        <Clock size={16} className="text-muted" />
+                    <div className="attendance-metrics">
+                      <div className="attendance-metric-tile">
+                        <Clock className="attendance-metric-icon" size={29} />
                         <div>
-                          <small className="text-muted text-uppercase d-block">CLOCK IN</small>
-                          <p className="fw-bold mb-0">{summary.clockInTime || "---"}</p>
+                          <span className="attendance-label">Clock In</span>
+                          <strong>{summary.clockInTime || "---"}</strong>
                         </div>
                       </div>
-                    </Col>
-                    <Col xs={6}>
-                      <div className="d-flex align-items-center gap-2">
-                        <Clock size={16} className="text-muted" />
+                      <div className="attendance-metric-tile">
+                        <Clock className="attendance-metric-icon" size={29} />
                         <div>
-                          <small className="text-muted text-uppercase d-block">HOURS TODAY</small>
-                          <p className="fw-bold mb-0">{liveHoursToday.toFixed(2)} hrs</p>
+                          <span className="attendance-label">Hours Today</span>
+                          <strong>{liveHoursToday.toFixed(2)} hrs</strong>
                         </div>
                       </div>
-                    </Col>
-                  </Row>
+                    </div>
+                  </div>
 
-                  <div className="d-flex gap-2">
+                  <div className="attendance-action-row">
                     <Button
                       variant="success"
-                      className="px-3 py-2 flex-grow-1 btn-clock"
+                      className="attendance-action-button attendance-clock-in"
                       onClick={handleClockInClick}
-                      disabled={
-                        summary.isClockedIn ||
-                        loadingSummary ||
-                        loadingIn ||
-                        loadingOut
-                      }
+                      disabled={summary.isClockedIn || loadingIn || loadingOut}
                     >
                       {loadingIn ? (
                         <>
@@ -450,15 +475,9 @@ const OverviewTab = ({
                     </Button>
                     <Button
                       variant="danger"
-                      className="px-3 py-2 flex-grow-1 btn-clock"
+                      className="attendance-action-button attendance-clock-out"
                       onClick={handleClockOutClick}
-                      disabled={
-                        !summary.isClockedIn ||
-                        loadingSummary ||
-                        isClockOutDisabled ||
-                        loadingIn ||
-                        loadingOut
-                      }
+                      disabled={!summary.isClockedIn || loadingIn || loadingOut}
                     >
                       {loadingOut ? (
                         <>
@@ -483,94 +502,70 @@ const OverviewTab = ({
           </Card>
         </Col>
 
-        {/* Right Column - Stats & Monthly Target */}
         <Col lg={7}>
-          {/* Stats Cards Row */}
-          <Row className="g-2 mb-3">
-            <Col xs={6} md={4}>
-              <Card className="border-0 rounded-2 shadow-sm stat-info-card">
-                <Card.Body className="p-3">
-                  <div className="d-flex justify-content-between align-items-start mb-2">
-                    <Calendar size={20} className="text-primary" />
-                    <Badge bg="success" className="badge-trend">+2.4 hrs</Badge>
-                  </div>
-                  <h5 className="fw-bold mb-1">
-                    {loadingSummary ? (
-                      <span className="spinner-border spinner-border-sm" />
-                    ) : (
-                      `${summary.weekHours.toFixed(2)} hrs`
-                    )}
-                  </h5>
-                  <small className="text-muted">This Week</small>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col xs={6} md={4}>
-              <Card className="border-0 rounded-2 shadow-sm stat-info-card">
-                <Card.Body className="p-3">
-                  <div className="d-flex justify-content-between align-items-start mb-2">
-                    <CheckCircle size={20} className="text-success" />
-                    <Badge bg="info" className="badge-trend">On track</Badge>
-                  </div>
-                  <h5 className="fw-bold mb-1">
-                    {loadingSummary ? (
-                      <span className="spinner-border spinner-border-sm" />
-                    ) : (
-                      `${summary.monthHours.toFixed(2)} hrs`
-                    )}
-                  </h5>
-                  <small className="text-muted">This Month</small>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col xs={6} md={4}>
-              <Card className="border-0 rounded-2 shadow-sm stat-info-card">
-                <Card.Body className="p-3">
-                  <div className="d-flex justify-content-between align-items-start mb-2">
-                    <Shield size={20} className="text-warning" />
-                    <Badge bg="success" className="badge-trend">100%</Badge>
-                  </div>
-                  <h5 className="fw-bold mb-1">
-                    {loadingSummary ? (
-                      <span className="spinner-border spinner-border-sm" />
-                    ) : (
-                      `${summary.attendanceDays} days`
-                    )}
-                  </h5>
-                  <small className="text-muted">Attendance</small>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-
-          {/* Monthly Target Card */}
-          <Card className="border-0 rounded-2 shadow-sm monthly-target-card">
+          <Card className="border-0 rounded-2 shadow-sm monthly-target-card attendance-target-card mb-3 mb-md-3">
             <Card.Body className="p-3 p-md-4">
-              <div className="d-flex justify-content-between align-items-start mb-3">
+              <div className="attendance-target-header">
                 <div>
-                  <small className="text-white text-uppercase d-block mb-1">MONTHLY TARGET</small>
-                  <h3 className="fw-bold mb-0 text-white">160 hrs</h3>
+                  <h3 className="attendance-target-title">Monthly Target</h3>
+                  <h4 className="attendance-target-hours">{monthlyTarget} hrs</h4>
                 </div>
-                <GraphUpArrow size={24} className="text-white opacity-50" />
+                <div className="attendance-target-dropdown-wrap">
+                  <select
+                    className="attendance-target-select"
+                    value={selectedTargetMonth}
+                    onChange={(event) => setSelectedTargetMonth(Number(event.target.value))}
+                    aria-label="Select month"
+                  >
+                    {monthOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    className="attendance-target-select"
+                    value={selectedTargetYear}
+                    onChange={(event) => setSelectedTargetYear(Number(event.target.value))}
+                    aria-label="Select year"
+                  >
+                    {yearOptions.map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <small className="text-white text-opacity-75 d-block mb-3">
-                {loadingSummary ? (
-                  "Loading..."
-                ) : (
-                  `${summary.monthHours.toFixed(2)} hrs completed • ${(160 - summary.monthHours).toFixed(2)} hrs remaining`
-                )}
-              </small>
-              <div className="progress" style={{ height: "8px" }}>
+              <div className="attendance-target-body">
+                <div className="attendance-target-copy">
+                  <strong>{selectedMonthHours.toFixed(2)} hrs completed</strong>
+                  <span>{(monthlyTarget - selectedMonthHours).toFixed(2)} hrs remaining</span>
+                  <div className="progress attendance-target-progress" style={{ height: "8px" }}>
+                    <div
+                      className="progress-bar"
+                      role="progressbar"
+                      style={{
+                        width: `${Math.min((selectedMonthHours / monthlyTarget) * 100, 100)}%`,
+                      }}
+                      aria-valuenow={selectedMonthHours}
+                      aria-valuemin="0"
+                      aria-valuemax={monthlyTarget}
+                    ></div>
+                  </div>
+                </div>
                 <div
-                  className="progress-bar bg-white"
-                  role="progressbar"
+                  className="attendance-target-ring"
                   style={{
-                    width: `${Math.min((summary.monthHours / 160) * 100, 100)}%`,
+                    "--target-progress": `${Math.min(
+                      (selectedMonthHours / monthlyTarget) * 100,
+                      100,
+                    )}%`,
                   }}
-                  aria-valuenow={summary.monthHours}
-                  aria-valuemin="0"
-                  aria-valuemax="160"
-                ></div>
+                >
+                  <strong>{Math.round(Math.min((selectedMonthHours / monthlyTarget) * 100, 100))}%</strong>
+                  <span>Completed</span>
+                </div>
               </div>
             </Card.Body>
           </Card>
@@ -631,10 +626,10 @@ const OverviewTab = ({
                 {loadingModels
                   ? "Loading face detection models..."
                   : isProcessing
-                  ? "Please wait while we capture your image."
-                  : faceAligned
-                  ? "Hold still. Your face is aligned with the green circle."
-                  : "Position your face inside the green circle and keep your head centered."}
+                    ? "Please wait while we capture your image."
+                    : faceAligned
+                      ? "Hold still. Your face is aligned with the green circle."
+                      : "Position your face inside the green circle and keep your head centered."}
               </div>
               {captureErrorMessage && (
                 <div className="mt-3 alert alert-danger py-2 px-3 text-start" role="alert">
@@ -659,10 +654,6 @@ const OverviewTab = ({
               </div>
 
               <div>
-                <Link onClick={() => setShowDropdown(!showDropdown)}>
-                  <ThreeDots className="text-secondary" />
-                </Link>
-
                 <Dropdown
                   show={showDropdown}
                   onClick={() => setShowDropdown(false)}

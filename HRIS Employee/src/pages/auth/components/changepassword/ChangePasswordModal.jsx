@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Modal, Button, Form, Toast, ToastContainer } from "react-bootstrap";
 import { Eye, EyeSlash, Lock } from "react-bootstrap-icons";
 import "./ChangePasswordModal.css";
-import api from "@/config/axios";
 import "@/assets/style/global.css";
 
 const ChangePasswordModal = ({ onClose, onUpdate }) => {

@@ -78,7 +78,7 @@ const LessonSelection = ({ lessons = [], setSelectedLesson, setIsAuth }) => {
           </Col>
         </Row>
         <Row>
-          {lessons.map((lesson, index) => (
+          {lessons.map((lesson) => (
             <Col md={6} lg={4} key={lesson.id} className="mb-4">
               <Card className="h-100">
                 <Card.Body>
