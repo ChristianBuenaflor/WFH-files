@@ -11,11 +11,13 @@ import {
   Speedometer2,
   FilePost,
   JournalText,
+  ChevronLeft,
+  ChevronRight,
 } from "react-bootstrap-icons";
 import "@/components/layout/sidebar/Sidebar.css";
 import logo from "@/assets/images/cropped-SnL-Logo-480x480.png";
 
-const Sidebar = ({ show, handleClose }) => {
+const Sidebar = ({ show, handleClose, collapsed, onToggle }) => {
   const location = useLocation();
 
   const iconMap = {
@@ -110,12 +112,21 @@ const Sidebar = ({ show, handleClose }) => {
       </Offcanvas>
 
       {/* Desktop Sidebar */}
-      <div className="sidebar-desktop">
+      <div className={`sidebar-desktop ${collapsed ? "collapsed" : ""}`}>
         <div className="sidebar-header-desktop">
           <div className="d-flex justify-content-start align-items-center">
             <img src={logo} alt="SnL Logo" className="sidebar-logo me-3" />
-            <span className=""><h5 className="sidebar-title mb-0 text-black">SnLHR </h5><h6 className="text-muted mb-0">Employee Portal</h6></span>
+            <span className="sidebar-brand"><h5 className="sidebar-title mb-0 text-black">SnLHR </h5><h6 className="text-muted mb-0">Employee Portal</h6></span>
           </div>
+          <button
+            type="button"
+            className="sidebar-toggle"
+            onClick={onToggle}
+            aria-label={collapsed ? "Expand sidebar" : "Minimize sidebar"}
+            title={collapsed ? "Expand sidebar" : "Minimize sidebar"}
+          >
+            {collapsed ? <ChevronRight /> : <ChevronLeft />}
+          </button>
         </div>
         <Nav className="flex-column sidebar-nav">
           {menuItems.map((item) => (
@@ -126,7 +137,7 @@ const Sidebar = ({ show, handleClose }) => {
               className={`sidebar-link ${isActive(item.path) ? "active" : ""}`}
             >
               <span className="sidebar-icon">{iconMap[item.icon]}</span>
-              <span>{item.label}</span>
+              <span className="sidebar-label">{item.label}</span>
             </Nav.Link>
           ))}
         </Nav>

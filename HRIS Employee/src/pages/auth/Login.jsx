@@ -4,8 +4,9 @@ import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "@/pages/auth/Login.css";
 import api from "@/config/axios";
-import { Toast, ToastContainer } from "react-bootstrap";
+import { ToastContainer } from "react-bootstrap";
 import { useAuth } from "@/context/AuthContext";
+import ToastMessage from "@/components/common/ToastMessage.jsx";
 import "@/assets/style/global.css";
 import { EyeFill, EyeSlashFill } from "react-bootstrap-icons";
 
@@ -173,8 +174,9 @@ const Login = ({ setIsAuth }) => {
         style={{ zIndex: 999999 }}
       >
         {toasts.map((toast) => (
-          <Toast
+          <ToastMessage
             key={toast.id}
+            variant={toast.type}
             show={toast.show}
             onClose={() => {
               setToasts((prevToasts) => 
@@ -183,13 +185,10 @@ const Login = ({ setIsAuth }) => {
                 )
               );
             }}
-            className={`custom-toast glb-toast-${toast.type}`}
             autohide={false}
           >
-            <Toast.Body>
-              {toast.message}
-            </Toast.Body>
-          </Toast>
+            {toast.message}
+          </ToastMessage>
         ))}
       </ToastContainer>
     </Container>

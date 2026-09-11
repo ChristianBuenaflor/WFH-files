@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import {
   Container,
   Button,
-  Toast,
   ToastContainer,
   Popover,
   Row,
@@ -12,6 +11,7 @@ import api from "@/config/axios.js";
 import { useAuth } from "@/context/AuthContext.jsx";
 import { ClockHistory, ListCheck, Download } from "react-bootstrap-icons";
 import { useNavigate } from "react-router-dom";
+import ToastMessage from "@/components/common/ToastMessage.jsx";
 import OverviewTab from "@/pages/attendance/tabs/OverviewTab.jsx";
 import AttendanceLogTab from "@/pages/attendance/tabs/AttendanceLogTab.jsx";
 import DRTAdjustmentModal from "@/pages/attendance/components/modals/DRTAdjustmentModal.jsx";
@@ -388,7 +388,10 @@ const Attendance = ({ setIsAuth }) => {
 
   // ----------------- REPORT MODAL SUBMIT -----------------
   const handleReportSubmit = async () => {
-    if (!reportBody || !reportBody.trim()) {
+    const reportText = reportBody
+      ? new DOMParser().parseFromString(reportBody, "text/html").body.textContent.trim()
+      : "";
+    if (!reportText) {
       showToast("Please enter a report before continuing.", "warning");
       return;
     }
@@ -767,17 +770,15 @@ const Attendance = ({ setIsAuth }) => {
           style={{ zIndex: 9999 }}
         >
           {toasts.map((t) => (
-            <Toast
+            <ToastMessage
               key={t.id}
               onClose={() => removeToast(t.id)}
               delay={6000}
               autohide
-              className={
-                t.type === "success" ? "glb-toast-success" : "glb-toast-danger"
-              }
+              variant={t.type}
             >
-              <Toast.Body>{t.message}</Toast.Body>
-            </Toast>
+              {t.message}
+            </ToastMessage>
           ))}
         </ToastContainer>
       </Container>

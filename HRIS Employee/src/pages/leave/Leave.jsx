@@ -63,7 +63,7 @@ const Leave = ({ setIsAuth }) => {
       setLoading(true);
       const response = await api.get("/my-leaves");
       if (response.data.isSuccess) {
-        setLeaves(response.data.leaves);
+        setLeaves(response.data.leaves || []);
       }
       setError(null);
     } catch (err) {
@@ -71,6 +71,19 @@ const Leave = ({ setIsAuth }) => {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  // Fetch the employee's assigned leave balances
+  const fetchLeaveBalances = useCallback(async () => {
+    try {
+      const response = await api.get("/my-leaves-balance");
+
+      if (response.data.isSuccess) {
+        setLeaveBalances(response.data.data || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch leave balances:", err);
     }
   }, []);
 
@@ -86,26 +99,14 @@ const Leave = ({ setIsAuth }) => {
       console.error("Failed to fetch leave types:", err);
     }
   }, []);
-  // Fetch leave balances
-  const fetchLeaveBalances = useCallback(async () => {
-    try {
-      const response = await api.get("/my-leaves-balance");
-      if (response.data.isSuccess) {
-        setLeaveBalances(response.data.balances || response.data.data || []);
-      }
-    } catch (err) {
-      console.error("Failed to fetch leave balances:", err);
-    }
-  }, []);
-
   // Fetch user data and leaves on component mount
   useEffect(() => {
     if (hasFetched.current) return;
     hasFetched.current = true;
     fetchLeaves();
-    fetchLeaveTypes();
     fetchLeaveBalances();
-  }, [fetchLeaves, fetchLeaveTypes, fetchLeaveBalances]);
+    fetchLeaveTypes();
+  }, [fetchLeaves, fetchLeaveBalances, fetchLeaveTypes]);
 
   // Handle form input changes
   const handleFormChange = (e) => {
@@ -135,7 +136,8 @@ const Leave = ({ setIsAuth }) => {
 
     // Check leave balance
     const selectedBalance = leaveBalances.find(
-      (balance) => balance.leave_type_id === parseInt(formData.leave_type_id),
+      (balance) =>
+        String(balance.leave_type_id) === String(formData.leave_type_id),
     );
 
     if (selectedBalance && calculatedDays > selectedBalance.remaining_days) {
@@ -189,22 +191,28 @@ const Leave = ({ setIsAuth }) => {
 
   // Get leave status badge
   const getStatusBadge = (status) => {
-    switch (status.toLowerCase()) {
+    const normalizedStatus = status?.toLowerCase() || "pending";
+
+    switch (normalizedStatus) {
       case "approved":
-        return <Badge bg="success">Approved</Badge>;
+        return <span className="leave-status-badge approved">Approved</span>;
       case "pending":
-        return <Badge bg="warning">Pending</Badge>;
+        return <span className="leave-status-badge pending">Pending</span>;
       case "rejected":
-        return <Badge bg="danger">Rejected</Badge>;
+        return <span className="leave-status-badge rejected">Rejected</span>;
       default:
-        return <Badge bg="secondary">{status}</Badge>;
+        return <span className="leave-status-badge">{status}</span>;
     }
   };
 
   // Get leave type name
-  const getLeaveTypeName = (leaveTypeId) => {
-    const leaveType = leaveTypes.find((lt) => lt.id === leaveTypeId);
-    return leaveType ? leaveType.leave_name : "Unknown";
+  const getLeaveTypeName = (leaveTypeId, embeddedLeaveType) => {
+    if (embeddedLeaveType?.leave_name) return embeddedLeaveType.leave_name;
+
+    const leaveType = leaveTypes.find(
+      (type) => String(type.id) === String(leaveTypeId),
+    );
+    return leaveType?.leave_name || "Unknown";
   };
 
   // Format date
@@ -278,13 +286,17 @@ const Leave = ({ setIsAuth }) => {
           </Col>
           {leaveBalances.length > 0 ? (
             leaveBalances.map((balance) => (
-              <Col md={6} lg={4} key={balance.id} className="mb-3">
-                <Card className="leave-balance-card h-100">
+              <Col md={6} lg={4} key={balance.leave_type_id} className="mb-3">
+                <Card className="dashboard-card-modern leave-balance-card h-100">
                   <Card.Body>
-                    <h6 className="leave-balance-type">
-                      {leaveTypes.find((lt) => lt.id === balance.leave_type_id)
-                        ?.leave_name || "Leave Type"}
-                    </h6>
+                    <div className="d-flex justify-content-between align-items-start gap-2 mb-3">
+                      <h6 className="leave-balance-type mb-0">
+                        {balance.leave_name || "Leave Type"}
+                      </h6>
+                      <Badge bg={balance.is_active ? "success" : "secondary"}>
+                        {balance.is_active ? "Active" : "Inactive"}
+                      </Badge>
+                    </div>
                     <div className="leave-balance-display">
                       <div className="balance-item">
                         <span className="balance-label">Remaining</span>
@@ -295,9 +307,9 @@ const Leave = ({ setIsAuth }) => {
                       </div>
                       <div className="balance-separator">•</div>
                       <div className="balance-item">
-                        <span className="balance-label">Total</span>
+                        <span className="balance-label">Allocated</span>
                         <span className="balance-value-secondary text-dark">
-                          {balance.used_days || 0}
+                          {balance.allocated_days || 0}
                         </span>
                       </div>
                     </div>
@@ -317,31 +329,30 @@ const Leave = ({ setIsAuth }) => {
         {/* Leave Requests Section */}
         <Row className="leave-section">
           <Col md={12}>
-          <Card>
-            <Card.Body className="p-4">
-  <div className="section-header-inline">
-              <div>
-                <h5 className="section-title">Leave Requests</h5>
-                <p className="section-subtitle">
-                  View your leave request history
-                </p>
-              </div>
-            </div>
+            <Card className="dashboard-card-modern leave-requests-card">
+              <Card.Header className="card-header-custom">
+                <div className="d-flex align-items-center justify-content-between gap-2">
+                  <div>
+                    <h5>Leave Requests</h5>
+                    <p className="section-subtitle mb-0">
+                      View your leave request history
+                    </p>
+                  </div>
+                  <span className="leave-request-count">{leaves.length}</span>
+                </div>
+              </Card.Header>
+              <Card.Body className="leave-requests-body">
+                {error && <Alert variant="danger">{error}</Alert>}
 
-            {error && <Alert variant="danger">{error}</Alert>}
-
-            {loading ? (
-              <div className="text-center py-5">
-                <Spinner animation="border" role="status">
-                  <span className="visually-hidden">Loading...</span>
-                </Spinner>
-              </div>
-            ) : leaves.length > 0 ? (
-              <Card className="leave-table-card">
-                <Card.Body className="p-0">
-                  <div className="table-responsive">
-                    <Table striped hover className="mb-0 leave-requests-table">
-                      <thead className="leave-table-header">
+                {loading ? (
+                  <div className="text-center py-5">
+                    <Spinner animation="border" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </Spinner>
+                  </div>
+                ) : leaves.length > 0 ? (
+                    <Table borderless responsive className="dashboard-table leave-requests-table">
+                      <thead>
                         <tr>
                           <th>Leave Type</th>
                           <th>Start Date</th>
@@ -353,43 +364,39 @@ const Leave = ({ setIsAuth }) => {
                       </thead>
                       <tbody>
                         {leaves.map((leave) => (
-                          <tr key={leave.id} className="leave-table-row">
+                          <tr key={leave.id}>
                             <td className="leave-type">
-                              <strong>
-                                {getLeaveTypeName(leave.leave_type_id)}
-                              </strong>
+                              <span className="leave-type-pill">
+                                {getLeaveTypeName(
+                                  leave.leave_type_id,
+                                  leave.leaveType || leave.leave_type,
+                                )}
+                              </span>
                             </td>
-                            <td>{formatDate(leave.start_date)}</td>
-                            <td>{formatDate(leave.end_date)}</td>
                             <td>
-                              <Badge
-                                bg="light"
-                                text="dark"
-                                className="px-2 py-1"
-                              >
-                                {leave.total_days}
-                              </Badge>
+                              <span className="leave-date">{formatDate(leave.start_date)}</span>
+                            </td>
+                            <td>
+                              <span className="leave-date">{formatDate(leave.end_date)}</span>
+                            </td>
+                            <td>
+                              <span className="leave-days-pill">{leave.total_days} days</span>
                             </td>
                             <td className="leave-reason">
-                              {leave.reason || (
-                                <span className="text-muted">-</span>
-                              )}
+                              {leave.reason || <span className="text-muted">No reason provided</span>}
                             </td>
                             <td>{getStatusBadge(leave.status)}</td>
                           </tr>
                         ))}
                       </tbody>
                     </Table>
+                ) : (
+                  <div className="leave-empty-state">
+                    <p className="mb-0">No leave requests found. Want to create one?</p>
                   </div>
-                </Card.Body>
-              </Card>
-            ) : (
-              <Alert variant="info">
-                No leave requests found. Want to create one?
-              </Alert>
-            )}
-            </Card.Body>
-          </Card>
+                )}
+              </Card.Body>
+            </Card>
           </Col>
         </Row>
 
@@ -419,8 +426,7 @@ const Leave = ({ setIsAuth }) => {
                   <option value="">Select Leave Type</option>
                   {leaveTypes.map((leaveType) => (
                     <option key={leaveType.id} value={leaveType.id}>
-                      {leaveType.leave_name} - ({leaveType.max_days} days
-                      remaining)
+                      {leaveType.leave_name}
                     </option>
                   ))}
                 </Form.Select>
@@ -462,14 +468,16 @@ const Leave = ({ setIsAuth }) => {
                 <Alert variant="info" className="mb-3">
                   <strong>Total Days:</strong> {calculatedDays} days
                   {leaveBalances.find(
-                    (b) => b.leave_type_id === parseInt(formData.leave_type_id),
+                    (b) =>
+                      String(b.leave_type_id) === String(formData.leave_type_id),
                   ) && (
                     <>
                       {" | "}
                       <strong>Remaining After:</strong>{" "}
                       {leaveBalances.find(
                         (b) =>
-                          b.leave_type_id === parseInt(formData.leave_type_id),
+                          String(b.leave_type_id) ===
+                          String(formData.leave_type_id),
                       )?.remaining_days - calculatedDays}{" "}
                       days
                     </>

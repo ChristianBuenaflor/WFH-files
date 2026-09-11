@@ -3,13 +3,22 @@ import { useNavigate } from "react-router-dom";
 import "@/pages/profile/Profile.css";
 import ProfileEditModal from "@/pages/profile/components/modal/profile/ProfileEditModal";
 import AdminLayout from "@/components/layout/Adminlayout";
-import { PencilSquare, CameraFill } from "react-bootstrap-icons";
+import {
+  PencilSquare,
+  CameraFill,
+  PersonFill,
+  TelephoneFill,
+  PeopleFill,
+  MortarboardFill,
+  FileEarmarkTextFill,
+  BriefcaseFill,
+} from "react-bootstrap-icons";
 import api from "@/config/axios";
 import { useAuth } from "@/context/AuthContext";
 import "@/assets/style/global.css";
 import coverPhoto from "@/assets/images/cover_photo.jpg";
+import ToastMessage from "@/components/common/ToastMessage.jsx";
 import {
-  Toast,
   ToastContainer,
   Modal,
   Button,
@@ -24,6 +33,7 @@ const Profile = ({ setIsAuth }) => {
   const [profileData, setProfileData] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showProfilePicModal, setShowProfilePicModal] = useState(false);
+  const [activeSection, setActiveSection] = useState("personal");
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState(null);
@@ -160,32 +170,15 @@ const Profile = ({ setIsAuth }) => {
     }
   }, [isAuth, fetchProfileData]);
 
-  const handleUpdateProfile = async (updatedData) => {
+  const handleUpdateProfile = async () => {
     try {
-      const cleanData = Object.keys(updatedData).reduce((acc, key) => {
-        if (
-          updatedData[key] !== null &&
-          updatedData[key] !== undefined &&
-          updatedData[key] !== ""
-        ) {
-          acc[key] = updatedData[key];
-        }
-        return acc;
-      }, {});
-
-      const response = await api.post(`/update-profile`, cleanData);
-
-      if (response.data && response.data.isSuccess) {
-        setShowToast({
-          show: true,
-          message: "Profile updated successfully!",
-          type: "success",
-        });
-        fetchProfileData();
-        setShowModal(false);
-      } else {
-        throw new Error(response.data?.message || "Failed to update profile");
-      }
+      await fetchProfileData();
+      setShowToast({
+        show: true,
+        message: "Profile updated successfully!",
+        type: "success",
+      });
+      setShowModal(false);
     } catch (err) {
       const errorMessage =
         err.response?.data?.message || err.message || "Error updating profile";
@@ -197,6 +190,20 @@ const Profile = ({ setIsAuth }) => {
       });
     }
   };
+
+  const openEdit = (section) => {
+    setActiveSection(section);
+    setShowModal(true);
+  };
+
+  const profileSections = [
+    { key: "personal", label: "Personal Information", icon: PersonFill },
+    { key: "contact", label: "Contact Information", icon: TelephoneFill },
+    { key: "family", label: "Family Information", icon: PeopleFill },
+    { key: "education", label: "Education", icon: MortarboardFill },
+    { key: "government", label: "Government IDs", icon: FileEarmarkTextFill },
+    { key: "other", label: "Other Information", icon: BriefcaseFill },
+  ];
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -448,12 +455,26 @@ const Profile = ({ setIsAuth }) => {
             </div>
             <button
               className="user-edit-btn"
-              onClick={() => setShowModal(true)}
+              onClick={() => openEdit("personal")}
             >
               <PencilSquare className="me-2" size={16} /> Edit Profile
             </button>
           </div>
         </div>
+
+        <nav className="profile-tabs" aria-label="Profile sections">
+          {profileSections.map((section) => (
+            <button
+              key={section.key}
+              type="button"
+              className={`profile-tab ${activeSection === section.key ? "active" : ""}`}
+              onClick={() => setActiveSection(section.key)}
+            >
+              {React.createElement(section.icon, { size: 14 })}
+              <span>{section.label}</span>
+            </button>
+          ))}
+        </nav>
 
         {/* Error banner */}
         {error && (
@@ -473,8 +494,11 @@ const Profile = ({ setIsAuth }) => {
         {/* Main Content */}
         <div className="user-content">
           {/* Personal Information */}
-          <section className="user-section">
-            <h2 className="user-section-title">Personal Information</h2>
+          {activeSection === "personal" && <section className="user-section">
+            <div className="user-section-heading">
+              <div><span className="section-icon"><PersonFill /></span><div><h2 className="user-section-title">Personal Information</h2><p>Basic details about the employee.</p></div></div>
+              <button type="button" className="section-edit-btn" onClick={() => openEdit("personal")}><PencilSquare /> Edit</button>
+            </div>
             <div className="user-section-grid">
               <div className="user-info-item">
                 <label>First Name:</label>
@@ -539,11 +563,14 @@ const Profile = ({ setIsAuth }) => {
                 <span>{profileData.weight_kg || "-"}</span>
               </div>
             </div>
-          </section>
+          </section>}
 
           {/* Contact Information */}
-          <section className="user-section">
-            <h2 className="user-section-title">Contact Information</h2>
+          {activeSection === "contact" && <section className="user-section">
+            <div className="user-section-heading">
+              <div><span className="section-icon"><TelephoneFill /></span><div><h2 className="user-section-title">Contact Information</h2><p>Residential and permanent address details.</p></div></div>
+              <button type="button" className="section-edit-btn" onClick={() => openEdit("contact")}><PencilSquare /> Edit</button>
+            </div>
             <div className="user-subsection">
               <h3>Residential Address</h3>
               <div className="user-section-grid">
@@ -578,11 +605,14 @@ const Profile = ({ setIsAuth }) => {
                 </div>
               </div>
             </div>
-          </section>
+          </section>}
 
           {/* Family Information */}
-          <section className="user-section">
-            <h2 className="user-section-title">Family Information</h2>
+          {activeSection === "family" && <section className="user-section">
+            <div className="user-section-heading">
+              <div><span className="section-icon"><PeopleFill /></span><div><h2 className="user-section-title">Family Information</h2><p>Details about family members and emergency contact.</p></div></div>
+              <button type="button" className="section-edit-btn" onClick={() => openEdit("family")}><PencilSquare /> Edit</button>
+            </div>
             <div className="user-subsection">
               <h3>Parents</h3>
               <div className="user-section-grid">
@@ -642,11 +672,14 @@ const Profile = ({ setIsAuth }) => {
                 </div>
               </div>
             </div>
-          </section>
+          </section>}
 
           {/* Education Background */}
-          <section className="user-section">
-            <h2 className="user-section-title">Education Background</h2>
+          {activeSection === "education" && <section className="user-section">
+            <div className="user-section-heading">
+              <div><span className="section-icon"><MortarboardFill /></span><div><h2 className="user-section-title">Education Background</h2><p>Your academic records and achievements.</p></div></div>
+              <button type="button" className="section-edit-btn" onClick={() => openEdit("education")}><PencilSquare /> Edit</button>
+            </div>
             <div className="user-subsection">
               <h3>Elementary</h3>
               <div className="user-section-grid">
@@ -796,11 +829,14 @@ const Profile = ({ setIsAuth }) => {
                 </div>
               </div>
             </div>
-          </section>
+          </section>}
 
           {/* Government IDs */}
-          <section className="user-section">
-            <h2 className="user-section-title">Government IDs and Numbers</h2>
+          {activeSection === "government" && <section className="user-section">
+            <div className="user-section-heading">
+              <div><span className="section-icon"><FileEarmarkTextFill /></span><div><h2 className="user-section-title">Government IDs and Numbers</h2><p>Your government-issued identification numbers.</p></div></div>
+              <button type="button" className="section-edit-btn" onClick={() => openEdit("government")}><PencilSquare /> Edit</button>
+            </div>
             <div className="user-section-grid">
               <div className="user-info-item">
                 <label>SSS Number:</label>
@@ -823,11 +859,14 @@ const Profile = ({ setIsAuth }) => {
                 <span>{profileData.tin_no || "-"}</span>
               </div>
             </div>
-          </section>
+          </section>}
 
           {/* Other Information */}
-          <section className="user-section">
-            <h2 className="user-section-title">Other Information</h2>
+          {activeSection === "other" && <section className="user-section">
+            <div className="user-section-heading">
+              <div><span className="section-icon"><BriefcaseFill /></span><div><h2 className="user-section-title">Other Information</h2><p>Additional employment details.</p></div></div>
+              <button type="button" className="section-edit-btn" onClick={() => openEdit("other")}><PencilSquare /> Edit</button>
+            </div>
             <div className="user-section-grid">
               <div className="user-info-item">
                 <label>Salary Mode:</label>
@@ -856,7 +895,7 @@ const Profile = ({ setIsAuth }) => {
                 </span>
               </div>
             </div>
-          </section>
+          </section>}
         </div>
         {/* Edit Modal */}
         {showModal && (
@@ -864,6 +903,7 @@ const Profile = ({ setIsAuth }) => {
             profileData={profileData}
             onClose={() => setShowModal(false)}
             onUpdate={handleUpdateProfile}
+            initialTab={activeSection}
           />
         )}
 
@@ -985,19 +1025,15 @@ const Profile = ({ setIsAuth }) => {
 
         {/* Toast Container */}
         <ToastContainer position="top-end" className="p-3">
-          <Toast
+          <ToastMessage
+            variant={toast.type}
             show={toast.show}
             onClose={() => setShowToast({ ...toast, show: false })}
             delay={3000}
             autohide
-            className={
-              toast.type === "success"
-                ? "glb-toast-success"
-                : "glb-toast-danger"
-            }
           >
-            <Toast.Body>{toast.message}</Toast.Body>
-          </Toast>
+            {toast.message}
+          </ToastMessage>
         </ToastContainer>
       </div>
     </AdminLayout>

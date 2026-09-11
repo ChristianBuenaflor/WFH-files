@@ -10,6 +10,7 @@ import {
   Pagination,
   Modal,
   Spinner,
+  Form,
 } from "react-bootstrap";
 import * as faceapi from "face-api.js";
 import api from "@/config/axios";
@@ -47,6 +48,10 @@ const OverviewTab = ({
     new Date().getFullYear(),
   );
   const [currentPage, setCurrentPage] = useState(1);
+  const [dateFilter, setDateFilter] = useState("");
+  const [attendanceStatusFilter, setAttendanceStatusFilter] = useState("all");
+  const [adjustmentStatusFilter, setAdjustmentStatusFilter] = useState("all");
+  const [timelinessFilter, setTimelinessFilter] = useState("all");
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -67,10 +72,16 @@ const OverviewTab = ({
   const [, setVerificationMessage] = useState("");
   const [captureErrorMessage, setCaptureErrorMessage] = useState("");
 
-  // Reset pagination when recent attendance data changes
+  // Reset pagination when the data or active filters change.
   useEffect(() => {
     setCurrentPage(1);
-  }, [summary?.recentAttendance?.length]);
+  }, [
+    summary?.recentAttendance?.length,
+    dateFilter,
+    attendanceStatusFilter,
+    adjustmentStatusFilter,
+    timelinessFilter,
+  ]);
 
   useEffect(() => {
     const loadModels = async () => {
@@ -342,20 +353,76 @@ const OverviewTab = ({
     return Number(summary?.monthHours || 0);
   }, [summary?.recentAttendance, summary?.monthHours, selectedTargetMonth, selectedTargetYear]);
 
+  const filteredRecentAttendance = React.useMemo(() => {
+    const records = summary?.recentAttendance || [];
+
+    return records.filter((record) => {
+      if (dateFilter) {
+        const recordDate = new Date(record.clock_in);
+        if (Number.isNaN(recordDate.getTime())) return false;
+
+        const localDate = [
+          recordDate.getFullYear(),
+          String(recordDate.getMonth() + 1).padStart(2, "0"),
+          String(recordDate.getDate()).padStart(2, "0"),
+        ].join("-");
+        if (localDate !== dateFilter) return false;
+      }
+
+      if (
+        attendanceStatusFilter !== "all" &&
+        String(record.status || "").toLowerCase() !== attendanceStatusFilter
+      ) {
+        return false;
+      }
+
+      const adjustmentStatus = String(
+        record.adjustment_status || "none",
+      ).toLowerCase();
+      if (
+        adjustmentStatusFilter !== "all" &&
+        adjustmentStatus !== adjustmentStatusFilter
+      ) {
+        return false;
+      }
+
+      if (timelinessFilter !== "all") {
+        const isLate = Number(record.is_late) === 1;
+        if (timelinessFilter === "late" && !isLate) return false;
+        if (timelinessFilter === "on-time" && isLate) return false;
+      }
+
+      return true;
+    });
+  }, [
+    summary?.recentAttendance,
+    dateFilter,
+    attendanceStatusFilter,
+    adjustmentStatusFilter,
+    timelinessFilter,
+  ]);
+
   const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
   const endIndex = startIndex + ROWS_PER_PAGE;
-  const paginatedRecentAttendance =
-    summary?.recentAttendance?.slice(startIndex, endIndex) || [];
-  const totalPages = Math.ceil(
-    (summary?.recentAttendance?.length || 0) / ROWS_PER_PAGE,
+  const paginatedRecentAttendance = filteredRecentAttendance.slice(
+    startIndex,
+    endIndex,
   );
+  const totalPages = Math.ceil(filteredRecentAttendance.length / ROWS_PER_PAGE);
+
+  const clearAttendanceFilters = () => {
+    setDateFilter("");
+    setAttendanceStatusFilter("all");
+    setAdjustmentStatusFilter("all");
+    setTimelinessFilter("all");
+  };
 
   // Pagination component renderer
   const PaginationControls = ({ currentPage, setCurrentPage, totalPages }) => {
     if (totalPages <= 1) return null;
 
     return (
-      <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mt-3 pt-3 border-top">
+      <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3 mt-3 p-3 border-top">
         <div className="text-muted small">
           Page {currentPage} of {totalPages}
         </div>
@@ -670,8 +737,97 @@ const OverviewTab = ({
               </div>
             </div>
 
+            <div className="px-4 pb-4">
+              <Row className="g-2 align-items-end">
+                <Col xs={12} sm={6} lg={3}>
+                  <Form.Group controlId="attendance-date-filter">
+                    <Form.Label className="small text-muted mb-1">Date</Form.Label>
+                    <Form.Control
+                      type="date"
+                      value={dateFilter}
+                      onChange={(event) => setDateFilter(event.target.value)}
+                    />
+                  </Form.Group>
+                </Col>
+
+                <Col xs={12} sm={6} lg={3}>
+                  <Form.Group controlId="attendance-status-filter">
+                    <Form.Label className="small text-muted mb-1">
+                      Attendance Status
+                    </Form.Label>
+                    <Form.Select
+                      value={attendanceStatusFilter}
+                      onChange={(event) =>
+                        setAttendanceStatusFilter(event.target.value)
+                      }
+                    >
+                      <option value="all">All statuses</option>
+                      <option value="present">Present</option>
+                      <option value="late">Late</option>
+                      <option value="pending">Pending</option>
+                      <option value="absent">Absent</option>
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
+
+                <Col xs={12} sm={6} lg={3}>
+                  <Form.Group controlId="adjustment-status-filter">
+                    <Form.Label className="small text-muted mb-1">
+                      Adjustment Status
+                    </Form.Label>
+                    <Form.Select
+                      value={adjustmentStatusFilter}
+                      onChange={(event) =>
+                        setAdjustmentStatusFilter(event.target.value)
+                      }
+                    >
+                      <option value="all">All adjustments</option>
+                      <option value="approved">Approved</option>
+                      <option value="pending">Pending</option>
+                      <option value="none">No adjustment</option>
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
+
+                <Col xs={12} sm={6} lg={3}>
+                  <Form.Group controlId="timeliness-filter">
+                    <Form.Label className="small text-muted mb-1">
+                      Time Status
+                    </Form.Label>
+                    <Form.Select
+                      value={timelinessFilter}
+                      onChange={(event) => setTimelinessFilter(event.target.value)}
+                    >
+                      <option value="all">On time or late</option>
+                      <option value="on-time">On time</option>
+                      <option value="late">Late</option>
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
+              </Row>
+
+              <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+                <span className="small text-muted">
+                  Showing {filteredRecentAttendance.length} of {summary.recentAttendance.length} records
+                </span>
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  onClick={clearAttendanceFilters}
+                  disabled={
+                    !dateFilter &&
+                    attendanceStatusFilter === "all" &&
+                    adjustmentStatusFilter === "all" &&
+                    timelinessFilter === "all"
+                  }
+                >
+                  Clear filters
+                </Button>
+              </div>
+            </div>
+
             <div className="recent-attendance-table-wrapper">
-              <Table responsive hover className="mb-0 report-table recent-attendance-table align-middle">
+              <Table responsive hover className="mb-0 report-table recent-attendance-table attendance-recent-modern align-middle">
                 <thead className="recent-attendance-header-row">
                   <tr>
                     <th>Date</th>
@@ -686,7 +842,13 @@ const OverviewTab = ({
                 </thead>
 
                 <tbody>
-                  {paginatedRecentAttendance.map((record, index) => (
+                  {paginatedRecentAttendance.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="text-center text-muted py-4">
+                        No attendance records match the selected filters.
+                      </td>
+                    </tr>
+                  ) : paginatedRecentAttendance.map((record, index) => (
                     <tr key={record.id || index} className="recent-attendance-row">
                       <td className="fw-medium">
                         {formatDate(record.clock_in)}
@@ -694,13 +856,13 @@ const OverviewTab = ({
 
                       <td>
                         {record.status === "Present" ? (
-                          <Badge bg="success">Present</Badge>
+                          <Badge bg="success" className="attendance-status-badge present">Present</Badge>
                         ) : record.status === "Late" ? (
-                          <Badge bg="warning">Late</Badge>
+                          <Badge bg="warning" className="attendance-status-badge late">Late</Badge>
                         ) : record.status === "Pending" ? (
-                          <Badge bg="info">Pending</Badge>
+                          <Badge bg="info" className="attendance-status-badge pending">Pending</Badge>
                         ) : (
-                          <Badge bg="danger">Absent</Badge>
+                          <Badge bg="danger" className="attendance-status-badge absent">Absent</Badge>
                         )}
                       </td>
 
@@ -722,9 +884,11 @@ const OverviewTab = ({
 
                       <td>
                         {record.is_late === 1 ? (
-                          <Badge bg="warning">{record.late_minutes} min</Badge>
+                          <Badge bg="warning" className="attendance-status-badge late">
+                            {record.late_minutes} min
+                          </Badge>
                         ) : (
-                          <Badge bg="success">On Time</Badge>
+                          <Badge bg="success" className="attendance-status-badge on-time">On Time</Badge>
                         )}
                       </td>
 

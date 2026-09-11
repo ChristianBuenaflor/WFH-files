@@ -6,7 +6,7 @@ import {
   BoxArrowRight,
   PersonLinesFill,
 } from "react-bootstrap-icons";
-import { Toast, ToastContainer } from "react-bootstrap";
+import { ToastContainer } from "react-bootstrap";
 import Sidebar from "@/components/layout/sidebar/Sidebar.jsx";
 import ChangePasswordModal from "@/pages/auth/components/changepassword/ChangePasswordModal.jsx";
 import "@/components/layout/AdminLayout.css";
@@ -14,6 +14,7 @@ import api from "../../config/axios.js";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext.jsx";
 import Announcement from "@/components/announcement/Announcement.jsx";
+import ToastMessage from "@/components/common/ToastMessage.jsx";
 import "@/assets/style/global.css";
 
 /**
@@ -30,6 +31,9 @@ import "@/assets/style/global.css";
 
 const AdminLayout = ({ children, setIsAuth }) => {
   const [sidebarShow, setSidebarShow] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    return localStorage.getItem("sidebarCollapsed") === "true";
+  });
   const [showToast, setShowToast] = React.useState(false);
   const [loading, setLoading] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
@@ -41,6 +45,13 @@ const AdminLayout = ({ children, setIsAuth }) => {
 
   const handleChangePassword = () => {
     setShowChangePasswordModal(true);
+  };
+  const toggleSidebar = () => {
+    setSidebarCollapsed((collapsed) => {
+      const nextCollapsed = !collapsed;
+      localStorage.setItem("sidebarCollapsed", String(nextCollapsed));
+      return nextCollapsed;
+    });
   };
   const fetchUserData = useCallback(async () => {
     if (!user) return; // Ensure user data is available before making the API call
@@ -141,9 +152,14 @@ const AdminLayout = ({ children, setIsAuth }) => {
   };
 
   return (
-    <div className="admin-layout">
+    <div className={`admin-layout ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
       {/* Sidebar */}
-      <Sidebar show={sidebarShow} handleClose={() => setSidebarShow(false)} />
+      <Sidebar
+        show={sidebarShow}
+        handleClose={() => setSidebarShow(false)}
+        collapsed={sidebarCollapsed}
+        onToggle={toggleSidebar}
+      />
 
       {/* Main Content */}
       <div className="admin-content">
@@ -239,15 +255,15 @@ const AdminLayout = ({ children, setIsAuth }) => {
       )}
 
       <ToastContainer position="top-end" className="p-3">
-        <Toast
-          className="glb-toast-success"
+        <ToastMessage
+          variant="success"
           show={showToast}
           onClose={() => setShowToast(false)}
           delay={3000}
           autohide
         >
-          <Toast.Body>You are now logged out!</Toast.Body>
-        </Toast>
+          You are now logged out!
+        </ToastMessage>
       </ToastContainer>
     </div>
   );

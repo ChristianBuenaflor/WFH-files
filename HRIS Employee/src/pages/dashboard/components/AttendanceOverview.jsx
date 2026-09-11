@@ -5,7 +5,6 @@ import {
   Col,
   Badge,
   Button,
-  Toast,
   ToastContainer,
   Modal,
   Spinner,
@@ -15,6 +14,7 @@ import {
   BoxArrowInRight,
   BoxArrowLeft,
 } from "react-bootstrap-icons";
+import ToastMessage from "@/components/common/ToastMessage.jsx";
 import * as faceapi from "face-api.js";
 import "@/assets/style/global.css";
 import api from "@/config/axios";
@@ -491,19 +491,15 @@ const AttendanceOverview = () => {
         style={{ zIndex: 1050 }}
       >
         {toasts.map((toast) => (
-          <Toast
+          <ToastMessage
             key={toast.id}
-            className="glb-toast-success"
+            variant={toast.variant}
             onClose={() =>
               setToasts((prev) => prev.filter((t) => t.id !== toast.id))
             }
           >
-            <Toast.Body
-              className={toast.variant === "danger" ? "text-dark" : ""}
-            >
-              {toast.message}
-            </Toast.Body>
-          </Toast>
+            {toast.message}
+          </ToastMessage>
         ))}
       </ToastContainer>
 

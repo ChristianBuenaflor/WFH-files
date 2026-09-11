@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Button, Toast, ToastContainer, Form } from "react-bootstrap";
+import { Modal, Button, ToastContainer, Form } from "react-bootstrap";
 import {
   PersonFill,
   PinMap,
@@ -8,14 +8,15 @@ import {
   FileEarmark,
   Gear,
 } from "react-bootstrap-icons";
+import ToastMessage from "@/components/common/ToastMessage.jsx";
 import "@/pages/profile/components/modal/profile/ProfileEditModal.css";
 import api from "@/config/axios";
 import { useAuth } from "@/context/AuthContext";
 
-const ProfileEditModal = ({ profileData, onClose, onUpdate }) => {
+const ProfileEditModal = ({ profileData, onClose, onUpdate, initialTab = "personal" }) => {
   const { updateUser } = useAuth();
   const [formData, setFormData] = useState(profileData);
-  const [activeTab, setActiveTab] = useState("personal");
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setShowToast] = useState({
     show: false,
@@ -437,17 +438,15 @@ const ProfileEditModal = ({ profileData, onClose, onUpdate }) => {
         className="p-3"
         style={{ position: "fixed", zIndex: 9999 }}
       >
-        <Toast
-          className={
-            toast.type === "success" ? "glb-toast-success" : "glb-toast-danger"
-          }
+        <ToastMessage
+          variant={toast.type}
           show={toast.show}
           onClose={() => setShowToast({ ...toast, show: false })}
           delay={3000}
           autohide
         >
-          <Toast.Body>{toast.message}</Toast.Body>
-        </Toast>
+          {toast.message}
+        </ToastMessage>
       </ToastContainer>
     </Modal>
   );

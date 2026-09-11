@@ -311,8 +311,10 @@ const Overview = ({ selectedMonth, selectedYear }) => {
                   {attendanceData.present === 0 &&
                     attendanceData.absent === 0 &&
                     attendanceData.late === 0 && (
-                      <div className="chart-empty-message">
-                        No attendance records found for {monthName} {yearValue}
+                      <div className="chart-empty-message-wrap">
+                        <div className="chart-empty-message">
+                          No attendance records found for {monthName} {yearValue}
+                        </div>
                       </div>
                     )}
                 </div>

@@ -36,6 +36,20 @@ const getStatTrendPoints = (stat) => {
   return `2,30 16,${25 - variation} 29,${28 - valueScale * 5} 43,${18 + variation} 57,${22 - valueScale * 8} 71,${endPoint + 5} 86,${endPoint}`;
 };
 
+const getStatTrendAreaPoints = (stat) =>
+  `2,42 ${getStatTrendPoints(stat)} 86,42`;
+
+const getStatTrendColor = (stat) => {
+  const colors = {
+    1: "#2475db",
+    2: "#159b67",
+    3: "#8745dd",
+    4: "#eba900",
+  };
+
+  return colors[stat.id] || colors[1];
+};
+
 const LoadingPanel = () => (
   <div className="text-center py-4 text-muted">
     <div className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
@@ -323,7 +337,12 @@ const Dashboard = ({ setIsAuth }) => {
               </p>
             )}
             <hr />
-            <p className="announcement-content mb-0">{selectedAnnouncement?.content}</p>
+            <div
+              className="announcement-content mb-0"
+              dangerouslySetInnerHTML={{
+                __html: selectedAnnouncement?.content || "",
+              }}
+            />
           </div>
         </Modal.Body>
         <Modal.Footer className="border-0 pt-0">
@@ -413,14 +432,23 @@ const Dashboard = ({ setIsAuth }) => {
                         </div>
                       </div>
                       <div className={`stat-trend-chart stat-trend-${stat.id}`} aria-hidden="true">
-                          <svg viewBox="0 0 88 42" preserveAspectRatio="none">
-                            <polyline
-                              points={
-                                getStatTrendPoints(stat)
-                              }
-                            />
-                          </svg>
-                        </div>
+                        <svg viewBox="0 0 88 42" preserveAspectRatio="none">
+                          <defs>
+                            <linearGradient id={`stat-gradient-${stat.id}`} x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor={getStatTrendColor(stat)} stopOpacity="0.22" />
+                              <stop offset="100%" stopColor={getStatTrendColor(stat)} stopOpacity="0" />
+                            </linearGradient>
+                          </defs>
+                          <line className="stat-trend-baseline" x1="2" y1="41" x2="86" y2="41" />
+                          <polygon
+                            className="stat-trend-area"
+                            points={getStatTrendAreaPoints(stat)}
+                            fill={`url(#stat-gradient-${stat.id})`}
+                          />
+                          <polyline points={getStatTrendPoints(stat)} />
+                          <circle className="stat-trend-endpoint" cx="86" cy={getStatTrendPoints(stat).split(" ").at(-1).split(",")[1]} r="2.5" />
+                        </svg>
+                      </div>
                     </Card.Body>
                   </Card>
                 </Col>

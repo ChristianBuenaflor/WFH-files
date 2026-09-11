@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Modal, Button, Form, Toast, ToastContainer } from "react-bootstrap";
+import { Modal, Button, Form, ToastContainer } from "react-bootstrap";
 import { Eye, EyeSlash, Lock } from "react-bootstrap-icons";
+import ToastMessage from "@/components/common/ToastMessage.jsx";
 import "./ChangePasswordModal.css";
 import "@/assets/style/global.css";
 
@@ -269,15 +270,15 @@ const ChangePasswordModal = ({ onClose, onUpdate }) => {
         className="p-3"
         style={{ position: "fixed", zIndex: 9999 }}
       >
-        <Toast
-          className={toast.type === "success" ? "glb-toast-success" : "glb-toast-danger"}
+        <ToastMessage
+          variant={toast.type}
           show={toast.show}
           onClose={() => setShowToast({ ...toast, show: false })}
           delay={3000}
           autohide
         >
-          <Toast.Body>{toast.message}</Toast.Body>
-        </Toast>
+          {toast.message}
+        </ToastMessage>
       </ToastContainer>
     </Modal>
   );

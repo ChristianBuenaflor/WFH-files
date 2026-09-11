@@ -1,40 +1,68 @@
-.rich-text-editor .btn-toolbar {
-  gap: 0.25rem;
+.rich-text-editor {
+  overflow: hidden;
+  border: 1px solid #dbe4ef;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(30, 58, 95, 0.06);
 }
 
-.rich-text-editor .btn-sm {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
-  border-radius: 0.2rem;
+.rich-text-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.55rem 0.65rem;
+  border-bottom: 1px solid #e8eef5;
+  background: #f8fafc;
+}
+
+.rich-text-tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  color: #526174;
+  background: transparent;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.rich-text-tool:hover:not(:disabled),
+.rich-text-tool.is-active {
+  color: #176b49;
+  background: #dff6e9;
+}
+
+.rich-text-tool:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.rich-text-tool-spaced {
+  margin-left: auto;
 }
 
 .ProseMirror {
   overflow-y: auto;
-  max-height: 400px !important;
-  min-height: 150px;
-  padding: 0.5rem;
-  border: 1px solid #ced4da;
-  border-radius: 10px;
-  background: white;
+  min-height: 235px;
+  max-height: 360px;
+  padding: 1rem 1.1rem;
+  border: 0;
+  background: #ffffff;
   font-family: inherit;
-  font-size: 1rem;
-  line-height: 1.5;
+  font-size: 0.95rem;
+  line-height: 1.65;
 }
 
 .ProseMirror:focus {
   outline: none;
-  border-color: #86b7fe;
-  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
 
-@media screen and (min-width: 768px) {
- .ProseMirror {
-  overflow-y: auto;
-  max-height: 300px !important;
-  min-height: 290px;
- }
-  
-}
+.ProseMirror p { margin-bottom: 0.7rem; }
+.ProseMirror ul,
+.ProseMirror ol { padding-left: 1.35rem; }
 
 .ProseMirror p.is-editor-empty:first-child::before {
   color: #adb5bd;

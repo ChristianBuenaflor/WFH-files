@@ -1,5 +1,6 @@
 import React, { Suspense, lazy } from "react";
-import { Modal, Button, Form, InputGroup, Row, Col } from "react-bootstrap";
+import { Modal, Button, Form, Row, Col } from "react-bootstrap";
+import { CheckCircleFill, Send } from "react-bootstrap-icons";
 
 const RichTextEditor = lazy(
   () => import("@/pages/attendance/components/richtexteditor/RichTextEditor"),
@@ -38,75 +39,64 @@ const ReportClockOutModal = ({
   const characterCount = getPlainText(reportBody).length;
 
   return (
-    <Modal show={show} onHide={handleClose} centered size="lg">
-      <Modal.Header closeButton>
-        <Modal.Title>Daily Report (Clock Out)</Modal.Title>
+    <Modal show={show} onHide={handleClose} centered size="lg" dialogClassName="report-modal-dialog">
+      <Modal.Header closeButton className="report-modal-header">
+        <div>
+          <div className="report-modal-kicker"><CheckCircleFill /> Face verified</div>
+          <Modal.Title>Finish your daily report</Modal.Title>
+          <p className="report-modal-subtitle">Add a quick summary before you clock out.</p>
+        </div>
       </Modal.Header>
 
-      <Modal.Body>
-          {verificationMessage && (
-          <div className=" alert alert-success py-2" role="alert">
-            <span className="text-muted small">{verificationMessage}</span>
+      <Modal.Body className="report-modal-body">
+        {verificationMessage && (
+          <div className="report-verification-note" role="status">
+            <CheckCircleFill />
+            <span>{verificationMessage}</span>
           </div>
         )}
         <Form>
-          <Row>
-            <Col lg={6} md={6} xs={12}>
-              {/* TO */}
-              <InputGroup className="mb-3">
-                <InputGroup.Text id="to-addon">TO</InputGroup.Text>
+          <Row className="g-4">
+            <Col lg={5} md={5} xs={12}>
+              <div className="report-field">
+                <Form.Label>Send report to</Form.Label>
                 <Form.Control
                   type="text"
-                  placeholder="hello@snlvirtualpartner.com"
+                  value="hello@snlvirtualpartner.com"
                   readOnly
                   disabled
-                  aria-label="TO"
-                  aria-describedby="to-addon"
-                  size="sm"
+                  aria-label="Send report to"
                 />
-              </InputGroup>
-
-              {/* CC */}
-              <InputGroup className="mb-3">
-                <InputGroup.Text id="cc-addon">CC</InputGroup.Text>
+              </div>
+              <div className="report-field">
+                <Form.Label>CC recipients <span>(optional)</span></Form.Label>
                 <Form.Control
-                  size="sm"
                   type="email"
                   multiple
                   value={ccEmails}
                   onChange={(e) => setCcEmails(e.target.value)}
-                  placeholder="Enter email addresses separated by commas"
-                  aria-label="CC"
-                  aria-describedby="cc-addon"
+                  placeholder="name@company.com, ..."
+                  aria-label="CC recipients"
                 />
-              </InputGroup>
-
-              <Form.Text className="text-muted mb-3 d-block">
-                Separate multiple emails with commas.
-              </Form.Text>
-
-              {/* SUBJECT */}
-              <InputGroup className="mb-3">
-                <InputGroup.Text id="subject-addon">Subject</InputGroup.Text>
+                <Form.Text>Separate multiple addresses with commas.</Form.Text>
+              </div>
+              <div className="report-field">
+                <Form.Label>Subject</Form.Label>
                 <Form.Control
-                  size="sm"
                   type="text"
                   placeholder="Daily report"
                   value={reportSubject}
                   onChange={(e) => setReportSubject(e.target.value)}
                   aria-label="Subject"
-                  aria-describedby="subject-addon"
                 />
-              </InputGroup>
-
-              <h5>Daily Summary</h5>
-              <p style={{ lineHeight: "1em !important" }} className="text-muted small">
-                Please provide a brief summary of the work you completed today.
-              </p>
+              </div>
             </Col>
 
-            <Col lg={6} md={6} xs={12}>
-              {/* REPORT BODY */}
+            <Col lg={7} md={7} xs={12}>
+              <div className="report-editor-heading">
+                <Form.Label>What did you work on today?</Form.Label>
+                <span>{characterCount} characters</span>
+              </div>
               <Suspense fallback={<div className="text-muted">Loading editor...</div>}>
                 <RichTextEditor
                   value={reportBody}
@@ -114,21 +104,18 @@ const ReportClockOutModal = ({
                   placeholder="Write your report here..."
                 />
               </Suspense>
-              <div className="d-flex justify-content-end mt-2">
-                <small className="text-muted">{characterCount}</small>
-              </div>
             </Col>
           </Row>
         </Form>
       
       </Modal.Body>
 
-      <Modal.Footer>
-        <Button size="sm" variant="outline-secondary" onClick={handleClose}>
+      <Modal.Footer className="report-modal-footer">
+        <Button size="sm" variant="light" onClick={handleClose}>
           Cancel
         </Button>
-        <Button variant="primary" size="sm" className="px-3 rounded-3" onClick={handleReportSubmit}>
-          Submit & Clock Out
+        <Button variant="success" size="sm" className="report-submit-button" onClick={handleReportSubmit}>
+          <Send /> Submit &amp; clock out
         </Button>
       </Modal.Footer>
     </Modal>

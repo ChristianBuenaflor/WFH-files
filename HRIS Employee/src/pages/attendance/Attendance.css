@@ -3,6 +3,159 @@
   background-color: transparent;
 }
 
+/* Clock-out report modal */
+.report-modal-dialog .modal-content {
+  overflow: hidden;
+  border: 0;
+  border-radius: 18px !important;
+  box-shadow: 0 24px 70px rgba(15, 35, 61, 0.2);
+}
+
+.report-modal-header {
+  padding: 1.6rem 1.8rem 1.25rem;
+  border-bottom: 1px solid #edf1f6;
+  background: linear-gradient(135deg, #f5fbf8 0%, #ffffff 72%);
+}
+
+.report-modal-header .btn-close {
+  margin-top: -0.7rem;
+}
+
+.report-modal-kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.45rem;
+  color: #176b49;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.report-modal-header .modal-title {
+  color: #10213f;
+  font-size: 1.45rem;
+  font-weight: 750;
+}
+
+.report-modal-subtitle {
+  margin: 0.3rem 0 0;
+  color: #6b7789;
+  font-size: 0.9rem;
+}
+
+.report-modal-body {
+  padding: 1.5rem 1.8rem 1.7rem;
+}
+
+.report-verification-note {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 1.25rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid #bce8ce;
+  border-radius: 9px;
+  color: #176b49;
+  background: #f0fbf4;
+  font-size: 0.82rem;
+}
+
+.report-field {
+  margin-bottom: 1rem;
+}
+
+.report-field .form-label,
+.report-editor-heading .form-label {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: #263852;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.report-field .form-label span {
+  color: #8b98a9;
+  font-weight: 500;
+}
+
+.report-field .form-control {
+  min-height: 42px;
+  border-color: #dbe4ef;
+  border-radius: 9px;
+  color: #263852;
+  font-size: 0.88rem;
+}
+
+.report-field .form-control:focus {
+  border-color: #71ba96;
+  box-shadow: 0 0 0 3px rgba(53, 165, 106, 0.13);
+}
+
+.report-field .form-control:disabled {
+  color: #65748a;
+  background: #f5f7fa;
+}
+
+.report-field .form-text {
+  display: block;
+  margin-top: 0.4rem;
+  color: #8b98a9;
+  font-size: 0.72rem;
+}
+
+.report-editor-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.report-editor-heading > span {
+  color: #8b98a9;
+  font-size: 0.72rem;
+}
+
+.report-modal-footer {
+  gap: 0.65rem;
+  padding: 1rem 1.8rem 1.35rem;
+  border-top: 1px solid #edf1f6;
+}
+
+.report-modal-footer .btn {
+  min-height: 38px;
+  border-radius: 9px;
+  font-weight: 700;
+}
+
+.report-submit-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding-inline: 1rem;
+  background: #176b49;
+  border-color: #176b49;
+}
+
+.report-submit-button:hover,
+.report-submit-button:focus {
+  background: #12583b;
+  border-color: #12583b;
+}
+
+@media (max-width: 576px) {
+  .report-modal-header,
+  .report-modal-body,
+  .report-modal-footer {
+    padding-inline: 1.15rem;
+  }
+
+  .report-modal-header .modal-title {
+    font-size: 1.25rem;
+  }
+}
+
 /* Page Header */
 .attendance-header {
   margin-bottom: 1.5rem;
@@ -663,15 +816,28 @@
 
 /* Recent Attendance Table */
 .recent-attendance-card {
-  border: 1px solid #e2e8f0;
+  border: 1px solid #dfe6ef;
   border-radius: 8px;
-  box-shadow: none;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
   overflow: hidden;
 }
 
 .recent-attendance-header {
   margin-bottom: 0;
-  padding-bottom: 1rem;
+  padding: 1.5rem 1.5rem 2.7rem !important;
+}
+
+.recent-attendance-header .section-title {
+  margin-bottom: 0.35rem !important;
+  color: #0b4f91;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.recent-attendance-header .section-subtitle {
+  color: #64748b;
+  font-size: 0.85rem;
 }
 
 .recent-attendance-table-wrapper {
@@ -681,59 +847,169 @@
 
 .recent-attendance-table {
   margin: 0;
+  min-width: 980px;
+  table-layout: fixed;
   vertical-align: middle;
 }
 
 .recent-attendance-header-row {
-  background-color: transparent;
+  background: #ffffff;
 }
 
 .recent-attendance-header-row th {
   color: #64748b;
-  font-size: 0.72rem;
+  background: #ffffff;
+  border-bottom: 1px solid #dfe6ef;
+  font-size: 0.7rem;
   font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: 0.04em;
-  border-bottom-color: #e2e8f0;
+  padding: 0.85rem 0.75rem;
+  text-transform: uppercase;
   white-space: nowrap;
-  padding: 0.75rem;
 }
 
 .recent-attendance-row {
   border-bottom: 1px solid #f1f5f9;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.15s ease;
 }
 
 .recent-attendance-row:hover {
-  background-color: #e5e7eb;
+  background-color: #f8fafc;
 }
 
 .recent-attendance-row td {
-  color: #475569;
-  padding: 1rem 0.75rem;
-  border-bottom-color: #f1f5f9;
+  color: #52657e;
+  font-size: 0.875rem;
+  padding: 0.85rem 0.75rem;
   vertical-align: middle;
 }
 
+.recent-attendance-row td:first-child {
+  color: #52657e;
+  font-weight: 500;
+}
+
+.recent-attendance-table .badge {
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.4rem 0.7rem;
+  white-space: nowrap;
+}
+
+.recent-attendance-table .badge.bg-success {
+  background-color: #e0f2fe !important;
+  color: #075985 !important;
+}
+
+.recent-attendance-table .badge.bg-warning {
+  background-color: #e0f2fe !important;
+  color: #075985 !important;
+}
+
+.recent-attendance-table .badge.bg-secondary {
+  background-color: #e0f2fe !important;
+  color: #075985 !important;
+}
+
+.recent-attendance-table .attendance-status-badge.present,
+.recent-attendance-table .attendance-status-badge.on-time {
+  background-color: #dcfce7 !important;
+  color: #166534 !important;
+}
+
+.recent-attendance-table .attendance-status-badge.late {
+  background-color: #fef3c7 !important;
+  color: #92400e !important;
+}
+
+.recent-attendance-table .attendance-status-badge.absent {
+  background-color: #fee2e2 !important;
+  color: #991b1b !important;
+}
+
+.recent-attendance-table .attendance-status-badge.pending {
+  background-color: #e0f2fe !important;
+  color: #075985 !important;
+}
+
+.recent-attendance-table .text-danger {
+  color: #ef5360 !important;
+}
+
+.recent-attendance-table .text-success {
+  color: #30966e !important;
+}
+
+/* Scoped overrides keep Bootstrap's generic table styles from flattening this table. */
+.recent-attendance-card .attendance-recent-modern {
+  --bs-table-bg: #ffffff;
+  --bs-table-hover-bg: #f8fafc;
+  --bs-table-border-color: #f1f5f9;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: #52657e;
+  margin-bottom: 0 !important;
+  min-width: 980px;
+}
+
+.recent-attendance-card .attendance-recent-modern > thead > tr > th {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #dfe6ef !important;
+  color: #64748b !important;
+  height: 42px;
+  padding: 0.75rem !important;
+  vertical-align: middle;
+}
+
+.recent-attendance-card .attendance-recent-modern > tbody > tr > td {
+  background-color: #ffffff;
+  border-bottom: 1px solid #f1f5f9 !important;
+  color: #52657e !important;
+  height: 48px;
+  padding: 0.7rem 0.75rem !important;
+  vertical-align: middle;
+}
+
+.recent-attendance-card .attendance-recent-modern > tbody > tr:hover > td {
+  background-color: #f8fafc !important;
+}
+
 .recent-attendance-action {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
+  border: 1px solid #5f9cff;
+  border-radius: 9px;
+  color: #2475db;
+  font-size: 0.78rem;
+  font-weight: 600;
+  min-width: 70px;
+  padding: 0.38rem 0.7rem;
+}
+
+.recent-attendance-action:hover,
+.recent-attendance-action:focus {
+  background: #eff6ff;
+  border-color: #2475db;
+  color: #1d4ed8;
 }
 
 @media (max-width: 768px) {
   .recent-attendance-header-row th,
   .recent-attendance-row td {
-    padding: 0.75rem 1rem;
+    padding: 0.75rem;
     font-size: 0.85rem;
-    white-space: normal;
+    white-space: nowrap;
   }
 }
 @media (max-width: 576px) {
+  .recent-attendance-header {
+    padding: 1.25rem 1rem 2.2rem !important;
+  }
+
   .recent-attendance-header-row th,
   .recent-attendance-row td {
-    padding: 0.5rem 0.75rem;
+    padding: 0.65rem 0.75rem;
     font-size: 0.75rem;
-    white-space: normal;
+    white-space: nowrap;
   }
 }
 
