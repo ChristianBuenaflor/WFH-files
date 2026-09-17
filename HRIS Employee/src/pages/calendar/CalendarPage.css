@@ -450,40 +450,71 @@ button.teams-event {
 .upcoming-holiday-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-width: 145px;
-  padding: 8px 10px;
-  border: 1px solid #f5e2b0;
-  border-radius: 6px;
+  gap: 10px;
+  min-width: 170px;
+  padding: 10px 12px;
+  border: 1px solid #f5d19a;
+  border-radius: 10px;
   background: #fffaf0;
   color: #7c4a03;
   cursor: pointer;
   text-align: left;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
 }
 
-.upcoming-holiday-item span:last-child {
+.upcoming-holiday-item.holiday-item {
+  border-color: #f59e0b;
+  background: #fff3cd;
+  color: #7c4a03;
+}
+
+.upcoming-holiday-item.leave-item {
+  border-color: #17a2b8;
+  background: #d1ecf1;
+  color: #0f5d8a;
+}
+
+.upcoming-event-meta {
   display: flex;
+  flex: 1;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
 }
 
-.upcoming-holiday-item strong,
-.upcoming-holiday-item small {
+.upcoming-event-meta strong,
+.upcoming-event-meta small {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.upcoming-holiday-item small {
-  color: #956b1b;
+.upcoming-event-meta strong {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.upcoming-event-meta small {
+  color: inherit;
   font-size: 0.72rem;
+  opacity: 0.9;
+}
+
+.holiday-item .upcoming-event-meta small,
+.holiday-item .upcoming-holiday-dot {
+  color: #7c4a03;
+  background: #f59e0b;
+}
+
+.leave-item .upcoming-event-meta small,
+.leave-item .upcoming-holiday-dot {
+  color: #0f5d8a;
 }
 
 .upcoming-holiday-dot {
-  width: 8px;
-  height: 8px;
-  flex: 0 0 8px;
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
   border-radius: 50%;
   background: #f59e0b;
 }

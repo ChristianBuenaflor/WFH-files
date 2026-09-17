@@ -198,6 +198,24 @@ const CalendarPage = ({ setIsAuth }) => {
     [calendarData],
   );
 
+  const normalizeText = (value) => {
+    if (value === null || value === undefined) return "";
+    if (typeof value === "string") return value.trim();
+    if (typeof value === "number") return String(value);
+    if (typeof value === "object") {
+      return normalizeText(
+        value.type_name ||
+          value.name ||
+          value.leave_name ||
+          value.leaveType ||
+          value.leave_type ||
+          value.description ||
+          value.label,
+      );
+    }
+    return "";
+  };
+
   const getHolidayData = (record) => {
     if (!record) return null;
     if (record.holiday) return record.holiday;
@@ -210,9 +228,68 @@ const CalendarPage = ({ setIsAuth }) => {
     return null;
   };
 
-  const holidayRecords = useMemo(
+  const getLeaveData = (record) => {
+    if (!record) return null;
+
+    const leaveValue = record.leave;
+
+    if (leaveValue && typeof leaveValue === "object") {
+      const leaveName = normalizeText(
+        leaveValue.name ||
+          leaveValue.leave_name ||
+          leaveValue.leaveType ||
+          leaveValue.leave_type ||
+          leaveValue.type_name ||
+          leaveValue.label,
+      );
+      const leaveType = normalizeText(
+        leaveValue.type ||
+          leaveValue.leave_type ||
+          leaveValue.leaveType ||
+          leaveValue.category ||
+          leaveValue.type_name ||
+          leaveValue.label,
+      );
+
+      if (leaveName || leaveType) {
+        return {
+          name: leaveName || "Leave",
+          type: leaveType || "Leave",
+        };
+      }
+    }
+
+    if (typeof leaveValue === "string" && leaveValue.trim()) {
+      return {
+        name: leaveValue.trim(),
+        type: "Leave",
+      };
+    }
+
+    const directLeaveType = normalizeText(record.leave_type || record.leaveType || record.leave_type_name);
+    if (directLeaveType) {
+      return {
+        name: directLeaveType,
+        type: "Leave",
+      };
+    }
+
+    if (record.status?.toLowerCase() === "leave") {
+      return {
+        name: "Leave",
+        type: "Leave",
+      };
+    }
+
+    return null;
+  };
+
+  const getLeaveName = (record) => getLeaveData(record)?.name || "Leave";
+  const getLeaveType = (record) => getLeaveData(record)?.type || "Leave";
+
+  const eventRecords = useMemo(
     () => [...calendarData]
-      .filter((record) => getHolidayData(record))
+      .filter((record) => getHolidayData(record) || getLeaveData(record))
       .sort((a, b) => new Date(a.date) - new Date(b.date)),
     [calendarData],
   );
@@ -302,12 +379,9 @@ const CalendarPage = ({ setIsAuth }) => {
 
   const getHolidayType = (record) => {
     const type = getHolidayData(record)?.type;
+    const normalized = normalizeText(type);
 
-    if (typeof type === "string") return type;
-    if (type && typeof type === "object") {
-      return type.type_name || type.name || type.description || "Holiday";
-    }
-
+    if (normalized) return normalized;
     return "Holiday";
   };
 
@@ -450,6 +524,9 @@ const CalendarPage = ({ setIsAuth }) => {
               const record = recordsByDate.get(getDateKey(date));
               const holidayInfo = getHolidayData(record);
               const holidayVisible = Boolean(holidayInfo) && showHoliday;
+              const leaveInfo = getLeaveData(record);
+              const leaveVisible = Boolean(leaveInfo) && record?.status?.toLowerCase() === "leave";
+
               return (
                 <div key={getDateKey(date)} className="teams-event-cell">
                   {holidayVisible && (
@@ -460,6 +537,16 @@ const CalendarPage = ({ setIsAuth }) => {
                     >
                       <strong>{getHolidayName(record)}</strong>
                       <small>{getHolidayType(record)}</small>
+                    </button>
+                  )}
+
+                  {leaveVisible && (
+                    <button
+                      type="button"
+                      className="teams-event teams-event-leave"
+                    >
+                      <strong>{getLeaveName(record)}</strong>
+                      <small>{getLeaveType(record)}</small>
                     </button>
                   )}
                 </div>
@@ -512,30 +599,41 @@ const CalendarPage = ({ setIsAuth }) => {
             <section className="upcoming-holidays" aria-labelledby="upcoming-holidays-title">
               <div className="upcoming-holidays-header">
                 <div>
-                  <p className="upcoming-holidays-eyebrow">All holidays</p>
-                  <h2 id="upcoming-holidays-title">Holiday List</h2>
+                  <p className="upcoming-holidays-eyebrow">All events</p>
+                  <h2 id="upcoming-holidays-title">Event List</h2>
                 </div>
               </div>
 
-              {holidayRecords.length > 0 ? (
+              {eventRecords.length > 0 ? (
                 <div className="upcoming-holidays-list">
-                  {holidayRecords.map((record) => (
-                    <button
-                      type="button"
-                      className="upcoming-holiday-item"
-                      key={record.date}
-                      onClick={() => selectHoliday(record)}
-                    >
-                      <span className="upcoming-holiday-dot" />
-                      <span>
-                        <strong>{new Date(`${record.date}T00:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</strong>
-                        <small>{getHolidayName(record)}</small>
-                      </span>
-                    </button>
-                  ))}
+                  {eventRecords.map((record) => {
+                    const holidayInfo = getHolidayData(record);
+                    const leaveInfo = getLeaveData(record);
+                    const eventLabel = holidayInfo?.name || leaveInfo?.name || "Event";
+                    const eventClassName = leaveInfo ? "upcoming-holiday-item leave-item" : "upcoming-holiday-item holiday-item";
+                    const eventDate = new Date(`${record.date}T00:00:00`).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    });
+
+                    return (
+                      <button
+                        type="button"
+                        className={eventClassName}
+                        key={`${record.date}-${eventLabel}`}
+                        onClick={() => selectHoliday(record)}
+                      >
+                        <span className="upcoming-holiday-dot" />
+                        <div className="upcoming-event-meta">
+                          <strong>{eventDate}</strong>
+                          <small>{eventLabel}</small>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               ) : (
-                <p className="upcoming-holidays-empty">No holiday records available.</p>
+                <p className="upcoming-holidays-empty">No event records available.</p>
               )}
             </section>
           )}
