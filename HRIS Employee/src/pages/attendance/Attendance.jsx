@@ -654,10 +654,8 @@ const Attendance = ({ setIsAuth }) => {
               <Button
                 key={tab.key}
                 size="sm"
-                className="px-3"
-                variant={
-                  activeTab === tab.key ? "secondary" : "outline-secondary"
-                }
+                className={`px-3 attendance-tab-btn ${activeTab === tab.key ? "active" : ""}`}
+                variant={activeTab === tab.key ? "secondary" : "outline-secondary"}
                 onClick={() => setActiveTab(tab.key)}
               >
                 {tab.icon}

@@ -19,6 +19,10 @@ import {
   DoorOpen,
   ChevronLeft,
   ChevronRight,
+  Calendar3,
+  Sliders2,
+  ArrowCounterclockwise,
+  Search,
 } from "react-bootstrap-icons";
 
 const OverviewTab = ({
@@ -48,10 +52,17 @@ const OverviewTab = ({
     new Date().getFullYear(),
   );
   const [currentPage, setCurrentPage] = useState(1);
-  const [dateFilter, setDateFilter] = useState("");
+  const [startDateFilter, setStartDateFilter] = useState("");
+  const [endDateFilter, setEndDateFilter] = useState("");
   const [attendanceStatusFilter, setAttendanceStatusFilter] = useState("all");
   const [adjustmentStatusFilter, setAdjustmentStatusFilter] = useState("all");
   const [timelinessFilter, setTimelinessFilter] = useState("all");
+  // Applied filters (only these affect the displayed records)
+  const [appliedStartDateFilter, setAppliedStartDateFilter] = useState("");
+  const [appliedEndDateFilter, setAppliedEndDateFilter] = useState("");
+  const [appliedAttendanceStatusFilter, setAppliedAttendanceStatusFilter] = useState("all");
+  const [appliedAdjustmentStatusFilter, setAppliedAdjustmentStatusFilter] = useState("all");
+  const [appliedTimelinessFilter, setAppliedTimelinessFilter] = useState("all");
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -72,15 +83,16 @@ const OverviewTab = ({
   const [, setVerificationMessage] = useState("");
   const [captureErrorMessage, setCaptureErrorMessage] = useState("");
 
-  // Reset pagination when the data or active filters change.
+  // Reset pagination when the data or applied filters change.
   useEffect(() => {
     setCurrentPage(1);
   }, [
     summary?.recentAttendance?.length,
-    dateFilter,
-    attendanceStatusFilter,
-    adjustmentStatusFilter,
-    timelinessFilter,
+    appliedStartDateFilter,
+    appliedEndDateFilter,
+    appliedAttendanceStatusFilter,
+    appliedAdjustmentStatusFilter,
+    appliedTimelinessFilter,
   ]);
 
   useEffect(() => {
@@ -355,23 +367,34 @@ const OverviewTab = ({
 
   const filteredRecentAttendance = React.useMemo(() => {
     const records = summary?.recentAttendance || [];
+    const normalizedStart = appliedStartDateFilter ? new Date(`${appliedStartDateFilter}T00:00:00`) : null;
+    const normalizedEnd = appliedEndDateFilter ? new Date(`${appliedEndDateFilter}T23:59:59.999`) : null;
 
     return records.filter((record) => {
-      if (dateFilter) {
-        const recordDate = new Date(record.clock_in);
-        if (Number.isNaN(recordDate.getTime())) return false;
+      const rawDate = record.clock_in || record.clockIn || record.date;
+      const recordDate = new Date(rawDate);
 
-        const localDate = [
-          recordDate.getFullYear(),
-          String(recordDate.getMonth() + 1).padStart(2, "0"),
-          String(recordDate.getDate()).padStart(2, "0"),
-        ].join("-");
-        if (localDate !== dateFilter) return false;
+      if (rawDate && Number.isNaN(recordDate.getTime())) {
+        return false;
+      }
+
+      if (normalizedStart || normalizedEnd) {
+        if (!rawDate) {
+          return false;
+        }
+
+        if (normalizedStart && recordDate < normalizedStart) {
+          return false;
+        }
+
+        if (normalizedEnd && recordDate > normalizedEnd) {
+          return false;
+        }
       }
 
       if (
-        attendanceStatusFilter !== "all" &&
-        String(record.status || "").toLowerCase() !== attendanceStatusFilter
+        appliedAttendanceStatusFilter !== "all" &&
+        String(record.status || "").toLowerCase() !== appliedAttendanceStatusFilter
       ) {
         return false;
       }
@@ -380,26 +403,27 @@ const OverviewTab = ({
         record.adjustment_status || "none",
       ).toLowerCase();
       if (
-        adjustmentStatusFilter !== "all" &&
-        adjustmentStatus !== adjustmentStatusFilter
+        appliedAdjustmentStatusFilter !== "all" &&
+        adjustmentStatus !== appliedAdjustmentStatusFilter
       ) {
         return false;
       }
 
-      if (timelinessFilter !== "all") {
+      if (appliedTimelinessFilter !== "all") {
         const isLate = Number(record.is_late) === 1;
-        if (timelinessFilter === "late" && !isLate) return false;
-        if (timelinessFilter === "on-time" && isLate) return false;
+        if (appliedTimelinessFilter === "late" && !isLate) return false;
+        if (appliedTimelinessFilter === "on-time" && isLate) return false;
       }
 
       return true;
     });
   }, [
     summary?.recentAttendance,
-    dateFilter,
-    attendanceStatusFilter,
-    adjustmentStatusFilter,
-    timelinessFilter,
+    appliedStartDateFilter,
+    appliedEndDateFilter,
+    appliedAttendanceStatusFilter,
+    appliedAdjustmentStatusFilter,
+    appliedTimelinessFilter,
   ]);
 
   const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
@@ -411,10 +435,28 @@ const OverviewTab = ({
   const totalPages = Math.ceil(filteredRecentAttendance.length / ROWS_PER_PAGE);
 
   const clearAttendanceFilters = () => {
-    setDateFilter("");
+    // Clear both the UI (temp) filters and the applied filters
+    setStartDateFilter("");
+    setEndDateFilter("");
     setAttendanceStatusFilter("all");
     setAdjustmentStatusFilter("all");
     setTimelinessFilter("all");
+
+    setAppliedStartDateFilter("");
+    setAppliedEndDateFilter("");
+    setAppliedAttendanceStatusFilter("all");
+    setAppliedAdjustmentStatusFilter("all");
+    setAppliedTimelinessFilter("all");
+    setCurrentPage(1);
+  };
+
+  const handleApplyFilters = () => {
+    setAppliedStartDateFilter(startDateFilter);
+    setAppliedEndDateFilter(endDateFilter);
+    setAppliedAttendanceStatusFilter(attendanceStatusFilter);
+    setAppliedAdjustmentStatusFilter(adjustmentStatusFilter);
+    setAppliedTimelinessFilter(timelinessFilter);
+    setCurrentPage(1);
   };
 
   // Pagination component renderer
@@ -712,49 +754,50 @@ const OverviewTab = ({
       {!loadingSummary && summary.recentAttendance.length > 0 && (
         <Card className="recent-attendance-card mb-4">
           <Card.Body className="p-0">
-            <div className="section-header-inline recent-attendance-header px-4 pt-4">
-              <div>
-                <h4 className="section-title mb-1">Recent Attendance</h4>
-                <p className="section-subtitle">
-                  Your recent attendance records
-                </p>
-              </div>
-
-              <div>
-                <Dropdown
-                  show={showDropdown}
-                  onClick={() => setShowDropdown(false)}
-                >
-                  <Dropdown.Toggle
-                    as="div"
-                    className="text-secondary absent-dropdown-toggle"
-                  />
-
-                  <Dropdown.Menu>
-                    <Dropdown.Item>Request to clock in</Dropdown.Item>
-                  </Dropdown.Menu>
-                </Dropdown>
+            <div className="recent-attendance-header px-4 pt-4">
+              <div className="section-header-inline recent-attendance-heading-row">
+                <div className="recent-attendance-title-wrap">
+                  <div>
+                    <h4 className="section-title mb-1">Recent Attendance</h4>
+                    <p className="section-subtitle">
+                      Your recent attendance records.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="px-4 pb-4">
-              <Row className="g-2 align-items-end">
-                <Col xs={12} sm={6} lg={3}>
-                  <Form.Group controlId="attendance-date-filter">
-                    <Form.Label className="small text-muted mb-1">Date</Form.Label>
-                    <Form.Control
-                      type="date"
-                      value={dateFilter}
-                      onChange={(event) => setDateFilter(event.target.value)}
-                    />
+            <div className="recent-attendance-filter-panel px-4 pb-4">
+              <Row className="g-2 align-items-end recent-attendance-filters-row">
+                <Col xs={12} sm={6} lg={2}>
+                  <Form.Group controlId="attendance-start-date-filter" className="recent-attendance-filter-group">
+                    <Form.Label className="small text-muted mb-1">Start date</Form.Label>
+                    <div className="recent-attendance-date-field">
+                      <Form.Control
+                        type="date"
+                        value={startDateFilter}
+                        onChange={(event) => setStartDateFilter(event.target.value)}
+                      />
+                    </div>
                   </Form.Group>
                 </Col>
 
-                <Col xs={12} sm={6} lg={3}>
-                  <Form.Group controlId="attendance-status-filter">
-                    <Form.Label className="small text-muted mb-1">
-                      Attendance Status
-                    </Form.Label>
+                <Col xs={12} sm={6} lg={2}>
+                  <Form.Group controlId="attendance-end-date-filter" className="recent-attendance-filter-group">
+                    <Form.Label className="small text-muted mb-1">End date</Form.Label>
+                    <div className="recent-attendance-date-field">
+                      <Form.Control
+                        type="date"
+                        value={endDateFilter}
+                        onChange={(event) => setEndDateFilter(event.target.value)}
+                      />
+                    </div>
+                  </Form.Group>
+                </Col>
+
+                <Col xs={12} sm={6} lg={2}>
+                  <Form.Group controlId="attendance-status-filter" className="recent-attendance-filter-group">
+                    <Form.Label className="small text-muted mb-1">Attendance Status</Form.Label>
                     <Form.Select
                       value={attendanceStatusFilter}
                       onChange={(event) =>
@@ -770,11 +813,9 @@ const OverviewTab = ({
                   </Form.Group>
                 </Col>
 
-                <Col xs={12} sm={6} lg={3}>
-                  <Form.Group controlId="adjustment-status-filter">
-                    <Form.Label className="small text-muted mb-1">
-                      Adjustment Status
-                    </Form.Label>
+                <Col xs={12} sm={6} lg={2}>
+                  <Form.Group controlId="adjustment-status-filter" className="recent-attendance-filter-group">
+                    <Form.Label className="small text-muted mb-1">Adjustment Status</Form.Label>
                     <Form.Select
                       value={adjustmentStatusFilter}
                       onChange={(event) =>
@@ -789,11 +830,9 @@ const OverviewTab = ({
                   </Form.Group>
                 </Col>
 
-                <Col xs={12} sm={6} lg={3}>
-                  <Form.Group controlId="timeliness-filter">
-                    <Form.Label className="small text-muted mb-1">
-                      Time Status
-                    </Form.Label>
+                <Col xs={12} sm={6} lg={2}>
+                  <Form.Group controlId="timeliness-filter" className="recent-attendance-filter-group">
+                    <Form.Label className="small text-muted mb-1">Time Status</Form.Label>
                     <Form.Select
                       value={timelinessFilter}
                       onChange={(event) => setTimelinessFilter(event.target.value)}
@@ -804,25 +843,42 @@ const OverviewTab = ({
                     </Form.Select>
                   </Form.Group>
                 </Col>
+
+                <Col xs={12} sm={12} lg={2} className="d-flex justify-content-end">
+                  <div className="recent-attendance-action-buttons d-flex flex-wrap gap-2 justify-content-lg-end justify-content-start">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      className="recent-attendance-apply-btn"
+                      onClick={handleApplyFilters}
+                    >
+                      <Search className="me-1" />
+                      Apply Filters
+                    </Button>
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      className="recent-attendance-clear-btn"
+                      onClick={clearAttendanceFilters}
+                      disabled={
+                        !startDateFilter &&
+                        !endDateFilter &&
+                        attendanceStatusFilter === "all" &&
+                        adjustmentStatusFilter === "all" &&
+                        timelinessFilter === "all"
+                      }
+                    >
+                      <ArrowCounterclockwise className="me-1" />
+                      Clear Filters
+                    </Button>
+                  </div>
+                </Col>
               </Row>
 
-              <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+              <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3 recent-attendance-record-summary">
                 <span className="small text-muted">
                   Showing {filteredRecentAttendance.length} of {summary.recentAttendance.length} records
                 </span>
-                <Button
-                  variant="outline-secondary"
-                  size="sm"
-                  onClick={clearAttendanceFilters}
-                  disabled={
-                    !dateFilter &&
-                    attendanceStatusFilter === "all" &&
-                    adjustmentStatusFilter === "all" &&
-                    timelinessFilter === "all"
-                  }
-                >
-                  Clear filters
-                </Button>
               </div>
             </div>
 
@@ -909,6 +965,7 @@ const OverviewTab = ({
                           className="px-3 recent-attendance-action"
                           onClick={() => handleOpenAdjustModal(record)}
                         >
+                          <Sliders2 className="me-2" />
                           Adjust
                         </Button>
                       </td>
