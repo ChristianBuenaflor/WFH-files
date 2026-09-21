@@ -103,8 +103,13 @@ const Payslip = ({ setIsAuth }) => {
   };
 
   const fetchPayslipHolidays = async (payslip) => {
-    const suppliedHolidays = payslip?.holidays || payslip?.holiday_dates;
-    if (Array.isArray(suppliedHolidays)) {
+    const suppliedHolidays = Array.isArray(payslip?.holidays)
+      ? payslip.holidays
+      : Array.isArray(payslip?.holiday_dates)
+        ? payslip.holiday_dates
+        : [];
+
+    if (suppliedHolidays.length > 0) {
       setPayslipHolidays(suppliedHolidays.map((holiday) => normalizeHoliday(holiday)));
       return;
     }
@@ -557,7 +562,7 @@ const Payslip = ({ setIsAuth }) => {
                   <div className="holidays-summary-header">
                     <span className="item-name holidays-label">Holidays</span>
                     <span className="holiday-count-badge">
-                      {selectedPayslip.total_holidays || payslipHolidays.length || 0}
+                      {selectedPayslip.total_holidays ?? payslipHolidays.length ?? 0}
                     </span>
                   </div>
 

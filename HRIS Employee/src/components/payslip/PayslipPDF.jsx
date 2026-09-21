@@ -71,11 +71,11 @@ const PayslipPDF = forwardRef(({ payslip, formatPeso }, ref) => {
         <div className="pdf-detail-row">
           <div className="pdf-detail-item">
             <label className="pdf-detail-label">Days Worked:</label>
-            <span className="pdf-detail-value">{payslip.days_worked} days</span>
+            <span className="pdf-detail-value">{Number(payslip.days_worked || 0).toFixed(0)} days</span>
           </div>
           <div className="pdf-detail-item">
             <label className="pdf-detail-label">Absences:</label>
-            <span className="pdf-detail-value">{payslip.absences} days</span>
+            <span className="pdf-detail-value">{Number(payslip.absences || 0).toFixed(0)} days</span>
           </div>
         </div>
         <div className="pdf-detail-row">
