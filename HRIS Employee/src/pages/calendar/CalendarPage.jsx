@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Modal } from "react-bootstrap";
 import AdminLayout from "@/components/layout/Adminlayout";
 import api from "@/config/axios";
@@ -198,7 +198,7 @@ const CalendarPage = ({ setIsAuth }) => {
     [calendarData],
   );
 
-  const normalizeText = (value) => {
+  const normalizeText = useCallback((value) => {
     if (value === null || value === undefined) return "";
     if (typeof value === "string") return value.trim();
     if (typeof value === "number") return String(value);
@@ -214,9 +214,9 @@ const CalendarPage = ({ setIsAuth }) => {
       );
     }
     return "";
-  };
+  }, []);
 
-  const getHolidayData = (record) => {
+  const getHolidayData = useCallback((record) => {
     if (!record) return null;
     if (record.holiday) return record.holiday;
     if (record.holiday_name) {
@@ -226,9 +226,9 @@ const CalendarPage = ({ setIsAuth }) => {
       };
     }
     return null;
-  };
+  }, []);
 
-  const getLeaveData = (record) => {
+  const getLeaveData = useCallback((record) => {
     if (!record) return null;
 
     const leaveValue = record.leave;
@@ -282,7 +282,7 @@ const CalendarPage = ({ setIsAuth }) => {
     }
 
     return null;
-  };
+  }, [normalizeText]);
 
   const getLeaveName = (record) => getLeaveData(record)?.name || "Leave";
   const getLeaveType = (record) => getLeaveData(record)?.type || "Leave";
@@ -291,7 +291,7 @@ const CalendarPage = ({ setIsAuth }) => {
     () => [...calendarData]
       .filter((record) => getHolidayData(record) || getLeaveData(record))
       .sort((a, b) => new Date(a.date) - new Date(b.date)),
-    [calendarData],
+    [calendarData, getHolidayData, getLeaveData],
   );
 
   const changeWeek = (amount) => {

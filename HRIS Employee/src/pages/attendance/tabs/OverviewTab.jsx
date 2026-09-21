@@ -35,8 +35,6 @@ const OverviewTab = ({
   setShowReportModal,
   loadingIn,
   loadingOut,
-  showDropdown,
-  setShowDropdown,
   formatDate,
   formatTimeRange,
   formatHoursWorked,
