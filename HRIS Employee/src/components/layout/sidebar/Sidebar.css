@@ -130,9 +130,25 @@
 }
 
 .sidebar-footer {
-  padding: 1rem 0;
+  padding: 1rem;
   margin-top: auto;
   border-top: 1px solid #e9ecef;
+}
+
+.sidebar-privacy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+.sidebar-privacy-btn.active {
+  background-color: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
 }
 
 .logout-link {
@@ -177,6 +193,15 @@
     padding-left: 1rem;
     padding-right: 1rem;
   }
+
+  .sidebar-desktop.collapsed .sidebar-footer {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .sidebar-desktop.collapsed .sidebar-privacy-btn span {
+    display: none;
+  }
 }
 
 @media (max-width: 991.98px) {
@@ -193,6 +218,12 @@
 .offcanvas-body {
   padding: 0 !important;
   overflow-y: auto;
+}
+
+.sidebar-offcanvas .offcanvas-body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .sidebar-offcanvas .btn-close {

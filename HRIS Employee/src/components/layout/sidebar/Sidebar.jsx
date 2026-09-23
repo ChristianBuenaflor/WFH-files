@@ -1,5 +1,5 @@
 import React from "react";
-import { Nav, Offcanvas } from "react-bootstrap";
+import { Button, Nav, Offcanvas } from "react-bootstrap";
 import { Link, useLocation } from "react-router-dom";
 import {
   CalendarCheck,
@@ -9,6 +9,7 @@ import {
   FileEarmarkText,
   BoxArrowRight,
   Speedometer2,
+  ShieldLock,
   FilePost,
   JournalText,
   ChevronLeft,
@@ -108,6 +109,18 @@ const Sidebar = ({ show, handleClose, collapsed, onToggle }) => {
               </Nav.Link>
             ))}
           </Nav>
+          <div className="sidebar-footer">
+            <Button
+              as={Link}
+              to="/privacy-policy"
+              variant="outline-primary"
+              className={`sidebar-privacy-btn ${isActive("/privacy-policy") ? "active" : ""}`}
+              onClick={handleClose}
+            >
+              <ShieldLock />
+              <span>Privacy Policy</span>
+            </Button>
+          </div>
         </Offcanvas.Body>
       </Offcanvas>
 
@@ -141,6 +154,17 @@ const Sidebar = ({ show, handleClose, collapsed, onToggle }) => {
             </Nav.Link>
           ))}
         </Nav>
+        <div className="sidebar-footer">
+          <Button
+            as={Link}
+            to="/privacy-policy"
+            variant="outline-primary"
+            className={`sidebar-privacy-btn ${isActive("/privacy-policy") ? "active" : ""}`}
+          >
+            <ShieldLock />
+            <span className="sidebar-label">Privacy Policy</span>
+          </Button>
+        </div>
       </div>
     </>
   );
