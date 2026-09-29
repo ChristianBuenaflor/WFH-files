@@ -15,7 +15,7 @@ const Lesson = lazy(() => import("@/pages/lessons/Lesson.jsx"));
 const Modules = lazy(() => import("@/pages/lessons/components/Modules.jsx"));
 const CalendarPage = lazy(() => import("@/pages/calendar/CalendarPage.jsx"));
 const ReportPage = lazy(() => import("@/pages/report/ReportPage.jsx"));
-const PrivacyPolicy = lazy(() => import("@/pages/privacy/PrivacyPolicy.jsx"));
+const HandBookPage = lazy(() => import("@/pages/handbook/HandBookPage.jsx"));
 
 // Loading component
 const LoadingScreen = () => (
@@ -152,10 +152,10 @@ const AppRoutes = ({ isAuth, setIsAuth }) => {
         />
 
         <Route
-          path="/privacy-policy"
+          path="/employee-handbook"
           element={
             isAuth ? (
-              <PrivacyPolicy setIsAuth={setIsAuth} />
+              <HandBookPage setIsAuth={setIsAuth} />
             ) : (
               <Navigate to="/" replace />
             )

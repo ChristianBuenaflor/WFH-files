@@ -14,6 +14,7 @@ import {
   JournalText,
   ChevronLeft,
   ChevronRight,
+  JournalBookmark,
 } from "react-bootstrap-icons";
 import "@/components/layout/sidebar/Sidebar.css";
 import logo from "@/assets/images/cropped-SnL-Logo-480x480.png";
@@ -112,13 +113,13 @@ const Sidebar = ({ show, handleClose, collapsed, onToggle }) => {
           <div className="sidebar-footer">
             <Button
               as={Link}
-              to="/privacy-policy"
+              to="/employee-handbook"
               variant="outline-primary"
-              className={`sidebar-privacy-btn ${isActive("/privacy-policy") ? "active" : ""}`}
+              className={`sidebar-privacy-btn ${isActive("/employee-handbook") ? "active" : ""}`}
               onClick={handleClose}
             >
               <ShieldLock />
-              <span>Privacy Policy</span>
+              <span>Handbook</span>
             </Button>
           </div>
         </Offcanvas.Body>
@@ -157,12 +158,12 @@ const Sidebar = ({ show, handleClose, collapsed, onToggle }) => {
         <div className="sidebar-footer">
           <Button
             as={Link}
-            to="/privacy-policy"
+            to="/employee-handbook"
             variant="outline-primary"
-            className={`sidebar-privacy-btn ${isActive("/privacy-policy") ? "active" : ""}`}
+            className={`sidebar-privacy-btn ${isActive("/employee-handbook") ? "active" : ""}`}
           >
-            <ShieldLock />
-            <span className="sidebar-label">Privacy Policy</span>
+            <JournalBookmark />
+            <span className="sidebar-label">Employee Handbook</span>
           </Button>
         </div>
       </div>
