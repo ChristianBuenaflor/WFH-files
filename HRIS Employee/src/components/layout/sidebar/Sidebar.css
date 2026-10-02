@@ -31,7 +31,29 @@
 }
 
 .sidebar-nav {
-  padding: 1rem 0;
+  padding: 0.75rem 0 1rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-section + .sidebar-section {
+  margin-top: 0.35rem;
+}
+
+.sidebar-section-title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a94a6;
+  padding: 0.9rem 1.5rem 0.35rem;
+  margin: 0;
+  white-space: nowrap;
 }
 
 .sidebar-link {
@@ -183,9 +205,28 @@
     margin-right: 0 !important;
   }
 
-  .sidebar-desktop.collapsed .sidebar-brand,
   .sidebar-desktop.collapsed .sidebar-label {
     display: none;
+  }
+
+  .sidebar-desktop.collapsed .sidebar-section-title {
+    text-align: center;
+    padding-left: 0;
+    padding-right: 0;
+    font-size: 0;
+    line-height: 0;
+  }
+
+  .sidebar-desktop.collapsed .sidebar-section-title::after {
+    content: "";
+    display: block;
+    height: 1px;
+    margin: 0.6rem 1rem 0.2rem;
+    background-color: #e9ecef;
+  }
+
+  .sidebar-desktop.collapsed .sidebar-section + .sidebar-section {
+    margin-top: 0;
   }
 
   .sidebar-desktop.collapsed .sidebar-link {

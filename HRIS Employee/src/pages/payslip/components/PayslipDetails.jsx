@@ -4,6 +4,7 @@ import {
   ArrowUpRight,
   Calendar3,
   CashCoin,
+  ClockHistory,
   Download,
   Person,
 } from "react-bootstrap-icons";
@@ -42,8 +43,18 @@ const PayslipDetails = ({
     ? Number(payslip.total_holidays)
     : normalizedHolidays.length;
 
+  const overtimeRequests = Array.isArray(payslip.overtime)
+    ? payslip.overtime
+    : [];
+  const overtimeCount = Number.isFinite(Number(payslip.total_overtime_requests))
+    ? Number(payslip.total_overtime_requests)
+    : overtimeRequests.length;
+
   const baseSalary = toAmount(payslip.base_salary || payslip.gross_base);
   const nightDifferential = toAmount(payslip.night_diff_pay);
+  const overtimeHours = toAmount(payslip.overtime_hours);
+  const overtimePay = toAmount(payslip.overtime_pay);
+  const overtimeRate = payslip.overtime_rate || "";
   const allowances = payslip.allowances || [];
   const deductions = payslip.deductions || [];
   const totalAllowances = allowances.reduce(
@@ -90,10 +101,22 @@ const PayslipDetails = ({
                 </h3>
                 <InfoRow label="Name:" value={payslip.employee_name} />
                 <InfoRow label="Period:" value={payslip.period} />
+                {payslip.cutoff_start_date && (
+                  <InfoRow
+                    label="Cutoff:"
+                    value={`${payslip.cutoff_start_date}${payslip.cutoff_end_date ? ` - ${payslip.cutoff_end_date}` : ""}`}
+                  />
+                )}
                 <InfoRow
                   label="Daily Rate:"
                   value={formatPeso(toAmount(payslip.daily_rate))}
                 />
+                {payslip.hourly_rate != null && (
+                  <InfoRow
+                    label="Hourly Rate:"
+                    value={formatPeso(toAmount(payslip.hourly_rate))}
+                  />
+                )}
                 <InfoRow
                   label="Days Worked:"
                   value={`${Number(payslip.days_worked || 0).toFixed(0)} ${
@@ -121,6 +144,13 @@ const PayslipDetails = ({
                   value={formatPeso(nightDifferential)}
                   tone="positive"
                 />
+                {overtimeHours > 0 && (
+                  <InfoRow
+                    label={`Overtime (${overtimeHours} hrs${overtimeRate ? ` @ ${overtimeRate}` : ""}):`}
+                    value={formatPeso(overtimePay)}
+                    tone="positive"
+                  />
+                )}
                 <InfoRow
                   label="Net Pay:"
                   value={formatPeso(toAmount(payslip.net_pay))}
@@ -140,6 +170,12 @@ const PayslipDetails = ({
                   <AmountRow
                     label="Night Differential"
                     value={formatPeso(nightDifferential)}
+                  />
+                )}
+                {overtimeHours > 0 && (
+                  <AmountRow
+                    label={`Overtime (${overtimeHours} hrs${overtimeRate ? ` @ ${overtimeRate}` : ""})`}
+                    value={formatPeso(overtimePay)}
                   />
                 )}
                 {allowances.map((allowance, index) => (
@@ -163,7 +199,11 @@ const PayslipDetails = ({
                 {deductions.map((deduction, index) => (
                   <AmountRow
                     key={`${deduction.deduction_type}-${index}`}
-                    label={deduction.deduction_type}
+                    label={
+                      deduction.loan_name
+                        ? `${deduction.deduction_type} (${deduction.loan_name})`
+                        : deduction.deduction_type
+                    }
                     value={formatPeso(toAmount(deduction.deduction_amount))}
                   />
                 ))}
@@ -199,6 +239,44 @@ const PayslipDetails = ({
               ) : (
                 <p className="payslip-holiday-empty">
                   No holidays recorded for this pay period.
+                </p>
+              )}
+            </section>
+            <section className="payslip-holidays-panel">
+              <div className="payslip-holidays-heading">
+                <h3>
+                  <ClockHistory /> OVERTIME
+                </h3>
+                <span>{overtimeCount}</span>
+              </div>
+              {overtimeRequests.length > 0 ? (
+                <div className="payslip-holiday-list">
+                  {overtimeRequests.map((overtime, index) => (
+                    <div
+                      className="payslip-holiday-row"
+                      key={`${overtime.overtime_date || "overtime"}-${overtime.start_time || index}`}
+                    >
+                      <div>
+                        <strong>{overtime.overtime_date || "Overtime"}</strong>
+                        {(overtime.start_time || overtime.end_time) && (
+                          <small>
+                            {overtime.start_time} - {overtime.end_time}
+                            {overtime.total_hours && ` • ${overtime.total_hours} hrs`}
+                            {overtime.reason && ` • ${overtime.reason}`}
+                          </small>
+                        )}
+                      </div>
+                      <span>
+                        {overtime.total_hours
+                          ? `${overtime.total_hours} hrs`
+                          : overtime.status || ""}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="payslip-holiday-empty">
+                  No approved overtime requests for this pay period.
                 </p>
               )}
             </section>

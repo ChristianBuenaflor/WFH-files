@@ -1,0 +1,47 @@
+/* Overtime page — shares card/table language with Leave via Leave.css.
+   Only overtime-specific additions live here. */
+
+.overtime-requests-table {
+  margin-bottom: 0;
+}
+
+.overtime-time-range {
+  color: #334155;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.overtime-rejection-reason {
+  color: #991b1b;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 0.25rem;
+  white-space: normal;
+}
+
+.leave-status-badge.overtime-cancelled {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+/* Pagination (same language as Loan page) */
+.pagination-controls {
+  display: flex;
+  align-items: center;
+}
+
+.pagination-controls .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+@media (max-width: 767.98px) {
+  .overtime-requests-table {
+    min-width: 760px;
+  }
+
+  .overtime-time-range {
+    white-space: nowrap;
+  }
+}

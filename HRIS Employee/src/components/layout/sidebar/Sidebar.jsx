@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   JournalBookmark,
+  ClockHistory,
 } from "react-bootstrap-icons";
 import "@/components/layout/sidebar/Sidebar.css";
 import logo from "@/assets/images/cropped-SnL-Logo-480x480.png";
@@ -32,53 +33,111 @@ const Sidebar = ({ show, handleClose, collapsed, onToggle }) => {
     logout: <BoxArrowRight />,
     "file-post": <FilePost />,
     "journal-text": <JournalText />,
-
+    "clock-history": <ClockHistory />,
   };
 
-  const menuItems = [
+  const menuSections = [
     {
-      id: "dashboard",
-      label: "Dashboard",
-      icon: "speedometer2",
-      path: "/dashboard",
+      id: "main",
+      title: null,
+      items: [
+        {
+          id: "dashboard",
+          label: "Dashboard",
+          icon: "speedometer2",
+          path: "/dashboard",
+        },
+      ],
     },
     {
-      id: "attendance",
-      label: "Attendance",
-      icon: "calendar-check",
-      path: "/attendance",
+      id: "time-attendance",
+      title: "Time & Attendance",
+      items: [
+        {
+          id: "attendance",
+          label: "Attendance",
+          icon: "calendar-check",
+          path: "/attendance",
+        },
+        {
+          id: "calendar",
+          label: "Calendar",
+          icon: "calendar-date",
+          path: "/calendar",
+        },
+        {
+          id: "overtime",
+          label: "Overtime",
+          icon: "clock-history",
+          path: "/overtime",
+        },
+        { id: "leave", label: "Leave", icon: "calendar-x", path: "/leave" },
+      ],
     },
     {
-      id: "calendar",
-      label: "Calendar",
-      icon: "calendar-date",
-      path: "/calendar",
-    },
-    { id: "leave", label: "Leave", icon: "calendar-x", path: "/leave" },
-    { id: "loan", label: "Loan", icon: "cash-coin", path: "/loan" },
-    {
-      id: "payslip",
-      label: "Payslip",
-      icon: "file-earmark-text",
-      path: "/payslip",
-    },
-    {
-      id: "lessons",
-      label: "Lessons",
-      icon: "file-post",
-      path: "/lessons",
+      id: "payroll",
+      title: "Payroll",
+      items: [
+        {
+          id: "payslip",
+          label: "Payslip",
+          icon: "file-earmark-text",
+          path: "/payslip",
+        },
+        { id: "loan", label: "Loan", icon: "cash-coin", path: "/loan" },
+      ],
     },
     {
-      id: "report",
-      label: "Reports",
-      icon: "journal-text",
-      path: "/report",
+      id: "employee",
+      title: "Other",
+      items: [
+        {
+          id: "lessons",
+          label: "Lessons",
+          icon: "file-post",
+          path: "/lessons",
+        },
+        {
+          id: "report",
+          label: "Reports",
+          icon: "journal-text",
+          path: "/report",
+        },
+      ],
     },
   ];
 
   const isActive = (path) => {
-    return location.pathname === path;
+    return (
+      location.pathname === path ||
+      location.pathname.startsWith(`${path}/`)
+    );
   };
+
+  const renderNav = (onNavigate, showSectionTitle = true) => (
+    <>
+      {menuSections.map((section) => (
+        <div key={section.id} className="sidebar-section">
+          {section.title && showSectionTitle && (
+            <p className="sidebar-section-title">{section.title}</p>
+          )}
+          {section.items.map((item) => (
+            <Nav.Link
+              as={Link}
+              to={item.path}
+              key={item.id}
+              className={`sidebar-link ${isActive(item.path) ? "active" : ""}`}
+              onClick={onNavigate}
+              title={collapsed ? item.label : undefined}
+            >
+              <span className="sidebar-icon">{iconMap[item.icon]}</span>
+              <span className="sidebar-label">{item.label}</span>
+            </Nav.Link>
+          ))}
+        </div>
+      ))}
+    </>
+  );
 
   return (
     <>
@@ -97,18 +156,7 @@ const Sidebar = ({ show, handleClose, collapsed, onToggle }) => {
         </Offcanvas.Header>
         <Offcanvas.Body className="p-0">
           <Nav className="flex-column sidebar-nav">
-            {menuItems.map((item) => (
-              <Nav.Link
-                as={Link}
-                to={item.path}
-                key={item.id}
-                className={`sidebar-link ${isActive(item.path) ? "active" : ""}`}
-                onClick={handleClose}
-              >
-                <span className="sidebar-icon">{iconMap[item.icon]}</span>
-                <span>{item.label}</span>
-              </Nav.Link>
-            ))}
+            {renderNav(handleClose, true)}
           </Nav>
           <div className="sidebar-footer">
             <Button
@@ -143,17 +191,7 @@ const Sidebar = ({ show, handleClose, collapsed, onToggle }) => {
           </button>
         </div>
         <Nav className="flex-column sidebar-nav">
-          {menuItems.map((item) => (
-            <Nav.Link
-              as={Link}
-              to={item.path}
-              key={item.id}
-              className={`sidebar-link ${isActive(item.path) ? "active" : ""}`}
-            >
-              <span className="sidebar-icon">{iconMap[item.icon]}</span>
-              <span className="sidebar-label">{item.label}</span>
-            </Nav.Link>
-          ))}
+          {renderNav(undefined, !collapsed)}
         </Nav>
         <div className="sidebar-footer">
           <Button

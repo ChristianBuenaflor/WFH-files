@@ -14,6 +14,7 @@ const Profile = lazy(() => import("@/pages/profile/Profile.jsx"));
 const Lesson = lazy(() => import("@/pages/lessons/Lesson.jsx"));
 const Modules = lazy(() => import("@/pages/lessons/components/Modules.jsx"));
 const CalendarPage = lazy(() => import("@/pages/calendar/CalendarPage.jsx"));
+const OvertimePage = lazy(() => import("@/pages/overtime/OvertimePage.jsx"));
 const ReportPage = lazy(() => import("@/pages/report/ReportPage.jsx"));
 const HandBookPage = lazy(() => import("@/pages/handbook/HandBookPage.jsx"));
 
@@ -77,6 +78,17 @@ const AppRoutes = ({ isAuth, setIsAuth }) => {
           element={
             isAuth ? (
               <CalendarPage setIsAuth={setIsAuth} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+
+        <Route
+          path="/overtime"
+          element={
+            isAuth ? (
+              <OvertimePage setIsAuth={setIsAuth} />
             ) : (
               <Navigate to="/" replace />
             )

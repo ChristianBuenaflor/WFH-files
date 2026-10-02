@@ -30,7 +30,11 @@ const PayslipPDF = forwardRef(({ payslip, formatPeso }, ref) => {
   const totalDeductionsAmount = calculateTotal(payslip.deductions);
   const basicSalary = Number(String(payslip.base_salary || payslip.gross_base || 0).replace(/,/g, ""));
   const nightDiff = Number(String(payslip.night_diff_pay || "0").replace(/,/g, ""));
+  const overtimeHours = Number(String(payslip.overtime_hours || "0").replace(/,/g, ""));
+  const overtimePay = Number(String(payslip.overtime_pay || "0").replace(/,/g, ""));
+  const overtimeRate = payslip.overtime_rate || "";
   const holidays = (payslip.holidays || payslip.holiday_dates || []).map((holiday) => normalizeHoliday(holiday));
+  const overtimeRequests = Array.isArray(payslip.overtime) ? payslip.overtime : [];
 
   return (
     <div ref={ref} className="pdf-container">
@@ -106,6 +110,23 @@ const PayslipPDF = forwardRef(({ payslip, formatPeso }, ref) => {
             </span>
           </div>
         </div>
+        {overtimeRequests.length > 0 && (
+          <div className="pdf-detail-row">
+            <div className="pdf-detail-item">
+              <label className="pdf-detail-label">Overtime:</label>
+              <span className="pdf-detail-value">
+                {overtimeRequests
+                  .map((overtime) =>
+                    `${overtime.overtime_date || "Overtime"}` +
+                    (overtime.start_time
+                      ? ` (${overtime.start_time} - ${overtime.end_time}, ${overtime.total_hours} hrs)`
+                      : ""),
+                  )
+                  .join(", ")}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Earnings and Deductions Tables */}
@@ -129,6 +150,12 @@ const PayslipPDF = forwardRef(({ payslip, formatPeso }, ref) => {
                 <tr>
                   <td>Night Differential</td>
                   <td>{formatPeso(nightDiff)}</td>
+                </tr>
+              )}
+              {overtimeHours > 0 && (
+                <tr>
+                  <td>Overtime ({overtimeHours} hrs{overtimeRate ? ` @ ${overtimeRate}` : ""})</td>
+                  <td>{formatPeso(overtimePay)}</td>
                 </tr>
               )}
               {payslip.allowances?.map((a, i) => (
@@ -158,7 +185,7 @@ const PayslipPDF = forwardRef(({ payslip, formatPeso }, ref) => {
             <tbody>
               {payslip.deductions?.map((d, i) => (
                 <tr key={i}>
-                  <td>{d.deduction_type}</td>
+                  <td>{d.loan_name ? `${d.deduction_type} (${d.loan_name})` : d.deduction_type}</td>
                   <td>{formatPeso(Number(String(d.deduction_amount).replace(/,/g, "")))}</td>
                 </tr>
               ))}
