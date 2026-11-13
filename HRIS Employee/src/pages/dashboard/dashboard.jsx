@@ -16,10 +16,13 @@ import {
   CashCoin,
   Eye,
   EyeSlash,
+  MegaphoneFill,
+  Calendar3,
 } from "react-bootstrap-icons";
 import api from "@/config/axios";
 import { useAuth } from "@/context/AuthContext.jsx";
 import "./Dashboard.css";
+import "@/components/announcement/AnnouncementModern.css";
 import "@/assets/style/global.css";
 
 const RecentReport = lazy(() => import("@/pages/dashboard/components/RecentReport"));
@@ -150,6 +153,7 @@ const Dashboard = ({ setIsAuth }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const hasFetched = useRef(false);
+  const detailOpenRef = useRef(false);
 
   const userKey = user?.id || user?.email || user?.username;
   const unreadAnnouncements = announcements
@@ -170,6 +174,9 @@ const Dashboard = ({ setIsAuth }) => {
 
   useEffect(() => {
     if (!announcementStorageKey) return;
+
+    // Don't auto-open over the bell detail modal — that was the overlap.
+    if (detailOpenRef.current || window.__announcementDetailOpen) return;
 
     const alreadySeen = localStorage.getItem(announcementStorageKey);
     const shouldOpen =
@@ -202,6 +209,31 @@ const Dashboard = ({ setIsAuth }) => {
     window.addEventListener("announcement-seen", handleAnnouncementSeen);
     return () => window.removeEventListener("announcement-seen", handleAnnouncementSeen);
   }, []);
+
+  useEffect(() => {
+    const closePopup = () => {
+      setShowAnnouncementModal(false);
+      setDismissedAnnouncementKey((prev) => prev ?? announcementStorageKey);
+    };
+    const markDetailOpen = () => {
+      detailOpenRef.current = true;
+      window.__announcementDetailOpen = true;
+      closePopup();
+    };
+    const markDetailClosed = () => {
+      detailOpenRef.current = false;
+      window.__announcementDetailOpen = false;
+    };
+
+    window.addEventListener("close-dashboard-announcement", closePopup);
+    window.addEventListener("announcement-detail-open", markDetailOpen);
+    window.addEventListener("announcement-detail-close", markDetailClosed);
+    return () => {
+      window.removeEventListener("close-dashboard-announcement", closePopup);
+      window.removeEventListener("announcement-detail-open", markDetailOpen);
+      window.removeEventListener("announcement-detail-close", markDetailClosed);
+    };
+  }, [announcementStorageKey]);
 
   const handleAnnouncementClose = () => {
     setShowAnnouncementModal(false);
@@ -296,62 +328,96 @@ const Dashboard = ({ setIsAuth }) => {
         onHide={handleAnnouncementClose}
         centered
         size="lg"
-        backdrop="static"
-        keyboard={false}
+        dialogClassName="am-modal am-popup"
       >
         <Modal.Header closeButton>
-          <Modal.Title>Announcement</Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="announcement-popup-body p-0">
-          <div className="announcement-popup-list">
-            {announcements.map((announcement) => (
-              <button
-                type="button"
-                key={announcement.id}
-                className={`announcement-popup-list-item ${
-                  selectedAnnouncement?.id === announcement.id
-                    ? "active"
-                    : ""
-                }`}
-                onClick={() => handleAnnouncementSelect(announcement.id)}
-              >
-                <span className="announcement-popup-list-heading">
-                  <strong>{announcement.title}</strong>
-                  <span
-                    className={`announcement-status-dot ${announcement.is_seen ? "is-seen" : ""}`}
-                    aria-label={announcement.is_seen ? "Read announcement" : "Unread announcement"}
-                    title={announcement.is_seen ? "Read announcement" : "Unread announcement"}
-                  >
-                    <span aria-hidden="true" />
-                  </span>
-                </span>
-                <small>{new Date(announcement.created_at).toLocaleDateString()}</small>
-              </button>
-            ))}
-          </div>
-          <div className="announcement-popup-detail announcement-details">
-            <h5 className="announcement-title">{selectedAnnouncement?.title}</h5>
-            {selectedAnnouncement?.created_at && (
-              <p className="text-muted announcement-date">
-                Posted on: {new Date(selectedAnnouncement.created_at).toLocaleDateString()}
+          <div className="am-modal-head">
+            <span className="am-head-icon" aria-hidden="true">
+              <MegaphoneFill />
+            </span>
+            <div>
+              <p className="am-modal-title">
+                Announcements
+                {unreadAnnouncements.length > 0 && (
+                  <> · {unreadAnnouncements.length} unread</>
+                )}
               </p>
-            )}
-            <hr />
+              <p className="am-modal-sub">
+                Stay updated with the latest company news
+              </p>
+            </div>
+          </div>
+        </Modal.Header>
+        <Modal.Body className="am-popup-body">
+          <div className="am-popup-list" role="listbox" aria-label="Announcements">
+            <div className="am-popup-count">
+              {announcements.length} update{announcements.length === 1 ? "" : "s"}
+            </div>
+            {announcements.map((announcement) => {
+              const isActive = selectedAnnouncement?.id === announcement.id;
+              const isUnread = !announcement.is_seen;
+              return (
+                <button
+                  type="button"
+                  key={announcement.id}
+                  role="option"
+                  aria-selected={isActive}
+                  className={`am-popup-item ${isActive ? "is-active" : ""}`}
+                  onClick={() => handleAnnouncementSelect(announcement.id)}
+                >
+                  <span className="am-popup-item-head">
+                    <strong>{announcement.title}</strong>
+                    <span
+                      className={`am-dot ${isUnread ? "" : "is-seen"}`}
+                      aria-label={isUnread ? "Unread" : "Read"}
+                      title={isUnread ? "Unread" : "Read"}
+                    />
+                  </span>
+                  <small>
+                    <Calendar3 size={12} aria-hidden="true" className="me-1" />
+                    {new Date(announcement.created_at).toLocaleDateString(
+                      undefined,
+                      { year: "numeric", month: "short", day: "numeric" },
+                    )}
+                    {isUnread ? " · New" : ""}
+                  </small>
+                </button>
+              );
+            })}
+          </div>
+          <div className="am-popup-detail">
+            <div className="am-detail-kicker">
+              <span
+                className={`am-chip ${selectedAnnouncement?.is_seen ? "is-read" : "is-new"}`}
+              >
+                {selectedAnnouncement?.is_seen ? "Announcement" : "New"}
+              </span>
+              {selectedAnnouncement?.created_at && (
+                <span className="am-detail-date">
+                  <Calendar3 size={14} aria-hidden="true" />
+                  {new Date(selectedAnnouncement.created_at).toLocaleDateString(
+                    undefined,
+                    { year: "numeric", month: "long", day: "numeric" },
+                  )}
+                </span>
+              )}
+            </div>
+            <h5 className="am-detail-title">{selectedAnnouncement?.title}</h5>
             <div
-              className="announcement-content mb-0"
+              className="am-detail-content"
               dangerouslySetInnerHTML={{
                 __html: selectedAnnouncement?.content || "",
               }}
             />
           </div>
         </Modal.Body>
-        <Modal.Footer className="border-0 pt-0">
+        <Modal.Footer>
           <button
             type="button"
-            className="btn btn-primary btn-sm px-3"
+            className="am-btn-primary"
             onClick={handleAnnouncementClose}
           >
-            Close
+            Got it
           </button>
         </Modal.Footer>
       </Modal>

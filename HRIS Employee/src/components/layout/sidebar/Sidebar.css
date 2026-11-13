@@ -272,7 +272,7 @@
 
 /* Offcanvas Body Custom Styling */
 .offcanvas-body {
-  padding: 0 !important;
+  padding: 20px;
   overflow-y: auto;
   overflow-x: hidden !important;
 }

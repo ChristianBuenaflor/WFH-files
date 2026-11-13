@@ -1,7 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Offcanvas, Modal } from "react-bootstrap";
-import { Megaphone } from "react-bootstrap-icons";
+import {
+  MegaphoneFill,
+  Check2All,
+  ChevronRight,
+  Calendar3,
+  Inbox,
+} from "react-bootstrap-icons";
 import "@/components/layout/Adminlayout.css";
+import "./AnnouncementModern.css";
 import api from "@/config/axios";
 import { useAuth } from "@/context/AuthContext.jsx";
 
@@ -22,7 +29,7 @@ const Announcement = () => {
 
   const hasFetched = useRef(false);
 
-  const getAnnouncementPreview = (content, maxLength = 80) => {
+  const getAnnouncementPreview = (content, maxLength = 90) => {
     if (!content) return "";
 
     const parser = new DOMParser();
@@ -47,11 +54,15 @@ const Announcement = () => {
 
   const handleCloseModal = () => {
     setShowModal(false);
+    window.dispatchEvent(new CustomEvent("announcement-detail-close"));
   };
 
   const openAnnouncementModal = (announcementId) => {
     setPendingAnnouncementId(announcementId);
     setShowList(false);
+    // Root-cause fix: bell detail must win over dashboard auto-popup.
+    // Tell dashboard to close so two `size="lg"` modals never stack.
+    window.dispatchEvent(new CustomEvent("close-dashboard-announcement"));
   };
 
   const fetchNotifications = async () => {
@@ -91,6 +102,7 @@ const Announcement = () => {
         }),
       );
 
+      window.dispatchEvent(new CustomEvent("announcement-detail-open"));
       setShowModal(true);
     } catch (error) {
       console.error("Error fetching announcement detail:", error);
@@ -174,24 +186,44 @@ const Announcement = () => {
   }, [user]);
 
   const handleNotificationToggle = () => {
-    setShowList((prev) => !prev);
+    setShowList((prev) => {
+      // Opening the bell list while the dashboard popup is up would
+      // stack offcanvas + modal — preemptively close the popup.
+      if (!prev) {
+        window.dispatchEvent(new CustomEvent("close-dashboard-announcement"));
+      }
+      return !prev;
+    });
   };
+
+  const subtitle =
+    unreadCount > 0
+      ? `${unreadCount} unread update${unreadCount > 1 ? "s" : ""}`
+      : "You're all caught up";
 
   return (
     <>
       <button
         type="button"
-        className="notification-btn"
+        className="am-trigger"
         onClick={handleNotificationToggle}
+        aria-label={
+          unreadCount > 0
+            ? `Announcements, ${unreadCount} unread`
+            : "Announcements"
+        }
+        aria-expanded={showList}
       >
-        <Megaphone size={16} color="black" />
+        <MegaphoneFill aria-hidden="true" />
         {unreadCount > 0 && (
-          <span className="notification-count">{unreadCount}</span>
+          <span className="am-badge" aria-hidden="true">
+            {unreadCount > 99 ? "99+" : unreadCount}
+          </span>
         )}
       </button>
 
       <Offcanvas
-        className="announcement-offcanvas"
+        className="announcement-offcanvas am-shell"
         show={showList}
         onHide={handleCloseList}
         placement="end"
@@ -199,135 +231,179 @@ const Announcement = () => {
         scroll
       >
         <Offcanvas.Header closeButton>
-          <Offcanvas.Title>Announcements</Offcanvas.Title>
+          <div className="am-head">
+            <span className="am-head-icon" aria-hidden="true">
+              <MegaphoneFill />
+            </span>
+            <div className="am-head-text">
+              <p className="am-head-title">Announcements</p>
+              <p className="am-head-sub">{subtitle}</p>
+            </div>
+            <button
+              type="button"
+              className="am-markall"
+              onClick={handleMarkAllAsRead}
+              disabled={unreadCount === 0 || markingAllAsRead}
+            >
+              <Check2All size={15} aria-hidden="true" />
+              <span>{markingAllAsRead ? "Marking..." : "Mark all read"}</span>
+            </button>
+          </div>
         </Offcanvas.Header>
 
-        <Offcanvas.Body className="announcement-list-body">
+        <Offcanvas.Body>
           {loading && notifications.length === 0 ? (
-            <div className="empty-notification text-center py-4">
-              <div
-                className="spinner-border text-primary mb-2"
-                role="status"
-                aria-hidden="true"
-              />
-              <p className="text-muted mb-0">Loading announcements...</p>
+            <div className="am-skeleton" aria-label="Loading announcements">
+              <div className="am-skel" />
+              <div className="am-skel" />
+              <div className="am-skel" />
             </div>
           ) : notifications.length === 0 ? (
-            <div className="empty-notification">
-              <p className="text-muted mb-0">No new announcements</p>
+            <div className="am-empty">
+              <span className="am-empty-icon" aria-hidden="true">
+                <Inbox />
+              </span>
+              <strong>No announcements yet</strong>
+              <p>New HR updates and company news will appear here.</p>
             </div>
           ) : (
-            <div className="notification-items-container">
-              {notifications.map((notification, index) => (
-                <button
-                  key={notification.id || index}
-                  type="button"
-                  className={`announcement-card announcement-list-item ${
-                    !notification.is_seen ? "announcement-unread" : ""
-                  }`}
-                  onClick={() => openAnnouncementModal(notification.id)}
-                >
-                  <div className="d-flex justify-content-between align-items-start gap-2 w-100">
-                    <strong className="text-start announcement-item-title">
-                      <h6 className="mb-0">{notification.title}</h6>
-                    </strong>
-
-                    <span
-                      className={`announcement-status-dot ${
-                        notification.is_seen ? "is-seen" : ""
-                      }`}
-                      aria-label={
-                        notification.is_seen
-                          ? "Read announcement"
-                          : "Unread announcement"
-                      }
-                      title={
-                        notification.is_seen
-                          ? "Read announcement"
-                          : "Unread announcement"
-                      }
-                    >
-                      <span aria-hidden="true" />
+            <div className="am-list" role="list">
+              {notifications.map((notification) => {
+                const isUnread = !notification.is_seen;
+                return (
+                  <button
+                    key={notification.id}
+                    type="button"
+                    role="listitem"
+                    className={`am-card ${isUnread ? "is-unread" : ""}`}
+                    onClick={() => openAnnouncementModal(notification.id)}
+                    aria-label={`${notification.title}${isUnread ? ", unread" : ""}`}
+                  >
+                    <span className="am-card-top">
+                      <span className="am-card-title">
+                        {notification.title}
+                      </span>
+                      <span className="am-pills">
+                        {isUnread ? (
+                          <span className="am-new">
+                            <i aria-hidden="true" />
+                            New
+                          </span>
+                        ) : (
+                          <span className="am-read">Read</span>
+                        )}
+                      </span>
                     </span>
-                  </div>
 
-                  <p className="text-muted mb-1">
-                    {getAnnouncementPreview(notification.content)}
-                  </p>
+                    <span className="am-preview">
+                      {getAnnouncementPreview(notification.content)}
+                    </span>
 
-                  <div className="d-flex justify-content-end">
-                    <small className="text-muted fs-7">
-                      {formatDate(notification.created_at)}
-                    </small>
-                  </div>
-                </button>
-              ))}
+                    <span className="am-meta">
+                      <span className="am-date">
+                        <Calendar3 aria-hidden="true" />
+                        {formatDate(notification.created_at)}
+                      </span>
+                      <span className="am-open">
+                        View
+                        <ChevronRight aria-hidden="true" />
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           )}
         </Offcanvas.Body>
 
-        <div className="announcement-offcanvas-footer">
+        <div className="am-foot">
           <button
             type="button"
-            className="w-100 py-2 border-0 bg-white border-top"
+            className="am-foot-btn"
             onClick={handleMarkAllAsRead}
             disabled={unreadCount === 0 || markingAllAsRead}
           >
+            <Check2All size={16} aria-hidden="true" />
             {markingAllAsRead ? "Marking as read..." : "Mark all as read"}
           </button>
         </div>
       </Offcanvas>
 
-      <Modal show={showModal} onHide={handleCloseModal} centered size="lg">
+      <Modal
+        show={showModal}
+        onHide={handleCloseModal}
+        centered
+        size="lg"
+        dialogClassName="am-modal"
+      >
         <Modal.Header closeButton>
-          <Modal.Title>Announcement Details</Modal.Title>
+          <div className="am-modal-head">
+            <span className="am-head-icon" aria-hidden="true">
+              <MegaphoneFill />
+            </span>
+            <div>
+              <p className="am-modal-title">Announcement</p>
+              <p className="am-modal-sub">Company update & details</p>
+            </div>
+          </div>
         </Modal.Header>
 
-        <Modal.Body className="pt-2 announcement-details ">
+        <Modal.Body>
           {detailLoading ? (
-            <div className="text-center py-4">
-              <span
-                className="spinner-border text-primary"
-                role="status"
-                aria-hidden="true"
-              />
+            <div className="am-skeleton" aria-label="Loading announcement details">
+              <div className="am-skel" style={{ minHeight: "42px" }} />
+              <div className="am-skel" style={{ minHeight: "220px" }} />
             </div>
           ) : selectedAnnouncement ? (
             <>
-              <h5 className="announcement-title">
+              <div className="am-detail-kicker">
+                <span
+                  className={`am-chip ${selectedAnnouncement.is_seen === false ? "is-new" : "is-read"}`}
+                >
+                  {selectedAnnouncement.is_seen === false ? "New" : "Announcement"}
+                </span>
+                <span className="am-detail-date">
+                  <Calendar3 size={14} aria-hidden="true" />
+                  Posted on{" "}
+                  {new Date(
+                    selectedAnnouncement.created_at,
+                  ).toLocaleDateString(undefined, {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </span>
+              </div>
+
+              <h5 className="am-detail-title">
                 {selectedAnnouncement.title}
               </h5>
 
-              <p className="text-muted announcement-date">
-                Posted on:{" "}
-                {new Date(
-                  selectedAnnouncement.created_at,
-                ).toLocaleDateString()}
-              </p>
-
-              <hr />
-
               <div
-                className="announcement-content"
+                className="am-detail-content"
                 dangerouslySetInnerHTML={{
                   __html: selectedAnnouncement.content || "",
                 }}
               />
             </>
           ) : (
-            <div className="text-center py-4 text-muted">
-              Unable to load announcement details.
+            <div className="am-empty">
+              <span className="am-empty-icon" aria-hidden="true">
+                <Inbox />
+              </span>
+              <strong>Unable to load details</strong>
+              <p>Please try opening this announcement again.</p>
             </div>
           )}
         </Modal.Body>
 
-        <Modal.Footer className="border-0 pt-0">
+        <Modal.Footer>
           <button
             type="button"
-            className="btn btn-outline-secondary btn-sm px-3"
+            className="am-btn-primary"
             onClick={handleCloseModal}
           >
-            Close
+            Got it
           </button>
         </Modal.Footer>
       </Modal>

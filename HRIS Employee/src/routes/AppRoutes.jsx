@@ -10,6 +10,7 @@ const Leave = lazy(() => import("@/pages/leave/Leave.jsx"));
 const Attendance = lazy(() => import("@/pages/attendance/Attendance.jsx"));
 const Loan = lazy(() => import("@/pages/loan/Loan.jsx"));
 const Payslip = lazy(() => import("@/pages/payslip/Payslip.jsx"));
+const ThirteenthMonth = lazy(() => import("@/pages/thirteenth-month/ThirteenthMonth.jsx"));
 const Profile = lazy(() => import("@/pages/profile/Profile.jsx"));
 const Lesson = lazy(() => import("@/pages/lessons/Lesson.jsx"));
 const Modules = lazy(() => import("@/pages/lessons/components/Modules.jsx"));
@@ -113,6 +114,17 @@ const AppRoutes = ({ isAuth, setIsAuth }) => {
           element={
             isAuth ? (
               <Payslip setIsAuth={setIsAuth} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+
+        <Route
+          path="/thirteenth-month"
+          element={
+            isAuth ? (
+              <ThirteenthMonth setIsAuth={setIsAuth} />
             ) : (
               <Navigate to="/" replace />
             )
